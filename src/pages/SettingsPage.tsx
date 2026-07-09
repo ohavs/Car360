@@ -1,14 +1,18 @@
+import { motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 import PageHeader from '../components/layout/PageHeader'
 import {
   IconBell,
+  IconCheck,
   IconDownload,
   IconInstall,
   IconLogout,
   IconMoon,
   IconShield,
 } from '../components/icons'
-import { Card, ConfirmDialog, Switch } from '../components/ui'
+import { Card, ConfirmDialog, Switch, spring } from '../components/ui'
+import { PALETTES, SKINS } from '../lib/palettes'
+import { cn } from '../lib/utils'
 import { useAuth } from '../contexts/AuthContext'
 import { useCars } from '../contexts/CarsContext'
 import { useTheme } from '../contexts/ThemeContext'
@@ -28,7 +32,7 @@ window.addEventListener('beforeinstallprompt', (e) => {
 
 export default function SettingsPage() {
   const { user, signOut, isCloud } = useAuth()
-  const { theme, toggle } = useTheme()
+  const { theme, toggle, palette, setPalette, skin, setSkin, restyling } = useTheme()
   const { toast } = useToast()
   const { cars } = useCars()
   const [confirmSignOut, setConfirmSignOut] = useState(false)
@@ -97,6 +101,127 @@ export default function SettingsPage() {
             <p className="mt-0.5 text-xs text-ink-3">
               {cars.length} רכבים · {isCloud ? 'מסונכרן בענן' : 'מצב מקומי (דמו)'}
             </p>
+          </div>
+        </Card>
+
+        {/* design studio */}
+        <Card className="space-y-5">
+          <div>
+            <h2 className="text-lg font-black">עיצוב</h2>
+            <p className="text-xs text-ink-3">פלטת צבעים ושפת עיצוב — הכל מתעדכן בכל האפליקציה</p>
+          </div>
+
+          {/* palette picker */}
+          <div>
+            <p className="mb-2.5 text-[13px] font-semibold text-ink-2">פלטת צבעים</p>
+            <div className="flex justify-between">
+              {PALETTES.map((p) => {
+                const active = palette === p.id
+                return (
+                  <motion.button
+                    key={p.id}
+                    whileTap={{ scale: 0.88 }}
+                    transition={spring}
+                    disabled={restyling}
+                    onClick={() => !active && setPalette(p.id)}
+                    aria-label={`פלטת ${p.label}`}
+                    className="flex flex-col items-center gap-1.5"
+                  >
+                    <span
+                      className={cn(
+                        'relative flex size-12 items-center justify-center overflow-hidden rounded-full ring-2 transition-all',
+                        active ? 'ring-cta ring-offset-2 ring-offset-card' : 'ring-line',
+                      )}
+                    >
+                      <span className="absolute inset-0" style={{ background: p.preview[2] }} />
+                      <span
+                        className="absolute inset-y-0 start-0 w-1/2"
+                        style={{ background: p.preview[0] }}
+                      />
+                      <span
+                        className="absolute bottom-0 end-0 size-1/2 rounded-tl-full"
+                        style={{ background: p.preview[1] }}
+                      />
+                      {active && (
+                        <motion.span
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={spring}
+                          className="relative z-10 flex size-5 items-center justify-center rounded-full bg-white text-ink shadow-card"
+                        >
+                          <IconCheck size={12} className="text-black" />
+                        </motion.span>
+                      )}
+                    </span>
+                    <span className={cn('text-[11px] font-bold', active ? 'text-ink' : 'text-ink-3')}>
+                      {p.label}
+                    </span>
+                  </motion.button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* design language picker */}
+          <div>
+            <p className="mb-2.5 text-[13px] font-semibold text-ink-2">שפת עיצוב</p>
+            <div className="grid grid-cols-2 gap-3">
+              {SKINS.map((s) => {
+                const active = skin === s.id
+                return (
+                  <motion.button
+                    key={s.id}
+                    whileTap={{ scale: 0.96 }}
+                    transition={spring}
+                    disabled={restyling}
+                    onClick={() => !active && setSkin(s.id)}
+                    className={cn(
+                      'relative overflow-hidden rounded-2xl p-3.5 text-start ring-2 transition-all',
+                      active ? 'ring-cta' : 'ring-line',
+                    )}
+                  >
+                    {/* mini preview */}
+                    <span
+                      className={cn(
+                        'mb-2.5 block h-14 overflow-hidden rounded-xl',
+                        s.id === 'glass'
+                          ? 'bg-gradient-to-br from-sky-300/70 via-fuchsia-300/50 to-amber-200/70 dark:from-sky-500/40 dark:via-fuchsia-500/30 dark:to-amber-400/30'
+                          : 'bg-card-2',
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          'mx-2.5 mt-2.5 block h-6 rounded-lg shadow-card',
+                          s.id === 'glass'
+                            ? 'border border-white/60 bg-white/40 backdrop-blur-sm dark:border-white/20 dark:bg-white/10'
+                            : 'bg-card',
+                        )}
+                      />
+                      <span
+                        className={cn(
+                          'mx-2.5 mt-1.5 block h-6 w-2/3 rounded-lg shadow-card',
+                          s.id === 'glass'
+                            ? 'border border-white/60 bg-white/40 backdrop-blur-sm dark:border-white/20 dark:bg-white/10'
+                            : 'bg-card',
+                        )}
+                      />
+                    </span>
+                    <span className="block text-sm font-black">{s.label}</span>
+                    <span className="mt-0.5 block text-[11px] leading-snug text-ink-3">{s.description}</span>
+                    {active && (
+                      <motion.span
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={spring}
+                        className="absolute end-2.5 top-2.5 flex size-6 items-center justify-center rounded-full bg-cta text-white shadow-card"
+                      >
+                        <IconCheck size={14} />
+                      </motion.span>
+                    )}
+                  </motion.button>
+                )
+              })}
+            </div>
           </div>
         </Card>
 

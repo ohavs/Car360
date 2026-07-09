@@ -1,36 +1,138 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { AnimatePresence, motion } from 'motion/react'
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react'
+import type { PaletteId, SkinId } from '../lib/palettes'
 
 type Theme = 'light' | 'dark'
 
 interface ThemeCtx {
   theme: Theme
   toggle: () => void
+  palette: PaletteId
+  setPalette: (p: PaletteId) => void
+  skin: SkinId
+  setSkin: (s: SkinId) => void
+  /** true while the restyle loader is showing */
+  restyling: boolean
 }
 
-const Ctx = createContext<ThemeCtx>({ theme: 'light', toggle: () => {} })
+const Ctx = createContext<ThemeCtx>({
+  theme: 'light',
+  toggle: () => {},
+  palette: 'classic',
+  setPalette: () => {},
+  skin: 'minimal',
+  setSkin: () => {},
+  restyling: false,
+})
 
-const KEY = 'car360:theme'
+const THEME_KEY = 'car360:theme'
+const PALETTE_KEY = 'car360:palette'
+const SKIN_KEY = 'car360:skin'
 
 function initialTheme(): Theme {
-  const saved = localStorage.getItem(KEY)
+  const saved = localStorage.getItem(THEME_KEY)
   if (saved === 'light' || saved === 'dark') return saved
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
+function initialPalette(): PaletteId {
+  const saved = localStorage.getItem(PALETTE_KEY)
+  return (saved as PaletteId) || 'classic'
+}
+
+function initialSkin(): SkinId {
+  const saved = localStorage.getItem(SKIN_KEY)
+  return (saved as SkinId) || 'minimal'
+}
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>(initialTheme)
+  const [palette, setPaletteState] = useState<PaletteId>(initialPalette)
+  const [skin, setSkinState] = useState<SkinId>(initialSkin)
+  const [restyling, setRestyling] = useState(false)
+  const restyleTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', theme === 'dark')
-    localStorage.setItem(KEY, theme)
-    // keep the browser chrome / PWA titlebar in sync
-    const meta = document.querySelector('meta[name="theme-color"]')
-    meta?.setAttribute('content', theme === 'dark' ? '#101013' : '#f4f4f5')
-  }, [theme])
+    const root = document.documentElement
+    root.classList.toggle('dark', theme === 'dark')
+    root.dataset.palette = palette
+    root.dataset.skin = skin
+    localStorage.setItem(THEME_KEY, theme)
+    localStorage.setItem(PALETTE_KEY, palette)
+    localStorage.setItem(SKIN_KEY, skin)
+    // keep the browser chrome / PWA titlebar in sync with the actual canvas
+    requestAnimationFrame(() => {
+      const bg = getComputedStyle(document.body).backgroundColor
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', bg)
+    })
+  }, [theme, palette, skin])
+
+  /** Show the "rebuilding your design" loader, apply the change mid-way,
+   *  release after the new style has painted. */
+  const restyle = useCallback((apply: () => void) => {
+    if (restyleTimer.current) clearTimeout(restyleTimer.current)
+    setRestyling(true)
+    restyleTimer.current = setTimeout(() => {
+      apply()
+      restyleTimer.current = setTimeout(() => setRestyling(false), 900)
+    }, 450)
+  }, [])
+
+  const setPalette = useCallback(
+    (p: PaletteId) => restyle(() => setPaletteState(p)),
+    [restyle],
+  )
+  const setSkin = useCallback((s: SkinId) => restyle(() => setSkinState(s)), [restyle])
 
   return (
-    <Ctx.Provider value={{ theme, toggle: () => setTheme((t) => (t === 'dark' ? 'light' : 'dark')) }}>
+    <Ctx.Provider
+      value={{
+        theme,
+        toggle: () => setTheme((t) => (t === 'dark' ? 'light' : 'dark')),
+        palette,
+        setPalette,
+        skin,
+        setSkin,
+        restyling,
+      }}
+    >
       {children}
+      <AnimatePresence>
+        {restyling && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, transition: { duration: 0.25 } }}
+            className="fixed inset-0 z-[90] flex flex-col items-center justify-center gap-5 bg-canvas/85 backdrop-blur-xl"
+          >
+            <motion.div
+              initial={{ scale: 0.7, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 24 }}
+              className="relative flex size-20 items-center justify-center"
+            >
+              <span className="absolute inset-0 animate-spin rounded-full border-4 border-line border-t-cta" />
+              <span className="absolute inset-3 animate-spin rounded-full border-4 border-transparent border-b-ink [animation-direction:reverse] [animation-duration:1.2s]" />
+            </motion.div>
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+              className="text-base font-black"
+            >
+              בונה את העיצוב מחדש…
+            </motion.p>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </Ctx.Provider>
   )
 }
