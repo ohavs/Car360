@@ -13,7 +13,7 @@ import {
   EmptyState,
   Field,
   Input,
-  Spinner,
+  ListSkeleton,
   TextArea,
   listItem,
   listStagger,
@@ -104,9 +104,7 @@ export default function InsurancePage() {
       />
 
       {loading ? (
-        <div className="flex justify-center py-16">
-          <Spinner />
-        </div>
+        <ListSkeleton />
       ) : sorted.length === 0 ? (
         <EmptyState
           icon={<IconShield size={26} />}

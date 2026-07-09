@@ -314,6 +314,99 @@
   box-shadow: 7px 7px 18px rgb(0 0 0 / 0.6), -5px -5px 14px rgb(255 255 255 / 0.05);
 }
 
+/* ==========================================================
+   Design language: AURORA — a living, flowing color field with
+   translucent cards and neon CTA. The most maximal skin.
+   ========================================================== */
+
+[data-skin='aurora'] {
+  --radius-card: 1.75rem;
+  --c-canvas: #eef1fb;
+  --c-card: rgb(255 255 255 / 0.62);
+  --c-card-2: rgb(255 255 255 / 0.5);
+  --c-line: rgb(255 255 255 / 0.7);
+  --c-accent: rgb(255 255 255 / 0.7);
+  --c-accent-ink: var(--c-ink);
+  --shadow-card: 0 10px 34px -12px rgb(79 70 229 / 0.32), inset 0 1px 0 rgb(255 255 255 / 0.75);
+  --shadow-float: 0 24px 60px -14px rgb(79 70 229 / 0.45), inset 0 1px 0 rgb(255 255 255 / 0.65);
+}
+.dark[data-skin='aurora'] {
+  --c-canvas: #05030f;
+  --c-card: rgb(40 33 96 / 0.36);
+  --c-card-2: rgb(40 33 96 / 0.28);
+  --c-line: rgb(180 170 255 / 0.22);
+  --c-ink: #f4f2ff;
+  --c-ink-2: #bcb6e6;
+  --c-ink-3: #7d76ad;
+  --c-accent: rgb(255 255 255 / 0.14);
+  --c-accent-ink: #f4f2ff;
+  --shadow-card: 0 12px 40px -12px rgb(0 0 0 / 0.6), inset 0 1px 0 rgb(255 255 255 / 0.12);
+  --shadow-float: 0 26px 64px -14px rgb(0 0 0 / 0.72), inset 0 1px 0 rgb(255 255 255 / 0.14);
+}
+
+[data-skin='aurora'] .bg-card,
+[data-skin='aurora'] .bg-canvas,
+[data-skin='aurora'] .bg-canvas\/85,
+[data-skin='aurora'] .bg-accent {
+  backdrop-filter: blur(22px) saturate(1.7);
+  -webkit-backdrop-filter: blur(22px) saturate(1.7);
+}
+[data-skin='aurora'] .bg-card,
+[data-skin='aurora'] .bg-accent {
+  border: 1px solid rgb(255 255 255 / 0.5);
+}
+.dark[data-skin='aurora'] .bg-card,
+.dark[data-skin='aurora'] .bg-accent {
+  border-color: rgb(180 170 255 / 0.2);
+}
+[data-skin='aurora'] .bg-canvas {
+  background-color: color-mix(in srgb, var(--c-canvas) 55%, transparent);
+}
+
+/* neon CTA */
+[data-skin='aurora'] .bg-cta {
+  background-image: linear-gradient(135deg, #6366f1 0%, #d946ef 50%, #f43f5e 100%);
+  border: 1px solid rgb(255 255 255 / 0.4);
+  box-shadow: 0 10px 30px -6px rgb(217 70 239 / 0.55), inset 0 1px 0 rgb(255 255 255 / 0.5);
+}
+
+/* the living aurora field */
+@keyframes aurora-flow {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+  }
+  33% {
+    transform: translate3d(-6%, 4%, 0) rotate(4deg) scale(1.12);
+  }
+  66% {
+    transform: translate3d(5%, -5%, 0) rotate(-3deg) scale(1.06);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+  }
+}
+[data-skin='aurora'] body::before {
+  content: '';
+  position: fixed;
+  inset: -30%;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(28% 24% at 20% 18%, rgb(99 102 241 / 0.55), transparent 60%),
+    radial-gradient(26% 22% at 82% 22%, rgb(217 70 239 / 0.45), transparent 60%),
+    radial-gradient(30% 26% at 65% 72%, rgb(34 211 238 / 0.4), transparent 60%),
+    radial-gradient(26% 24% at 28% 82%, rgb(244 63 94 / 0.38), transparent 62%),
+    radial-gradient(30% 28% at 50% 50%, rgb(16 185 129 / 0.28), transparent 65%);
+  filter: blur(52px);
+  animation: aurora-flow 24s ease-in-out infinite;
+}
+[data-skin='aurora']:not(.dark) body::before {
+  opacity: 0.7;
+}
+.dark[data-skin='aurora'] body::before {
+  filter: blur(58px) brightness(1.15);
+}
+
 html,
 body,
 #root {

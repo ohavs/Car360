@@ -326,6 +326,51 @@ export function Spinner({ className }: { className?: string }) {
   )
 }
 
+/* ---------- Skeletons (loading placeholders) ---------- */
+
+export function Skeleton({ className }: { className?: string }) {
+  return <div className={cn('animate-pulse rounded-2xl bg-card-2', className)} />
+}
+
+/** Home screen placeholder — mirrors the real layout so there's no jump. */
+export function HomeSkeleton() {
+  return (
+    <div className="px-4 pt-safe" aria-hidden="true">
+      <div className="flex items-center justify-between py-4">
+        <Skeleton className="size-11 rounded-full" />
+        <Skeleton className="h-6 w-32" />
+        <Skeleton className="size-11 rounded-full" />
+      </div>
+      <Skeleton className="mx-auto h-40 w-4/5 rounded-card" />
+      <div className="mt-5 grid grid-cols-2 gap-3">
+        <Skeleton className="h-24 rounded-card" />
+        <Skeleton className="h-24 rounded-card" />
+      </div>
+      <div className="mt-4 flex justify-between px-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="size-14 rounded-full" />
+        ))}
+      </div>
+      <div className="mt-5 grid grid-cols-2 gap-3">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="h-20 rounded-card" />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/** Generic vertical list placeholder for services / insurance / reminders. */
+export function ListSkeleton({ rows = 4 }: { rows?: number }) {
+  return (
+    <div className="space-y-3 px-1" aria-hidden="true">
+      {Array.from({ length: rows }).map((_, i) => (
+        <Skeleton key={i} className="h-24 rounded-card" />
+      ))}
+    </div>
+  )
+}
+
 export function EmptyState({
   icon,
   title,

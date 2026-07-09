@@ -188,6 +188,8 @@ export default function SettingsPage() {
                           'bg-gradient-to-br from-sky-300/70 via-fuchsia-300/50 to-amber-200/70 dark:from-sky-500/40 dark:via-fuchsia-500/30 dark:to-amber-400/30',
                         s.id === 'minimal' && 'bg-card-2',
                         s.id === 'neu' && 'bg-slate-200 dark:bg-slate-800',
+                        s.id === 'aurora' &&
+                          'bg-[radial-gradient(circle_at_20%_20%,#6366f1,transparent_45%),radial-gradient(circle_at_80%_30%,#d946ef,transparent_45%),radial-gradient(circle_at_50%_80%,#22d3ee,transparent_45%)] bg-[#0b0820]',
                       )}
                     >
                       {[0, 1].map((i) => (
@@ -201,6 +203,7 @@ export default function SettingsPage() {
                             s.id === 'minimal' && 'bg-card shadow-card',
                             s.id === 'neu' &&
                               'bg-slate-200 shadow-[4px_4px_8px_rgb(148_163_184/0.7),-4px_-4px_8px_white] dark:bg-slate-800 dark:shadow-[4px_4px_8px_rgb(0_0_0/0.6),-4px_-4px_8px_rgb(255_255_255/0.05)]',
+                            s.id === 'aurora' && 'border border-white/40 bg-white/20 backdrop-blur-sm',
                           )}
                         />
                       ))}

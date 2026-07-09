@@ -16,10 +16,12 @@ import {
   IconSun,
   IconWrench,
 } from '../components/icons'
-import { Badge, Card, EmptyState, Spinner, listItem, listStagger, spring } from '../components/ui'
+import { Badge, Card, EmptyState, HomeSkeleton, listItem, listStagger, spring } from '../components/ui'
+import CarHealthRing from '../components/cars/CarHealthRing'
 import { useAuth } from '../contexts/AuthContext'
 import { useCars } from '../contexts/CarsContext'
 import { useTheme } from '../contexts/ThemeContext'
+import { carHealth } from '../lib/health'
 import { carDisplayName, collectReminders, notifyUpcoming } from '../lib/reminders'
 import { cn, dueLabel, dueStatus, formatDate, formatPlate } from '../lib/utils'
 import type { DerivedReminder, InfoBlock } from '../types'
@@ -95,14 +97,12 @@ export default function HomePage() {
     [reminders, activeCarId],
   )
   const urgent = useMemo(() => carReminders.filter((r) => r.daysLeft <= 30), [carReminders])
+  const health = useMemo(
+    () => (activeCar ? carHealth(activeCar, carReminders) : null),
+    [activeCar, carReminders],
+  )
 
-  if (loading) {
-    return (
-      <div className="flex min-h-[70dvh] items-center justify-center">
-        <Spinner />
-      </div>
-    )
-  }
+  if (loading) return <HomeSkeleton />
 
   return (
     <div className="px-4 pt-safe">
@@ -233,6 +233,13 @@ export default function HomePage() {
                   </motion.div>
                 ))}
               </motion.div>
+
+              {/* car health ring */}
+              {health && (
+                <motion.div variants={listItem}>
+                  <CarHealthRing score={health.score} factors={health.factors} />
+                </motion.div>
+              )}
 
               {/* upcoming reminders for this car */}
               {urgent.length > 0 && (

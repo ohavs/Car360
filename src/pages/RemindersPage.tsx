@@ -11,7 +11,7 @@ import {
   EmptyState,
   Field,
   Input,
-  Spinner,
+  ListSkeleton,
   listItem,
   listStagger,
 } from '../components/ui'
@@ -107,9 +107,7 @@ export default function RemindersPage() {
       )}
 
       {loading ? (
-        <div className="flex justify-center py-16">
-          <Spinner />
-        </div>
+        <ListSkeleton />
       ) : reminders.length === 0 ? (
         <EmptyState
           icon={<IconBell size={26} />}

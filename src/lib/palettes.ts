@@ -19,7 +19,7 @@ export const PALETTES: PaletteMeta[] = [
   { id: 'violet', label: 'סגול לילה', preview: ['#4c1d95', '#7c3aed', '#f7f5fb'] },
 ]
 
-export type SkinId = 'minimal' | 'glass' | 'neu'
+export type SkinId = 'minimal' | 'glass' | 'neu' | 'aurora'
 
 export interface SkinMeta {
   id: SkinId
@@ -31,4 +31,5 @@ export const SKINS: SkinMeta[] = [
   { id: 'minimal', label: 'מינימל', description: 'נקי, שטוח וממוקד — ברירת המחדל' },
   { id: 'glass', label: 'זכוכית', description: 'Glassmorphism — טשטוש, שקיפות ורקע חי' },
   { id: 'neu', label: 'נאומורפיזם', description: 'Soft UI — משטחים רכים בולטים ושקועים' },
+  { id: 'aurora', label: 'זוהר', description: 'Aurora — רקע צבעוני זורם וקצוות ניאון' },
 ]

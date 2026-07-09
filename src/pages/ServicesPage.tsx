@@ -13,7 +13,7 @@ import {
   EmptyState,
   Field,
   Input,
-  Spinner,
+  ListSkeleton,
   TextArea,
   listItem,
   listStagger,
@@ -105,9 +105,7 @@ export default function ServicesPage() {
       />
 
       {loading ? (
-        <div className="flex justify-center py-16">
-          <Spinner />
-        </div>
+        <ListSkeleton />
       ) : sorted.length === 0 ? (
         <EmptyState
           icon={<IconWrench size={26} />}

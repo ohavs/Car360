@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useCars } from '../../contexts/CarsContext'
 import { cn } from '../../lib/utils'
 import {
@@ -28,6 +28,10 @@ export default function AppShell() {
   const [quickAdd, setQuickAdd] = useState(false)
   const { activeCarId } = useCars()
   const navigate = useNavigate()
+  const location = useLocation()
+  // group routes into "sections" so navigating between top-level tabs animates,
+  // but query-only changes (e.g. ?add=1) don't remount the page
+  const routeKey = location.pathname
 
   const go = (path: string) => {
     setQuickAdd(false)
@@ -48,7 +52,14 @@ export default function AppShell() {
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col">
       <main className="flex-1 pb-36">
-        <Outlet />
+        <motion.div
+          key={routeKey}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.28, ease: [0.22, 0.9, 0.3, 1] }}
+        >
+          <Outlet />
+        </motion.div>
       </main>
 
       <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-50">
