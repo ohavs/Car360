@@ -239,6 +239,13 @@ export const IconFuel = (p: P) => (
   </Svg>
 )
 
+export const IconClock = (p: P) => (
+  <Svg {...p}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 7v5l3 2" />
+  </Svg>
+)
+
 export const IconInstall = (p: P) => (
   <Svg {...p}>
     <rect x="5" y="2" width="14" height="20" rx="2.5" />

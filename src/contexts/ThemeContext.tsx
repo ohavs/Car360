@@ -19,8 +19,11 @@ interface ThemeCtx {
   setPalette: (p: PaletteId) => void
   skin: SkinId
   setSkin: (s: SkinId) => void
+  /** personal accent (hex) that overrides the palette's CTA color; null = palette default */
+  accent: string | null
+  setAccent: (hex: string | null) => void
   /** apply cloud-synced prefs silently (no restyle loader) */
-  applyRemote: (p: PaletteId, s: SkinId) => void
+  applyRemote: (p: PaletteId, s: SkinId, accent: string | null) => void
   /** true while the restyle loader is showing */
   restyling: boolean
 }
@@ -32,6 +35,8 @@ const Ctx = createContext<ThemeCtx>({
   setPalette: () => {},
   skin: 'minimal',
   setSkin: () => {},
+  accent: null,
+  setAccent: () => {},
   applyRemote: () => {},
   restyling: false,
 })
@@ -39,6 +44,7 @@ const Ctx = createContext<ThemeCtx>({
 const THEME_KEY = 'car360:theme'
 const PALETTE_KEY = 'car360:palette'
 const SKIN_KEY = 'car360:skin'
+const ACCENT_KEY = 'car360:accent'
 
 function initialTheme(): Theme {
   const saved = localStorage.getItem(THEME_KEY)
@@ -60,6 +66,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>(initialTheme)
   const [palette, setPaletteState] = useState<PaletteId>(initialPalette)
   const [skin, setSkinState] = useState<SkinId>(initialSkin)
+  const [accent, setAccentState] = useState<string | null>(() => localStorage.getItem(ACCENT_KEY))
   const [restyling, setRestyling] = useState(false)
   const restyleTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -71,12 +78,24 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(THEME_KEY, theme)
     localStorage.setItem(PALETTE_KEY, palette)
     localStorage.setItem(SKIN_KEY, skin)
+
+    // personal accent overrides the palette CTA color (+ a derived soft tint)
+    if (accent) {
+      root.style.setProperty('--c-cta', accent)
+      root.style.setProperty('--c-cta-soft', `color-mix(in srgb, ${accent} 16%, transparent)`)
+      localStorage.setItem(ACCENT_KEY, accent)
+    } else {
+      root.style.removeProperty('--c-cta')
+      root.style.removeProperty('--c-cta-soft')
+      localStorage.removeItem(ACCENT_KEY)
+    }
+
     // keep the browser chrome / PWA titlebar in sync with the actual canvas
     requestAnimationFrame(() => {
       const bg = getComputedStyle(document.body).backgroundColor
       document.querySelector('meta[name="theme-color"]')?.setAttribute('content', bg)
     })
-  }, [theme, palette, skin])
+  }, [theme, palette, skin, accent])
 
   /** Show the "rebuilding your design" loader, apply the change mid-way,
    *  release after the new style has painted. */
@@ -94,10 +113,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     [restyle],
   )
   const setSkin = useCallback((s: SkinId) => restyle(() => setSkinState(s)), [restyle])
+  // accent changes are instant (no full-screen rebuild — it's a light recolor)
+  const setAccent = useCallback((hex: string | null) => setAccentState(hex), [])
 
-  const applyRemote = useCallback((p: PaletteId, s: SkinId) => {
+  const applyRemote = useCallback((p: PaletteId, s: SkinId, a: string | null) => {
     setPaletteState(p)
     setSkinState(s)
+    setAccentState(a)
   }, [])
 
   return (
@@ -109,6 +131,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         setPalette,
         skin,
         setSkin,
+        accent,
+        setAccent,
         applyRemote,
         restyling,
       }}

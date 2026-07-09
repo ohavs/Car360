@@ -7,6 +7,7 @@ import type { PaletteId, SkinId } from '../lib/palettes'
 export interface DesignPrefs {
   palette: PaletteId
   skin: SkinId
+  accent?: string | null
 }
 
 export async function loadDesignPrefs(uid: string): Promise<DesignPrefs | null> {

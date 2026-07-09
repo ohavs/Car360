@@ -15,6 +15,7 @@ import RemindersPage from './pages/RemindersPage'
 import ServicesPage from './pages/ServicesPage'
 import SettingsPage from './pages/SettingsPage'
 import SharePage from './pages/SharePage'
+import TimelinePage from './pages/TimelinePage'
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth()
@@ -46,6 +47,7 @@ const router = createBrowserRouter([
       { path: 'car/:id/insurance', element: <InsurancePage /> },
       { path: 'car/:id/documents', element: <DocumentsPage /> },
       { path: 'car/:id/share', element: <SharePage /> },
+      { path: 'car/:id/timeline', element: <TimelinePage /> },
       { path: 'documents', element: <DocumentsTab /> },
       { path: 'reminders', element: <RemindersPage /> },
       { path: 'settings', element: <SettingsPage /> },
@@ -58,14 +60,14 @@ const router = createBrowserRouter([
  *  pulls once per sign-in, pushes on every local change afterwards. */
 function PrefsSync() {
   const { user, isCloud } = useAuth()
-  const { palette, skin, applyRemote } = useTheme()
+  const { palette, skin, accent, applyRemote } = useTheme()
   const loadedFor = useRef<string | null>(null)
 
   useEffect(() => {
     if (!user || !isCloud || loadedFor.current === user.uid) return
     void loadDesignPrefs(user.uid).then((prefs) => {
       loadedFor.current = user.uid
-      if (prefs) applyRemote(prefs.palette, prefs.skin)
+      if (prefs) applyRemote(prefs.palette, prefs.skin, prefs.accent ?? null)
     })
   }, [user, isCloud, applyRemote])
 
@@ -73,8 +75,8 @@ function PrefsSync() {
     // never push before the initial cloud read — a fresh device must not
     // overwrite the user's saved design with defaults
     if (!user || !isCloud || loadedFor.current !== user.uid) return
-    void saveDesignPrefs(user.uid, { palette, skin })
-  }, [user, isCloud, palette, skin])
+    void saveDesignPrefs(user.uid, { palette, skin, accent })
+  }, [user, isCloud, palette, skin, accent])
 
   return null
 }

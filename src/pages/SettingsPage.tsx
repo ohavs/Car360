@@ -32,7 +32,7 @@ window.addEventListener('beforeinstallprompt', (e) => {
 
 export default function SettingsPage() {
   const { user, signOut, isCloud } = useAuth()
-  const { theme, toggle, palette, setPalette, skin, setSkin, restyling } = useTheme()
+  const { theme, toggle, palette, setPalette, skin, setSkin, accent, setAccent, restyling } = useTheme()
   const { toast } = useToast()
   const { cars } = useCars()
   const [confirmSignOut, setConfirmSignOut] = useState(false)
@@ -225,6 +225,9 @@ export default function SettingsPage() {
               })}
             </div>
           </div>
+
+          {/* personal accent color */}
+          <AccentPicker accent={accent} setAccent={setAccent} />
         </Card>
 
         {/* appearance & notifications */}
@@ -299,6 +302,86 @@ export default function SettingsPage() {
           onCancel={() => setConfirmSignOut(false)}
         />
       )}
+    </div>
+  )
+}
+
+const ACCENT_PRESETS = [
+  '#dc2626', '#ea580c', '#d97706', '#16a34a', '#0d9488',
+  '#0284c7', '#4f46e5', '#7c3aed', '#db2777', '#e11d48',
+]
+
+function AccentPicker({
+  accent,
+  setAccent,
+}: {
+  accent: string | null
+  setAccent: (hex: string | null) => void
+}) {
+  const [hue, setHue] = useState(265)
+
+  return (
+    <div>
+      <p className="mb-2.5 text-[13px] font-semibold text-ink-2">צבע דגש</p>
+      <div className="flex flex-wrap gap-2.5">
+        {/* default (palette) */}
+        <motion.button
+          whileTap={{ scale: 0.88 }}
+          transition={spring}
+          onClick={() => setAccent(null)}
+          aria-label="ברירת מחדל"
+          className={cn(
+            'flex size-9 items-center justify-center rounded-full text-[10px] font-black ring-2 transition-all',
+            accent === null ? 'ring-cta ring-offset-2 ring-offset-card' : 'ring-line',
+          )}
+          style={{ background: 'linear-gradient(135deg,var(--color-accent),var(--color-card-2))' }}
+        >
+          {accent === null && <IconCheck size={14} className="text-white mix-blend-difference" />}
+        </motion.button>
+
+        {ACCENT_PRESETS.map((c) => (
+          <motion.button
+            key={c}
+            whileTap={{ scale: 0.85 }}
+            transition={spring}
+            onClick={() => setAccent(c)}
+            aria-label={`צבע ${c}`}
+            className={cn(
+              'flex size-9 items-center justify-center rounded-full ring-2 ring-offset-2 ring-offset-card transition-all',
+              accent === c ? 'ring-ink' : 'ring-transparent',
+            )}
+            style={{ background: c }}
+          >
+            {accent === c && <IconCheck size={15} className="text-white" />}
+          </motion.button>
+        ))}
+      </div>
+
+      {/* custom hue slider */}
+      <div className="mt-3.5 flex items-center gap-3">
+        <span
+          className="size-9 shrink-0 rounded-full ring-1 ring-line"
+          style={{ background: `hsl(${hue} 72% 52%)` }}
+        />
+        <input
+          type="range"
+          min={0}
+          max={360}
+          value={hue}
+          onChange={(e) => {
+            const h = Number(e.target.value)
+            setHue(h)
+            setAccent(`hsl(${h} 72% 52%)`)
+          }}
+          aria-label="בחירת גוון מותאם"
+          className="h-3 flex-1 cursor-pointer appearance-none rounded-full [&::-webkit-slider-thumb]:size-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-[0_1px_4px_rgb(0_0_0/0.4)] [&::-webkit-slider-thumb]:ring-1 [&::-webkit-slider-thumb]:ring-black/10"
+          style={{
+            background:
+              'linear-gradient(90deg,hsl(0 72% 52%),hsl(60 72% 52%),hsl(120 72% 52%),hsl(180 72% 52%),hsl(240 72% 52%),hsl(300 72% 52%),hsl(360 72% 52%))',
+          }}
+        />
+      </div>
+      <p className="mt-1.5 text-[11px] text-ink-3">בחרו צבע מוכן או גררו לגוון מותאם אישית</p>
     </div>
   )
 }

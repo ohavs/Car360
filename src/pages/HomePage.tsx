@@ -6,6 +6,8 @@ import {
   IconBell,
   IconCalendar,
   IconCar,
+  IconChevronLeft,
+  IconClock,
   IconEdit,
   IconLink,
   IconMoon,
@@ -240,6 +242,25 @@ export default function HomePage() {
                   <CarHealthRing score={health.score} factors={health.factors} />
                 </motion.div>
               )}
+
+              {/* timeline entry */}
+              <motion.div variants={listItem}>
+                <Link to={`/car/${activeCar.id}/timeline`}>
+                  <motion.div
+                    whileTap={{ scale: 0.98 }}
+                    className="flex items-center gap-3 rounded-card bg-card p-4 shadow-card"
+                  >
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-card-2 text-ink">
+                      <IconClock size={20} />
+                    </span>
+                    <span className="flex-1">
+                      <span className="block text-sm font-bold">ציר הזמן של הרכב</span>
+                      <span className="block text-xs text-ink-3">כל הטיפולים, הביטוחים והמסמכים לפי סדר</span>
+                    </span>
+                    <IconChevronLeft size={20} className="text-ink-3" />
+                  </motion.div>
+                </Link>
+              </motion.div>
 
               {/* upcoming reminders for this car */}
               {urgent.length > 0 && (
