@@ -28,12 +28,15 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Write Firebase service account
-        run: printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-sa.json"
+      - name: Deploy hosting + Firestore rules
+        run: npx firebase-tools@13 deploy --only hosting,firestore:rules --project car360-50b44 --non-interactive --force
         env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
 
-      - name: Deploy hosting + security rules
-        run: npx firebase-tools@14 deploy --only hosting,firestore:rules,storage --project car360-50b44 --non-interactive --force
+      # Storage rules deploy is separate so a project without Storage enabled
+      # doesn't fail the whole pipeline; becomes active once Storage is set up
+      - name: Deploy Storage rules (optional)
+        continue-on-error: true
+        run: npx firebase-tools@13 deploy --only storage --project car360-50b44 --non-interactive --force
         env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-sa.json
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}

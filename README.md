@@ -25,11 +25,10 @@ npm run dev
 
 **הגדרה חד-פעמית** — צריך סוד אחד בריפו:
 
-1. ב-[Google Cloud Console → Service Accounts](https://console.cloud.google.com/iam-admin/serviceaccounts?project=car360-50b44) צרו מפתח JSON לחשבון `firebase-adminsdk` (או צרו service account עם התפקידים Firebase Hosting Admin + Firebase Rules Admin + Cloud Datastore Owner).
-   דרך קלה יותר: להריץ פעם אחת במחשב `npx firebase-tools init hosting:github` והוא ייצור הכל לבד.
-2. ב-GitHub: **Settings → Secrets and variables → Actions → New repository secret** בשם `FIREBASE_SERVICE_ACCOUNT`, והדביקו את כל תוכן ה-JSON.
+1. הריצו `npx firebase-tools login:ci` (בכל מכשיר עם דפדפן) והעתיקו את הטוקן.
+2. ב-GitHub: **Settings → Secrets and variables → Actions → New repository secret** בשם `FIREBASE_TOKEN`, והדביקו את הטוקן.
 
-מאותו רגע — כל push עולה לאוויר לבד.
+מאותו רגע — כל push עולה לאוויר לבד. פריסת חוקי Storage מדלגת אוטומטית כל עוד Storage לא הופעל בפרויקט.
 
 ## ארכיטקטורה
 

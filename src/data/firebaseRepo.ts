@@ -100,10 +100,17 @@ export const firebaseRepo: Repo = {
   deleteReminder: (carId, id) => deleteSub(carId, 'reminders', id),
 
   async uploadImage(path, dataUrl) {
-    const { st, storage: s } = await storage()
-    const ref = st.ref(s, path)
-    await st.uploadString(ref, dataUrl, 'data_url')
-    return st.getDownloadURL(ref)
+    try {
+      const { st, storage: s } = await storage()
+      const ref = st.ref(s, path)
+      await st.uploadString(ref, dataUrl, 'data_url')
+      return st.getDownloadURL(ref)
+    } catch {
+      // Storage not enabled on the project (or offline) — keep the compressed
+      // image inline in Firestore. Images are ~100-350KB so they fit within
+      // the 1MB document limit; once Storage is enabled new uploads use it.
+      return dataUrl
+    }
   },
 
   async deleteImage(url) {
