@@ -1,6 +1,8 @@
 import { MotionConfig } from 'motion/react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
-import type { ReactNode } from 'react'
+import { useTheme } from './contexts/ThemeContext'
+import { loadDesignPrefs, saveDesignPrefs } from './data/prefs'
 import AppShell from './components/layout/AppShell'
 import { Spinner } from './components/ui'
 import { useAuth } from './contexts/AuthContext'
@@ -52,9 +54,35 @@ const router = createBrowserRouter([
   },
 ])
 
+/** Keeps design prefs (palette+skin) in sync with the cloud:
+ *  pulls once per sign-in, pushes on every local change afterwards. */
+function PrefsSync() {
+  const { user, isCloud } = useAuth()
+  const { palette, skin, applyRemote } = useTheme()
+  const loadedFor = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (!user || !isCloud || loadedFor.current === user.uid) return
+    void loadDesignPrefs(user.uid).then((prefs) => {
+      loadedFor.current = user.uid
+      if (prefs) applyRemote(prefs.palette, prefs.skin)
+    })
+  }, [user, isCloud, applyRemote])
+
+  useEffect(() => {
+    // never push before the initial cloud read — a fresh device must not
+    // overwrite the user's saved design with defaults
+    if (!user || !isCloud || loadedFor.current !== user.uid) return
+    void saveDesignPrefs(user.uid, { palette, skin })
+  }, [user, isCloud, palette, skin])
+
+  return null
+}
+
 export default function App() {
   return (
     <MotionConfig reducedMotion="user">
+      <PrefsSync />
       <RouterProvider router={router} />
     </MotionConfig>
   )

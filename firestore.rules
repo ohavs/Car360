@@ -17,6 +17,11 @@ service cloud.firestore {
       return canAccessCar(get(/databases/$(database)/documents/cars/$(carId)).data);
     }
 
+    // per-user profile & design preferences
+    match /users/{uid} {
+      allow read, write: if isSignedIn() && request.auth.uid == uid;
+    }
+
     match /cars/{carId} {
       allow read: if canAccessCar(resource.data);
       allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;

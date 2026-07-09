@@ -82,7 +82,7 @@ export function Field({
 }
 
 const inputCls =
-  'w-full min-h-13 rounded-field bg-card px-4 text-base font-medium text-ink ring-1 ring-line placeholder:font-normal placeholder:text-ink-3 focus:outline-none focus:ring-2 focus:ring-ink transition-shadow'
+  'field-well w-full min-h-13 rounded-field bg-card px-4 text-base font-medium text-ink ring-1 ring-line placeholder:font-normal placeholder:text-ink-3 focus:outline-none focus:ring-2 focus:ring-ink transition-shadow'
 
 export function Input({ className, ...props }: InputHTMLAttributes<HTMLInputElement>) {
   return <input className={cn(inputCls, className)} {...props} />

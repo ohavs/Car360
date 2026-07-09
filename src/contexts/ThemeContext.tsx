@@ -19,6 +19,8 @@ interface ThemeCtx {
   setPalette: (p: PaletteId) => void
   skin: SkinId
   setSkin: (s: SkinId) => void
+  /** apply cloud-synced prefs silently (no restyle loader) */
+  applyRemote: (p: PaletteId, s: SkinId) => void
   /** true while the restyle loader is showing */
   restyling: boolean
 }
@@ -30,6 +32,7 @@ const Ctx = createContext<ThemeCtx>({
   setPalette: () => {},
   skin: 'minimal',
   setSkin: () => {},
+  applyRemote: () => {},
   restyling: false,
 })
 
@@ -92,6 +95,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   )
   const setSkin = useCallback((s: SkinId) => restyle(() => setSkinState(s)), [restyle])
 
+  const applyRemote = useCallback((p: PaletteId, s: SkinId) => {
+    setPaletteState(p)
+    setSkinState(s)
+  }, [])
+
   return (
     <Ctx.Provider
       value={{
@@ -101,6 +109,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         setPalette,
         skin,
         setSkin,
+        applyRemote,
         restyling,
       }}
     >

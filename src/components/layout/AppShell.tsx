@@ -80,21 +80,23 @@ export default function AppShell() {
                   className={({ isActive }) =>
                     cn(
                       'relative flex min-w-14 flex-col items-center gap-0.5 rounded-2xl px-2 py-1.5 text-[11px] font-bold transition-colors',
-                      isActive ? 'text-ink' : 'text-ink-3',
+                      isActive ? 'text-cta' : 'text-ink-3',
                     )
                   }
                 >
                   {({ isActive }) => (
                     <>
-                      <tab.icon size={22} strokeWidth={isActive ? 2.3 : 1.8} />
-                      <span>{tab.label}</span>
                       {isActive && (
                         <motion.span
-                          layoutId="nav-dot"
+                          layoutId="nav-pill"
                           transition={spring}
-                          className="absolute -bottom-0.5 size-1.5 rounded-full bg-cta"
+                          className="absolute inset-0 rounded-2xl bg-cta-soft"
                         />
                       )}
+                      <span className="relative">
+                        <tab.icon size={22} strokeWidth={isActive ? 2.3 : 1.8} />
+                      </span>
+                      <span className="relative">{tab.label}</span>
                     </>
                   )}
                 </NavLink>

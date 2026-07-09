@@ -184,27 +184,26 @@ export default function SettingsPage() {
                     <span
                       className={cn(
                         'mb-2.5 block h-14 overflow-hidden rounded-xl',
-                        s.id === 'glass'
-                          ? 'bg-gradient-to-br from-sky-300/70 via-fuchsia-300/50 to-amber-200/70 dark:from-sky-500/40 dark:via-fuchsia-500/30 dark:to-amber-400/30'
-                          : 'bg-card-2',
+                        s.id === 'glass' &&
+                          'bg-gradient-to-br from-sky-300/70 via-fuchsia-300/50 to-amber-200/70 dark:from-sky-500/40 dark:via-fuchsia-500/30 dark:to-amber-400/30',
+                        s.id === 'minimal' && 'bg-card-2',
+                        s.id === 'neu' && 'bg-slate-200 dark:bg-slate-800',
                       )}
                     >
-                      <span
-                        className={cn(
-                          'mx-2.5 mt-2.5 block h-6 rounded-lg shadow-card',
-                          s.id === 'glass'
-                            ? 'border border-white/60 bg-white/40 backdrop-blur-sm dark:border-white/20 dark:bg-white/10'
-                            : 'bg-card',
-                        )}
-                      />
-                      <span
-                        className={cn(
-                          'mx-2.5 mt-1.5 block h-6 w-2/3 rounded-lg shadow-card',
-                          s.id === 'glass'
-                            ? 'border border-white/60 bg-white/40 backdrop-blur-sm dark:border-white/20 dark:bg-white/10'
-                            : 'bg-card',
-                        )}
-                      />
+                      {[0, 1].map((i) => (
+                        <span
+                          key={i}
+                          className={cn(
+                            'mx-2.5 block h-6 rounded-lg',
+                            i === 0 ? 'mt-2.5' : 'mt-1.5 w-2/3',
+                            s.id === 'glass' &&
+                              'border border-white/60 bg-white/40 shadow-card backdrop-blur-sm dark:border-white/20 dark:bg-white/10',
+                            s.id === 'minimal' && 'bg-card shadow-card',
+                            s.id === 'neu' &&
+                              'bg-slate-200 shadow-[4px_4px_8px_rgb(148_163_184/0.7),-4px_-4px_8px_white] dark:bg-slate-800 dark:shadow-[4px_4px_8px_rgb(0_0_0/0.6),-4px_-4px_8px_rgb(255_255_255/0.05)]',
+                          )}
+                        />
+                      ))}
                     </span>
                     <span className="block text-sm font-black">{s.label}</span>
                     <span className="mt-0.5 block text-[11px] leading-snug text-ink-3">{s.description}</span>
