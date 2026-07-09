@@ -50,7 +50,7 @@ export async function collectReminders(cars: Car[]): Promise<DerivedReminder[]> 
 
     for (const r of custom) {
       if (!r.done)
-        push({ key: `custom:${car.id}:${r.id}`, title: r.title, dueDate: r.dueDate, source: 'custom', customId: r.id })
+        push({ key: `custom:${car.id}:${r.id}`, title: r.title, dueDate: r.dueDate, time: r.time, source: 'custom', customId: r.id })
     }
   }
 

@@ -10,7 +10,6 @@ import {
   Button,
   Card,
   ConfirmDialog,
-  DateInput,
   EmptyState,
   Field,
   Input,
@@ -19,6 +18,7 @@ import {
   listItem,
   listStagger,
 } from '../components/ui'
+import { DateInput } from '../components/pickers'
 import { useCars } from '../contexts/CarsContext'
 import { useToast } from '../contexts/ToastContext'
 import { repo } from '../data'

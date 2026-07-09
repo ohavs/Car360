@@ -93,6 +93,8 @@ export interface CustomReminder {
   carId: string
   title: string
   dueDate: string
+  /** optional HH:MM */
+  time?: string
   done: boolean
   createdAt: number
   updatedAt: number
@@ -105,6 +107,7 @@ export interface DerivedReminder {
   carName: string
   title: string
   dueDate: string
+  time?: string
   daysLeft: number
   source: 'test' | 'license' | 'insurance' | 'service' | 'block' | 'custom'
   customId?: string

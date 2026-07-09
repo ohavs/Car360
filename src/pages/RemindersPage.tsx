@@ -8,15 +8,14 @@ import {
   BottomSheet,
   Button,
   Card,
-  DateInput,
   EmptyState,
   Field,
   Input,
-  Select,
   Spinner,
   listItem,
   listStagger,
 } from '../components/ui'
+import { DateInput, Select, TimeInput } from '../components/pickers'
 import { useCars } from '../contexts/CarsContext'
 import { useToast } from '../contexts/ToastContext'
 import { repo } from '../data'
@@ -26,7 +25,7 @@ import {
   notificationsSupported,
   requestNotificationPermission,
 } from '../lib/reminders'
-import { cn, dueLabel, dueStatus, formatDate, newId } from '../lib/utils'
+import { cn, dueLabel, dueStatus, formatDate, newId, todayISO } from '../lib/utils'
 import type { DerivedReminder } from '../types'
 
 const statusTone = { none: 'neutral', ok: 'ok', warn: 'warn', danger: 'danger' } as const
@@ -140,7 +139,8 @@ export default function RemindersPage() {
                     <Link to="/" className="underline-offset-2 hover:underline">
                       {r.carName}
                     </Link>{' '}
-                    · {formatDate(r.dueDate)} · {sourceLabel[r.source]}
+                    · {formatDate(r.dueDate)}
+                    {r.time ? ` · ${r.time}` : ''} · {sourceLabel[r.source]}
                   </p>
                 </div>
                 <div className="flex shrink-0 flex-col items-end gap-1.5">
@@ -181,6 +181,7 @@ function AddReminderSheet({ onClose, onSaved }: { onClose: () => void; onSaved: 
   const [carId, setCarId] = useState(activeCarId ?? cars[0]?.id ?? '')
   const [title, setTitle] = useState('')
   const [dueDate, setDueDate] = useState('')
+  const [time, setTime] = useState('')
   const [saving, setSaving] = useState(false)
 
   const save = async () => {
@@ -191,6 +192,7 @@ function AddReminderSheet({ onClose, onSaved }: { onClose: () => void; onSaved: 
       carId,
       title: title.trim(),
       dueDate,
+      time: time || undefined,
       done: false,
       createdAt: now,
       updatedAt: now,
@@ -203,20 +205,24 @@ function AddReminderSheet({ onClose, onSaved }: { onClose: () => void; onSaved: 
     <BottomSheet title="תזכורת חדשה" onClose={onClose}>
       <div className="space-y-4">
         <Field label="רכב">
-          <Select value={carId} onChange={(e) => setCarId(e.target.value)}>
-            {cars.map((c) => (
-              <option key={c.id} value={c.id}>
-                {carDisplayName(c)}
-              </option>
-            ))}
-          </Select>
+          <Select
+            title="בחירת רכב"
+            value={carId}
+            onChange={setCarId}
+            options={cars.map((c) => ({ value: c.id, label: carDisplayName(c) }))}
+          />
         </Field>
         <Field label="מה להזכיר?">
           <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="חידוש מנוי חניה…" />
         </Field>
-        <Field label="תאריך יעד">
-          <DateInput value={dueDate} onChange={setDueDate} />
-        </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="תאריך יעד">
+            <DateInput value={dueDate} onChange={setDueDate} min={todayISO()} />
+          </Field>
+          <Field label="שעה (אופציונלי)">
+            <TimeInput value={time} onChange={setTime} />
+          </Field>
+        </div>
         <Button className="w-full" disabled={!title.trim() || !dueDate || !carId || saving} onClick={() => void save()}>
           {saving ? 'שומר…' : 'הוספת תזכורת'}
         </Button>

@@ -7,13 +7,12 @@ import {
   BottomSheet,
   Button,
   ConfirmDialog,
-  DateInput,
   Field,
   Input,
-  Select,
   Switch,
   TextArea,
 } from '../components/ui'
+import { DateInput, Select } from '../components/pickers'
 import { useAuth } from '../contexts/AuthContext'
 import { useCars } from '../contexts/CarsContext'
 import { useToast } from '../contexts/ToastContext'
@@ -270,14 +269,12 @@ export default function CarFormPage() {
               <Input value={draft.color ?? ''} onChange={(e) => set('color', e.target.value)} placeholder="שחור" />
             </Field>
             <Field label="סוג דלק">
-              <Select value={draft.fuelType ?? ''} onChange={(e) => set('fuelType', e.target.value)}>
-                <option value="">בחירה…</option>
-                {FUEL_TYPES.map((f) => (
-                  <option key={f} value={f}>
-                    {f}
-                  </option>
-                ))}
-              </Select>
+              <Select
+                title="סוג דלק"
+                value={draft.fuelType ?? ''}
+                onChange={(v) => set('fuelType', v)}
+                options={FUEL_TYPES.map((f) => ({ value: f, label: f }))}
+              />
             </Field>
           </div>
           <Field label="מספר שלדה (VIN)" hint="אופציונלי — שימושי מול מוסכים וביטוח">
@@ -429,15 +426,11 @@ function BlockEditorSheet({
         </Field>
         <Field label="סוג">
           <Select
+            title="סוג הבלוק"
             value={b.type}
-            onChange={(e) => setB({ ...b, type: e.target.value as BlockType, value: '' })}
-          >
-            {BLOCK_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
-              </option>
-            ))}
-          </Select>
+            onChange={(v) => setB({ ...b, type: v as BlockType, value: '' })}
+            options={BLOCK_TYPES.map((t) => ({ value: t.value, label: t.label }))}
+          />
         </Field>
         <Field label="ערך">
           {b.type === 'date' ? (

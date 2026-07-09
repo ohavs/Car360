@@ -1,14 +1,12 @@
 import { motion, type HTMLMotionProps } from 'motion/react'
 import {
   useEffect,
-  useRef,
   type InputHTMLAttributes,
   type ReactNode,
-  type SelectHTMLAttributes,
   type TextareaHTMLAttributes,
 } from 'react'
-import { cn, formatDate } from '../lib/utils'
-import { IconAlert, IconCalendar, IconChevronDown, IconX } from './icons'
+import { cn } from '../lib/utils'
+import { IconAlert, IconX } from './icons'
 
 /* Shared spring presets — 150-300ms feel, no layout-shifting overshoot */
 export const spring = { type: 'spring', stiffness: 480, damping: 34, mass: 0.7 } as const
@@ -93,97 +91,8 @@ export function TextArea({ className, ...props }: TextareaHTMLAttributes<HTMLTex
 }
 
 /** Select with a designed chevron instead of the OS default arrow. */
-export function Select({ className, ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
-  return (
-    <div className="relative">
-      <select className={cn(inputCls, 'appearance-none pe-11', className)} {...props} />
-      <IconChevronDown
-        size={18}
-        className="pointer-events-none absolute end-4 top-1/2 -translate-y-1/2 text-ink-3"
-      />
-    </div>
-  )
-}
-
-/** Fully designed date field: custom trigger UI (formatted Hebrew date,
- *  calendar icon, clear affordance) that opens the native OS picker —
- *  the best of both: branded look, native mobile UX. */
-export function DateInput({
-  value,
-  onChange,
-  placeholder = 'בחירת תאריך',
-  min,
-  max,
-}: {
-  value: string
-  onChange: (v: string) => void
-  placeholder?: string
-  min?: string
-  max?: string
-}) {
-  const ref = useRef<HTMLInputElement>(null)
-
-  const open = () => {
-    const el = ref.current
-    if (!el) return
-    if ('showPicker' in el) {
-      try {
-        el.showPicker()
-        return
-      } catch {
-        /* fall through to focus */
-      }
-    }
-    el.focus()
-    el.click()
-  }
-
-  return (
-    <div className="relative">
-      <motion.button
-        type="button"
-        whileTap={{ scale: 0.98 }}
-        transition={spring}
-        onClick={open}
-        className={cn(inputCls, 'flex items-center justify-between gap-3 text-start')}
-      >
-        <span className={cn('truncate', !value && 'font-normal text-ink-3')}>
-          {value ? formatDate(value) : placeholder}
-        </span>
-        <span className="flex items-center gap-1.5">
-          {value && (
-            <span
-              role="button"
-              aria-label="ניקוי תאריך"
-              onClick={(e) => {
-                e.stopPropagation()
-                onChange('')
-              }}
-              className="flex size-7 items-center justify-center rounded-full bg-card-2 text-ink-3"
-            >
-              <IconX size={13} />
-            </span>
-          )}
-          <span className="flex size-9 items-center justify-center rounded-full bg-card-2 text-ink-2">
-            <IconCalendar size={17} />
-          </span>
-        </span>
-      </motion.button>
-      {/* invisible native input drives the OS picker */}
-      <input
-        ref={ref}
-        type="date"
-        tabIndex={-1}
-        aria-hidden="true"
-        value={value}
-        min={min}
-        max={max}
-        onChange={(e) => onChange(e.target.value)}
-        className="native-picker absolute inset-0 -z-10 h-full w-full opacity-0"
-      />
-    </div>
-  )
-}
+/* DateInput, TimeInput and Select (custom dropdown) live in ./pickers —
+   they render their own designed UI and inherit every skin via tokens. */
 
 /* ---------- Cards ---------- */
 

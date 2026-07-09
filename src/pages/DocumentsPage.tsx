@@ -10,11 +10,11 @@ import {
   EmptyState,
   Field,
   Input,
-  Select,
   Spinner,
   listItem,
   listStagger,
 } from '../components/ui'
+import { Select } from '../components/pickers'
 import { useCars } from '../contexts/CarsContext'
 import { useToast } from '../contexts/ToastContext'
 import { repo } from '../data'
@@ -257,13 +257,12 @@ function AddDocumentSheet({
           <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="רישיון רכב 2026" />
         </Field>
         <Field label="קטגוריה">
-          <Select value={category} onChange={(e) => setCategory(e.target.value as DocumentCategory)}>
-            {CATEGORIES.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </Select>
+          <Select
+            title="קטגוריה"
+            value={category}
+            onChange={(v) => setCategory(v as DocumentCategory)}
+            options={CATEGORIES.map((c) => ({ value: c, label: c }))}
+          />
         </Field>
         <Button
           className="w-full"

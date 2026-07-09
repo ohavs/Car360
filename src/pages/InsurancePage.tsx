@@ -10,16 +10,15 @@ import {
   Button,
   Card,
   ConfirmDialog,
-  DateInput,
   EmptyState,
   Field,
   Input,
-  Select,
   Spinner,
   TextArea,
   listItem,
   listStagger,
 } from '../components/ui'
+import { DateInput, Select } from '../components/pickers'
 import { useCars } from '../contexts/CarsContext'
 import { useToast } from '../contexts/ToastContext'
 import { repo } from '../data'
@@ -202,13 +201,12 @@ function InsuranceEditor({
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-3">
           <Field label="סוג ביטוח">
-            <Select value={r.kind} onChange={(e) => setR({ ...r, kind: e.target.value as InsuranceKind })}>
-              {KINDS.map((k) => (
-                <option key={k} value={k}>
-                  {k}
-                </option>
-              ))}
-            </Select>
+            <Select
+              title="סוג ביטוח"
+              value={r.kind}
+              onChange={(v) => setR({ ...r, kind: v as InsuranceKind })}
+              options={KINDS.map((k) => ({ value: k, label: k }))}
+            />
           </Field>
           <Field label="חברת ביטוח">
             <Input value={r.company} onChange={(e) => setR({ ...r, company: e.target.value })} />
