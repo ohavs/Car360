@@ -51,14 +51,30 @@ export const authService = {
   async signInWithGoogle(): Promise<UserProfile> {
     if (isFirebaseConfigured) {
       const app = await getFirebaseApp()
-      const { getAuth, GoogleAuthProvider, signInWithPopup } = await import('firebase/auth')
-      const cred = await signInWithPopup(getAuth(app), new GoogleAuthProvider())
-      const u = cred.user
-      return {
-        uid: u.uid,
-        displayName: u.displayName ?? u.email ?? 'משתמש',
-        email: u.email ?? '',
-        photoUrl: u.photoURL ?? undefined,
+      const { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect } = await import(
+        'firebase/auth'
+      )
+      const auth = getAuth(app)
+      const provider = new GoogleAuthProvider()
+      try {
+        const cred = await signInWithPopup(auth, provider)
+        const u = cred.user
+        return {
+          uid: u.uid,
+          displayName: u.displayName ?? u.email ?? 'משתמש',
+          email: u.email ?? '',
+          photoUrl: u.photoURL ?? undefined,
+        }
+      } catch (err) {
+        // popups are blocked in some mobile/standalone contexts — fall back to
+        // full-page redirect (onAuthStateChanged picks the session up after)
+        const code = (err as { code?: string }).code ?? ''
+        if (code === 'auth/popup-blocked' || code === 'auth/popup-closed-by-user' || code === 'auth/operation-not-supported-in-this-environment') {
+          if (code !== 'auth/popup-closed-by-user') {
+            await signInWithRedirect(auth, provider)
+          }
+        }
+        throw err
       }
     }
     const demo: UserProfile = {

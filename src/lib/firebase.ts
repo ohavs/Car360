@@ -9,6 +9,7 @@ const cfg = {
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET as string | undefined,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID as string | undefined,
   appId: import.meta.env.VITE_FIREBASE_APP_ID as string | undefined,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID as string | undefined,
 }
 
 export const isFirebaseConfigured = Boolean(cfg.apiKey && cfg.projectId && cfg.appId)
@@ -19,9 +20,20 @@ let appPromise: Promise<import('firebase/app').FirebaseApp> | null = null
 export function getFirebaseApp() {
   if (!isFirebaseConfigured) throw new Error('Firebase is not configured')
   if (!appPromise) {
-    appPromise = import('firebase/app').then(({ initializeApp }) =>
-      initializeApp(cfg as Record<string, string>),
-    )
+    appPromise = import('firebase/app').then(({ initializeApp }) => {
+      const app = initializeApp(cfg as Record<string, string>)
+      if (cfg.measurementId) void initAnalytics(app)
+      return app
+    })
   }
   return appPromise
+}
+
+async function initAnalytics(app: import('firebase/app').FirebaseApp) {
+  try {
+    const { getAnalytics, isSupported } = await import('firebase/analytics')
+    if (await isSupported()) getAnalytics(app)
+  } catch {
+    // analytics blocked / unsupported — never break the app over it
+  }
 }

@@ -11,17 +11,25 @@ npm run dev
 
 בלי שום הגדרה נוספת האפליקציה עולה ב**מצב דמו מקומי**: הנתונים נשמרים ב-IndexedDB על המכשיר, וכפתור "כניסה עם Google" יוצר משתמש דמו. זה מאפשר לחוות את כל האפליקציה מיד.
 
-## חיבור Firebase (כניסת Google אמיתית, סנכרון ושיתוף)
+## Firebase
 
-1. צרו פרויקט ב-[Firebase Console](https://console.firebase.google.com).
-2. **Authentication** → Sign-in method → הפעילו **Google**.
-3. **Firestore Database** → צרו מסד (production mode) → העתיקו את הכללים מ-`firestore.rules`.
-4. **Storage** → הפעילו → העתיקו את הכללים מ-`storage.rules`.
-5. **Project settings → Your apps** → הוסיפו Web App והעתיקו את הקונפיגורציה.
-6. העתיקו את `.env.example` ל-`.env.local` ומלאו את הערכים.
-7. `npm run build && npm run preview` (או פריסה ל-Firebase Hosting / Vercel / Netlify).
+הפרויקט מחובר לפרויקט Firebase בשם **car360-50b44** (הקונפיגורציה הציבורית ב-`.env`).
+כללי האבטחה נמצאים ב-`firestore.rules` ו-`storage.rules` ונפרסים אוטומטית בכל deploy.
 
-ברגע שהקונפיגורציה קיימת, האפליקציה עוברת אוטומטית למצב ענן — אין שינוי קוד.
+- אפליקציה חיה: **https://car360-50b44.web.app**
+- להחלפת פרויקט: עדכנו את `.env` ואת `.firebaserc`.
+
+## פריסה אוטומטית (GitHub Actions)
+
+כל push לענף הראשי מפעיל את `.github/workflows/deploy.yml`: build → פריסת Hosting + Firestore rules + Storage rules.
+
+**הגדרה חד-פעמית** — צריך סוד אחד בריפו:
+
+1. ב-[Google Cloud Console → Service Accounts](https://console.cloud.google.com/iam-admin/serviceaccounts?project=car360-50b44) צרו מפתח JSON לחשבון `firebase-adminsdk` (או צרו service account עם התפקידים Firebase Hosting Admin + Firebase Rules Admin + Cloud Datastore Owner).
+   דרך קלה יותר: להריץ פעם אחת במחשב `npx firebase-tools init hosting:github` והוא ייצור הכל לבד.
+2. ב-GitHub: **Settings → Secrets and variables → Actions → New repository secret** בשם `FIREBASE_SERVICE_ACCOUNT`, והדביקו את כל תוכן ה-JSON.
+
+מאותו רגע — כל push עולה לאוויר לבד.
 
 ## ארכיטקטורה
 
