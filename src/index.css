@@ -1,0 +1,146 @@
+@import '@fontsource-variable/heebo';
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: 'Heebo Variable', 'Heebo', system-ui, -apple-system, sans-serif;
+
+  /* Surface tokens — light values; .dark overrides via CSS vars below */
+  --color-canvas: var(--c-canvas);
+  --color-card: var(--c-card);
+  --color-card-2: var(--c-card-2);
+  --color-ink: var(--c-ink);
+  --color-ink-2: var(--c-ink-2);
+  --color-ink-3: var(--c-ink-3);
+  --color-line: var(--c-line);
+  --color-accent: var(--c-accent);
+  --color-accent-ink: var(--c-accent-ink);
+  --color-ok: #22c55e;
+  --color-ok-soft: var(--c-ok-soft);
+  --color-warn: #f59e0b;
+  --color-warn-soft: var(--c-warn-soft);
+  --color-danger: #ef4444;
+  --color-danger-soft: var(--c-danger-soft);
+
+  --radius-card: 1.5rem;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px -12px rgb(0 0 0 / 0.12);
+  --shadow-float: 0 12px 32px -8px rgb(0 0 0 / 0.25);
+}
+
+:root {
+  --c-canvas: #f1f1f3;
+  --c-card: #ffffff;
+  --c-card-2: #f6f6f7;
+  --c-ink: #17171a;
+  --c-ink-2: #55555e;
+  --c-ink-3: #9a9aa3;
+  --c-line: #e7e7ea;
+  --c-accent: #18181b;
+  --c-accent-ink: #ffffff;
+  --c-ok-soft: #dcfce7;
+  --c-warn-soft: #fef3c7;
+  --c-danger-soft: #fee2e2;
+  color-scheme: light;
+}
+
+.dark {
+  --c-canvas: #101013;
+  --c-card: #1b1b1f;
+  --c-card-2: #232329;
+  --c-ink: #f4f4f5;
+  --c-ink-2: #b5b5bd;
+  --c-ink-3: #74747e;
+  --c-line: #2b2b31;
+  --c-accent: #f4f4f5;
+  --c-accent-ink: #101013;
+  --c-ok-soft: #113123;
+  --c-warn-soft: #33260c;
+  --c-danger-soft: #391616;
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background-color: var(--c-canvas);
+  color: var(--c-ink);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* Hide scrollbar on horizontal carousels while keeping scrollability */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Safe-area padding for standalone PWA */
+.pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom), 0px);
+}
+.pt-safe {
+  padding-top: max(env(safe-area-inset-top), 0px);
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.animate-toast-in {
+  animation: toast-in 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+.animate-sheet-up {
+  animation: sheet-up 0.28s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.animate-fade-in {
+  animation: fade-in 0.2s ease;
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.animate-pop-in {
+  animation: pop-in 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.15);
+}
