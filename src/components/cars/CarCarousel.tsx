@@ -1,11 +1,11 @@
-import { motion } from 'motion/react'
 import { useEffect, useRef } from 'react'
 import type { Car } from '../../types'
 import { cn } from '../../lib/utils'
 import CarSilhouette from './CarSilhouette'
 
-/** Swipeable hero carousel — native horizontal scroll-snap, so it feels
- *  perfectly smooth on mobile (works in RTL out of the box). */
+/** Swipeable 3D "coverflow" hero carousel — native horizontal scroll-snap
+ *  for perfectly smooth mobile physics, with per-slide perspective rotation
+ *  driven live from the scroll offset. Works in RTL out of the box. */
 export default function CarCarousel({
   cars,
   activeId,
@@ -17,6 +17,7 @@ export default function CarCarousel({
 }) {
   const trackRef = useRef<HTMLDivElement>(null)
   const suppressScroll = useRef(false)
+  const rafPending = useRef(false)
 
   // when the active car changes from outside (e.g. restored on load), snap to it
   useEffect(() => {
@@ -30,9 +31,21 @@ export default function CarCarousel({
     if (current !== idx) {
       suppressScroll.current = true
       slide.scrollIntoView({ behavior: 'instant', inline: 'center', block: 'nearest' })
-      setTimeout(() => (suppressScroll.current = false), 100)
+      setTimeout(() => {
+        suppressScroll.current = false
+        applyTransforms()
+      }, 100)
     }
+    applyTransforms()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeId, cars])
+
+  useEffect(() => {
+    applyTransforms()
+    window.addEventListener('resize', applyTransforms)
+    return () => window.removeEventListener('resize', applyTransforms)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   function nearestIndex(track: HTMLDivElement): number {
     let best = 0
@@ -50,7 +63,34 @@ export default function CarCarousel({
     return best
   }
 
+  /** Rotate / scale / fade each slide by its normalized distance from centre. */
+  function applyTransforms() {
+    const track = trackRef.current
+    if (!track) return
+    const mid = track.scrollLeft + track.clientWidth / 2
+    Array.from(track.children).forEach((el) => {
+      const inner = (el as HTMLElement).firstElementChild as HTMLElement | null
+      if (!inner) return
+      const c = el as HTMLElement
+      const center = c.offsetLeft + c.offsetWidth / 2
+      const dist = (center - mid) / c.offsetWidth // -1 .. 1 for neighbours
+      const clamped = Math.max(-1.4, Math.min(1.4, dist))
+      const rotateY = clamped * -32 // tilt away from centre
+      const scale = 1 - Math.min(0.26, Math.abs(clamped) * 0.24)
+      const opacity = 1 - Math.min(0.6, Math.abs(clamped) * 0.5)
+      inner.style.transform = `perspective(900px) rotateY(${rotateY}deg) scale(${scale})`
+      inner.style.opacity = String(opacity)
+    })
+  }
+
   const onScroll = () => {
+    if (!rafPending.current) {
+      rafPending.current = true
+      requestAnimationFrame(() => {
+        rafPending.current = false
+        applyTransforms()
+      })
+    }
     if (suppressScroll.current) return
     const track = trackRef.current
     if (!track) return
@@ -64,30 +104,30 @@ export default function CarCarousel({
       <div
         ref={trackRef}
         onScroll={onScroll}
-        className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto scroll-smooth"
+        className={cn(
+          'no-scrollbar flex snap-x snap-mandatory overflow-x-auto scroll-smooth',
+          cars.length > 1 && 'px-[11%]',
+        )}
       >
         {cars.map((car) => (
-          <div key={car.id} className="w-full shrink-0 snap-center px-6">
-            <div className="relative flex h-44 items-center justify-center">
-              <motion.div
-                animate={{
-                  scale: car.id === activeId ? 1 : 0.88,
-                  opacity: car.id === activeId ? 1 : 0.55,
-                }}
-                transition={{ type: 'spring', stiffness: 260, damping: 26 }}
-                className="flex max-w-full items-center justify-center"
-              >
-                {car.imageUrl ? (
-                  <img
-                    src={car.imageUrl}
-                    alt={car.nickname || `${car.make} ${car.model}`}
-                    className="max-h-44 w-auto max-w-full object-contain drop-shadow-[0_18px_16px_rgb(0_0_0/0.22)]"
-                    draggable={false}
-                  />
-                ) : (
-                  <CarSilhouette className="h-36 w-auto max-w-full text-ink drop-shadow-[0_18px_16px_rgb(0_0_0/0.18)]" />
-                )}
-              </motion.div>
+          <div
+            key={car.id}
+            className={cn('shrink-0 snap-center px-2', cars.length > 1 ? 'w-[78%]' : 'w-full px-6')}
+          >
+            <div
+              className="relative flex h-44 items-center justify-center will-change-transform"
+              style={{ transform: 'perspective(900px)' }}
+            >
+              {car.imageUrl ? (
+                <img
+                  src={car.imageUrl}
+                  alt={car.nickname || `${car.make} ${car.model}`}
+                  className="max-h-44 w-auto max-w-full object-contain drop-shadow-[0_18px_16px_rgb(0_0_0/0.22)]"
+                  draggable={false}
+                />
+              ) : (
+                <CarSilhouette className="h-36 w-auto max-w-full text-ink drop-shadow-[0_18px_16px_rgb(0_0_0/0.18)]" />
+              )}
               {/* soft floor shadow like the reference design */}
               <div className="absolute bottom-1 left-1/2 h-4 w-3/5 -translate-x-1/2 rounded-[100%] bg-black/15 blur-md dark:bg-black/40" />
             </div>

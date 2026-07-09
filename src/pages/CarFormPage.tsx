@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import PageHeader from '../components/layout/PageHeader'
 import CarSilhouette from '../components/cars/CarSilhouette'
-import { IconCamera, IconCalendar, IconDownload, IconPlus, IconTrash, IconX } from '../components/icons'
+import { IconCamera, IconCalendar, IconDownload, IconPlus, IconSparkles, IconTrash, IconX } from '../components/icons'
 import {
   BottomSheet,
   Button,
@@ -20,6 +20,7 @@ import { useCars } from '../contexts/CarsContext'
 import { useToast } from '../contexts/ToastContext'
 import { repo } from '../data'
 import { useUnsavedChanges } from '../hooks/useUnsavedChanges'
+import { removeImageBackground } from '../lib/bgRemoval'
 import { compressToDataUrl } from '../lib/images'
 import { newId } from '../lib/utils'
 import { lookupVehicle } from '../lib/vehicleApi'
@@ -84,6 +85,8 @@ export default function CarFormPage() {
   const [saving, setSaving] = useState(false)
   const [compressing, setCompressing] = useState(false)
   const [fetching, setFetching] = useState(false)
+  const [removingBg, setRemovingBg] = useState(false)
+  const [bgProgress, setBgProgress] = useState(0)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [blockEditor, setBlockEditor] = useState<InfoBlock | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -153,6 +156,23 @@ export default function CarFormPage() {
       toast('דחיסת התמונה נכשלה', 'error')
     } finally {
       setCompressing(false)
+    }
+  }
+
+  const removeBg = async () => {
+    if (!draft.imageUrl) return
+    setRemovingBg(true)
+    setBgProgress(0)
+    try {
+      const blob = await removeImageBackground(draft.imageUrl, setBgProgress)
+      const png = new File([blob], 'car.png', { type: 'image/png' })
+      const dataUrl = await compressToDataUrl(png, 'hero')
+      set('imageUrl', dataUrl)
+      toast('הרקע הוסר — תמונה נקייה!')
+    } catch {
+      toast('הסרת הרקע נכשלה, נסו שוב', 'error')
+    } finally {
+      setRemovingBg(false)
     }
   }
 
@@ -237,17 +257,37 @@ export default function CarFormPage() {
             ) : (
               <CarSilhouette className="h-28 w-auto text-ink-3/60" />
             )}
+            {/* background-removal progress overlay */}
+            {removingBg && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-2xl bg-canvas/80 backdrop-blur-sm">
+                <Spinner />
+                <p className="text-xs font-bold">
+                  מסיר רקע… {bgProgress > 0 ? `${Math.round(bgProgress * 100)}%` : ''}
+                </p>
+              </div>
+            )}
           </div>
-          <button
-            onClick={() => fileRef.current?.click()}
-            disabled={compressing}
-            className="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-card-2 py-3 text-sm font-semibold text-ink-2 active:scale-[0.98] disabled:opacity-50"
-          >
-            <IconCamera size={18} />
-            {compressing ? 'דוחס תמונה…' : draft.imageUrl ? 'החלפת תמונה' : 'העלאת תמונת רכב'}
-          </button>
-          <p className="mt-2 text-center text-xs text-ink-3">
-            טיפ: תמונה עם רקע שקוף (PNG) תיראה הכי טוב. התמונה נדחסת אוטומטית.
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <button
+              onClick={() => fileRef.current?.click()}
+              disabled={compressing || removingBg}
+              className="flex items-center justify-center gap-2 rounded-full bg-card-2 py-3 text-sm font-semibold text-ink-2 active:scale-[0.98] disabled:opacity-50"
+            >
+              <IconCamera size={18} />
+              {compressing ? 'דוחס…' : draft.imageUrl ? 'החלפה' : 'העלאה'}
+            </button>
+            <button
+              onClick={() => void removeBg()}
+              disabled={!draft.imageUrl || removingBg || compressing}
+              className="flex items-center justify-center gap-2 rounded-full bg-accent py-3 text-sm font-bold text-accent-ink shadow-card active:scale-[0.98] disabled:opacity-40"
+            >
+              <IconSparkles size={18} />
+              הסרת רקע
+            </button>
+          </div>
+          <p className="mt-2 text-center text-xs leading-relaxed text-ink-3">
+            צלמו את הרכב ולחצו "הסרת רקע" לתמונה נקייה ומקצועית. בפעם הראשונה ההכנה עשויה
+            לקחת מספר שניות. התמונה נדחסת אוטומטית.
           </p>
           <input
             ref={fileRef}
