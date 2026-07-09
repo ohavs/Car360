@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import PageHeader from '../components/layout/PageHeader'
+import ExpenseChart from '../components/ExpenseChart'
 import PhotoPicker from '../components/PhotoPicker'
 import { IconPlus, IconTrash, IconWrench } from '../components/icons'
 import { motion } from 'motion/react'
@@ -122,10 +123,7 @@ export default function ServicesPage() {
         <motion.div variants={listStagger} initial="hidden" animate="show" className="space-y-3 pb-8">
           {totalCost > 0 && (
             <motion.div variants={listItem}>
-              <Card className="flex items-center justify-between !bg-card-2 !shadow-none">
-                <span className="text-sm font-semibold text-ink-2">סה״כ הוצאות מתועדות</span>
-                <span className="text-lg font-black">{formatMoney(totalCost)}</span>
-              </Card>
+              <ExpenseChart items={sorted} />
             </motion.div>
           )}
           {sorted.map((rec) => (

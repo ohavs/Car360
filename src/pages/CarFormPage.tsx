@@ -1,14 +1,16 @@
+import { motion } from 'motion/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import PageHeader from '../components/layout/PageHeader'
 import CarSilhouette from '../components/cars/CarSilhouette'
-import { IconCamera, IconCalendar, IconPlus, IconTrash, IconX } from '../components/icons'
+import { IconCamera, IconCalendar, IconDownload, IconPlus, IconTrash, IconX } from '../components/icons'
 import {
   BottomSheet,
   Button,
   ConfirmDialog,
   Field,
   Input,
+  Spinner,
   Switch,
   TextArea,
 } from '../components/ui'
@@ -20,6 +22,7 @@ import { repo } from '../data'
 import { useUnsavedChanges } from '../hooks/useUnsavedChanges'
 import { compressToDataUrl } from '../lib/images'
 import { newId } from '../lib/utils'
+import { lookupVehicle } from '../lib/vehicleApi'
 import type { BlockType, Car, InfoBlock } from '../types'
 
 const FUEL_TYPES = ['בנזין', 'דיזל', 'היברידי', 'חשמלי', 'גפ״מ (גז)']
@@ -80,6 +83,7 @@ export default function CarFormPage() {
   const [dirty, setDirty] = useState(false)
   const [saving, setSaving] = useState(false)
   const [compressing, setCompressing] = useState(false)
+  const [fetching, setFetching] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [blockEditor, setBlockEditor] = useState<InfoBlock | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -105,6 +109,39 @@ export default function CarFormPage() {
   const set = <K extends keyof Draft>(key: K, value: Draft[K]) => {
     setDraft((d) => ({ ...d, [key]: value }))
     setDirty(true)
+  }
+
+  const fetchByPlate = async () => {
+    const digits = (draft.plate ?? '').replace(/\D/g, '')
+    if (digits.length < 5) {
+      toast('הזינו קודם לוחית רישוי תקינה', 'error')
+      return
+    }
+    setFetching(true)
+    try {
+      const info = await lookupVehicle(digits)
+      if (!info) {
+        toast('לא נמצאו נתונים לרכב הזה', 'error')
+        return
+      }
+      // fill from the registry (overwrite — the user asked for it)
+      setDraft((d) => ({
+        ...d,
+        make: info.make ?? d.make,
+        model: info.model ?? d.model,
+        year: info.year ?? d.year,
+        color: info.color ?? d.color,
+        fuelType: info.fuelType ?? d.fuelType,
+        vin: info.vin ?? d.vin,
+        testExpiry: info.testExpiry ?? d.testExpiry,
+      }))
+      setDirty(true)
+      toast('הפרטים נמשכו ממשרד התחבורה')
+    } catch {
+      toast('שליפת הנתונים נכשלה', 'error')
+    } finally {
+      setFetching(false)
+    }
   }
 
   const pickImage = async (file: File) => {
@@ -243,27 +280,41 @@ export default function CarFormPage() {
               <Input value={draft.model} onChange={(e) => set('model', e.target.value)} placeholder="XC40" />
             </Field>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="לוחית רישוי">
+          <Field label="לוחית רישוי">
+            <div className="flex gap-2">
               <Input
                 value={draft.plate}
                 onChange={(e) => set('plate', e.target.value)}
                 placeholder="12-345-67"
                 inputMode="numeric"
                 dir="ltr"
-                className="text-center font-bold tracking-widest"
+                className="flex-1 text-center font-bold tracking-widest"
               />
-            </Field>
-            <Field label="שנת ייצור">
-              <Input
-                type="number"
-                inputMode="numeric"
-                value={draft.year ?? ''}
-                onChange={(e) => set('year', e.target.value ? Number(e.target.value) : undefined)}
-                placeholder="2022"
-              />
-            </Field>
-          </div>
+              <motion.button
+                type="button"
+                whileTap={{ scale: 0.94 }}
+                onClick={() => void fetchByPlate()}
+                disabled={fetching}
+                className="flex min-h-13 shrink-0 items-center gap-1.5 rounded-field bg-accent px-4 text-sm font-bold text-accent-ink shadow-card disabled:opacity-50"
+              >
+                {fetching ? (
+                  <Spinner className="size-4 border-2 border-accent-ink/30 border-t-accent-ink" />
+                ) : (
+                  <IconDownload size={16} />
+                )}
+                {fetching ? 'מושך…' : 'מילוי אוטומטי'}
+              </motion.button>
+            </div>
+          </Field>
+          <Field label="שנת ייצור">
+            <Input
+              type="number"
+              inputMode="numeric"
+              value={draft.year ?? ''}
+              onChange={(e) => set('year', e.target.value ? Number(e.target.value) : undefined)}
+              placeholder="2022"
+            />
+          </Field>
           <div className="grid grid-cols-2 gap-3">
             <Field label="צבע">
               <Input value={draft.color ?? ''} onChange={(e) => set('color', e.target.value)} placeholder="שחור" />
