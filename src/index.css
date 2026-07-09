@@ -3,10 +3,12 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Design system: "Exaggerated Minimalism" (ui-ux-pro-max) —
+   premium slate + automotive red accent, oversized type, generous whitespace.
+   All colors flow through semantic tokens so both themes stay in sync. */
 @theme {
   --font-sans: 'Heebo Variable', 'Heebo', system-ui, -apple-system, sans-serif;
 
-  /* Surface tokens — light values; .dark overrides via CSS vars below */
   --color-canvas: var(--c-canvas);
   --color-card: var(--c-card);
   --color-card-2: var(--c-card-2);
@@ -16,47 +18,60 @@
   --color-line: var(--c-line);
   --color-accent: var(--c-accent);
   --color-accent-ink: var(--c-accent-ink);
-  --color-ok: #22c55e;
+  --color-cta: var(--c-cta);
+  --color-cta-soft: var(--c-cta-soft);
+  --color-ok: var(--c-ok);
   --color-ok-soft: var(--c-ok-soft);
-  --color-warn: #f59e0b;
+  --color-warn: var(--c-warn);
   --color-warn-soft: var(--c-warn-soft);
-  --color-danger: #ef4444;
+  --color-danger: var(--c-danger);
   --color-danger-soft: var(--c-danger-soft);
 
-  --radius-card: 1.5rem;
-  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px -12px rgb(0 0 0 / 0.12);
-  --shadow-float: 0 12px 32px -8px rgb(0 0 0 / 0.25);
+  --radius-card: 1.75rem;
+  --radius-field: 1.125rem;
+  --shadow-card: 0 1px 2px rgb(15 23 42 / 0.04), 0 10px 30px -14px rgb(15 23 42 / 0.14);
+  --shadow-float: 0 18px 44px -12px rgb(15 23 42 / 0.32);
 }
 
 :root {
-  --c-canvas: #f1f1f3;
+  --c-canvas: #f6f7f9;
   --c-card: #ffffff;
-  --c-card-2: #f6f6f7;
-  --c-ink: #17171a;
-  --c-ink-2: #55555e;
-  --c-ink-3: #9a9aa3;
-  --c-line: #e7e7ea;
-  --c-accent: #18181b;
+  --c-card-2: #eef1f4;
+  --c-ink: #0f172a;
+  --c-ink-2: #48566b;
+  --c-ink-3: #8b98ab;
+  --c-line: #e2e8f0;
+  --c-accent: #0f172a;
   --c-accent-ink: #ffffff;
+  --c-cta: #dc2626;
+  --c-cta-soft: #fee2e2;
+  --c-ok: #16a34a;
   --c-ok-soft: #dcfce7;
+  --c-warn: #d97706;
   --c-warn-soft: #fef3c7;
+  --c-danger: #dc2626;
   --c-danger-soft: #fee2e2;
   color-scheme: light;
 }
 
 .dark {
-  --c-canvas: #101013;
-  --c-card: #1b1b1f;
-  --c-card-2: #232329;
-  --c-ink: #f4f4f5;
-  --c-ink-2: #b5b5bd;
-  --c-ink-3: #74747e;
-  --c-line: #2b2b31;
-  --c-accent: #f4f4f5;
-  --c-accent-ink: #101013;
-  --c-ok-soft: #113123;
+  --c-canvas: #0b1120;
+  --c-card: #151e30;
+  --c-card-2: #1e2940;
+  --c-ink: #f1f5f9;
+  --c-ink-2: #a9b6c9;
+  --c-ink-3: #64748b;
+  --c-line: #263349;
+  --c-accent: #f1f5f9;
+  --c-accent-ink: #0b1120;
+  --c-cta: #ef4444;
+  --c-cta-soft: #3b1519;
+  --c-ok: #4ade80;
+  --c-ok-soft: #102b1c;
+  --c-warn: #fbbf24;
   --c-warn-soft: #33260c;
-  --c-danger-soft: #391616;
+  --c-danger: #f87171;
+  --c-danger-soft: #3b1519;
   color-scheme: dark;
 }
 
@@ -64,6 +79,13 @@ html,
 body,
 #root {
   height: 100%;
+}
+
+/* The app is mobile-only: content never exceeds phone width and the page
+   can never pan horizontally. */
+html,
+body {
+  overflow-x: clip;
 }
 
 body {
@@ -93,54 +115,22 @@ body {
   padding-top: max(env(safe-area-inset-top), 0px);
 }
 
-@keyframes toast-in {
-  from {
-    opacity: 0;
-    transform: translateY(12px) scale(0.97);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-.animate-toast-in {
-  animation: toast-in 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+/* Native date/time indicator is hidden — we render our own field UI and
+   only borrow the OS picker. */
+input.native-picker::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
 }
 
-@keyframes sheet-up {
-  from {
-    transform: translateY(100%);
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
   }
-  to {
-    transform: translateY(0);
-  }
-}
-.animate-sheet-up {
-  animation: sheet-up 0.28s cubic-bezier(0.2, 0.9, 0.3, 1);
-}
-
-@keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-.animate-fade-in {
-  animation: fade-in 0.2s ease;
-}
-
-@keyframes pop-in {
-  from {
-    opacity: 0;
-    transform: scale(0.94);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-.animate-pop-in {
-  animation: pop-in 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.15);
 }

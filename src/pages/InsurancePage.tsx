@@ -3,18 +3,22 @@ import { useParams, useSearchParams } from 'react-router-dom'
 import PageHeader from '../components/layout/PageHeader'
 import PhotoPicker from '../components/PhotoPicker'
 import { IconPhone, IconPlus, IconShield, IconTrash } from '../components/icons'
+import { motion } from 'motion/react'
 import {
   Badge,
   BottomSheet,
   Button,
   Card,
   ConfirmDialog,
+  DateInput,
   EmptyState,
   Field,
   Input,
   Select,
   Spinner,
   TextArea,
+  listItem,
+  listStagger,
 } from '../components/ui'
 import { useCars } from '../contexts/CarsContext'
 import { useToast } from '../contexts/ToastContext'
@@ -117,11 +121,12 @@ export default function InsurancePage() {
           }
         />
       ) : (
-        <div className="space-y-3 pb-8">
+        <motion.div variants={listStagger} initial="hidden" animate="show" className="space-y-3 pb-8">
           {sorted.map((rec) => {
             const st = dueStatus(rec.endDate)
             return (
-              <Card key={rec.id} onClick={() => setEditing(rec)} className="space-y-2">
+              <motion.div key={rec.id} variants={listItem}>
+                <Card onClick={() => setEditing(rec)} className="space-y-2">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="font-bold">
@@ -149,10 +154,11 @@ export default function InsurancePage() {
                     חיוג לסוכן
                   </a>
                 )}
-              </Card>
+                </Card>
+              </motion.div>
             )
           })}
-        </div>
+        </motion.div>
       )}
 
       {editing && (
@@ -211,12 +217,12 @@ function InsuranceEditor({
         <Field label="מספר פוליסה">
           <Input value={r.policyNumber ?? ''} onChange={(e) => setR({ ...r, policyNumber: e.target.value })} dir="ltr" />
         </Field>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid gap-3">
           <Field label="תחילת תוקף">
-            <Input type="date" value={r.startDate ?? ''} onChange={(e) => setR({ ...r, startDate: e.target.value })} />
+            <DateInput value={r.startDate ?? ''} onChange={(v) => setR({ ...r, startDate: v })} />
           </Field>
           <Field label="סיום תוקף">
-            <Input type="date" value={r.endDate} onChange={(e) => setR({ ...r, endDate: e.target.value })} />
+            <DateInput value={r.endDate} onChange={(v) => setR({ ...r, endDate: v })} />
           </Field>
         </div>
         <div className="grid grid-cols-2 gap-3">

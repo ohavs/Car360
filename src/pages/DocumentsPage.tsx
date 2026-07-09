@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { Navigate, useParams, useSearchParams } from 'react-router-dom'
 import PageHeader from '../components/layout/PageHeader'
 import { IconDownload, IconFile, IconPlus, IconTrash } from '../components/icons'
+import { motion } from 'motion/react'
 import {
   BottomSheet,
   Button,
@@ -11,6 +12,8 @@ import {
   Input,
   Select,
   Spinner,
+  listItem,
+  listStagger,
 } from '../components/ui'
 import { useCars } from '../contexts/CarsContext'
 import { useToast } from '../contexts/ToastContext'
@@ -117,8 +120,8 @@ export default function DocumentsPage() {
             key={c}
             onClick={() => setFilter(c)}
             className={cn(
-              'shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors',
-              filter === c ? 'bg-accent text-accent-ink' : 'bg-card text-ink-2 ring-1 ring-line',
+              'shrink-0 rounded-full px-4 py-2 text-sm font-bold transition-colors',
+              filter === c ? 'bg-accent text-accent-ink shadow-card' : 'bg-card text-ink-2 ring-1 ring-line',
             )}
           >
             {c}
@@ -143,23 +146,25 @@ export default function DocumentsPage() {
           }
         />
       ) : (
-        <div className="grid grid-cols-2 gap-3 pb-8">
+        <motion.div variants={listStagger} initial="hidden" animate="show" className="grid grid-cols-2 gap-3 pb-8">
           {filtered.map((doc) => (
-            <button
+            <motion.button
               key={doc.id}
+              variants={listItem}
+              whileTap={{ scale: 0.96 }}
               onClick={() => setViewing(doc)}
-              className="overflow-hidden rounded-card bg-card text-start shadow-card transition-transform active:scale-[0.97]"
+              className="overflow-hidden rounded-card bg-card text-start shadow-card"
             >
               <img src={doc.imageUrl} alt={doc.title} className="h-32 w-full object-cover" loading="lazy" />
               <div className="p-3">
-                <p className="truncate text-sm font-semibold">{doc.title}</p>
+                <p className="truncate text-sm font-bold">{doc.title}</p>
                 <p className="text-xs text-ink-3">
                   {doc.category} · {formatDate(new Date(doc.createdAt).toISOString().slice(0, 10))}
                 </p>
               </div>
-            </button>
+            </motion.button>
           ))}
-        </div>
+        </motion.div>
       )}
 
       {adding && carId && <AddDocumentSheet carId={carId} onSave={(d) => void save(d)} onClose={closeAdd} />}

@@ -2,16 +2,20 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import PageHeader from '../components/layout/PageHeader'
 import { IconBell, IconCheck, IconPlus } from '../components/icons'
+import { motion } from 'motion/react'
 import {
   Badge,
   BottomSheet,
   Button,
   Card,
+  DateInput,
   EmptyState,
   Field,
   Input,
   Select,
   Spinner,
+  listItem,
+  listStagger,
 } from '../components/ui'
 import { useCars } from '../contexts/CarsContext'
 import { useToast } from '../contexts/ToastContext'
@@ -114,11 +118,12 @@ export default function RemindersPage() {
           subtitle="הוסיפו תאריכי טסט וביטוח לרכבים — והם יופיעו כאן אוטומטית"
         />
       ) : (
-        <div className="space-y-3 pb-8">
+        <motion.div variants={listStagger} initial="hidden" animate="show" className="space-y-3 pb-8">
           {reminders.map((r) => {
             const st = dueStatus(r.dueDate)
             return (
-              <Card key={r.key} className="flex items-center gap-3">
+              <motion.div key={r.key} variants={listItem}>
+                <Card className="flex items-center gap-3">
                 <span
                   className={cn(
                     'flex size-11 shrink-0 items-center justify-center rounded-full',
@@ -150,10 +155,11 @@ export default function RemindersPage() {
                     </button>
                   )}
                 </div>
-              </Card>
+                </Card>
+              </motion.div>
             )
           })}
-        </div>
+        </motion.div>
       )}
 
       {adding && (
@@ -209,7 +215,7 @@ function AddReminderSheet({ onClose, onSaved }: { onClose: () => void; onSaved: 
           <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="חידוש מנוי חניה…" />
         </Field>
         <Field label="תאריך יעד">
-          <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+          <DateInput value={dueDate} onChange={setDueDate} />
         </Field>
         <Button className="w-full" disabled={!title.trim() || !dueDate || !carId || saving} onClick={() => void save()}>
           {saving ? 'שומר…' : 'הוספת תזכורת'}

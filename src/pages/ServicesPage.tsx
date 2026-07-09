@@ -3,17 +3,21 @@ import { useParams, useSearchParams } from 'react-router-dom'
 import PageHeader from '../components/layout/PageHeader'
 import PhotoPicker from '../components/PhotoPicker'
 import { IconPlus, IconTrash, IconWrench } from '../components/icons'
+import { motion } from 'motion/react'
 import {
   Badge,
   BottomSheet,
   Button,
   Card,
   ConfirmDialog,
+  DateInput,
   EmptyState,
   Field,
   Input,
   Spinner,
   TextArea,
+  listItem,
+  listStagger,
 } from '../components/ui'
 import { useCars } from '../contexts/CarsContext'
 import { useToast } from '../contexts/ToastContext'
@@ -117,15 +121,18 @@ export default function ServicesPage() {
           }
         />
       ) : (
-        <div className="space-y-3 pb-8">
+        <motion.div variants={listStagger} initial="hidden" animate="show" className="space-y-3 pb-8">
           {totalCost > 0 && (
-            <Card className="flex items-center justify-between !bg-card-2 !shadow-none">
-              <span className="text-sm text-ink-2">סה״כ הוצאות מתועדות</span>
-              <span className="font-bold">{formatMoney(totalCost)}</span>
-            </Card>
+            <motion.div variants={listItem}>
+              <Card className="flex items-center justify-between !bg-card-2 !shadow-none">
+                <span className="text-sm font-semibold text-ink-2">סה״כ הוצאות מתועדות</span>
+                <span className="text-lg font-black">{formatMoney(totalCost)}</span>
+              </Card>
+            </motion.div>
           )}
           {sorted.map((rec) => (
-            <Card key={rec.id} onClick={() => setEditing(rec)} className="space-y-2">
+            <motion.div key={rec.id} variants={listItem}>
+              <Card onClick={() => setEditing(rec)} className="space-y-2">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="font-bold">{rec.title}</p>
@@ -145,10 +152,11 @@ export default function ServicesPage() {
                 )}
                 {rec.photos.length > 0 && <Badge>{rec.photos.length} תמונות</Badge>}
               </div>
-              {rec.notes && <p className="text-sm leading-relaxed text-ink-2">{rec.notes}</p>}
-            </Card>
+                {rec.notes && <p className="text-sm leading-relaxed text-ink-2">{rec.notes}</p>}
+              </Card>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       )}
 
       {editing && (
@@ -197,14 +205,12 @@ function ServiceEditor({
             placeholder="טיפול 15,000 / החלפת צמיגים / בלמים…"
           />
         </Field>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="תאריך">
-            <Input type="date" value={r.date} onChange={(e) => setR({ ...r, date: e.target.value })} />
-          </Field>
-          <Field label="מוסך">
-            <Input value={r.garage ?? ''} onChange={(e) => setR({ ...r, garage: e.target.value })} />
-          </Field>
-        </div>
+        <Field label="תאריך">
+          <DateInput value={r.date} onChange={(v) => setR({ ...r, date: v })} />
+        </Field>
+        <Field label="מוסך">
+          <Input value={r.garage ?? ''} onChange={(e) => setR({ ...r, garage: e.target.value })} />
+        </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="קילומטראז׳">
             <Input
@@ -224,11 +230,7 @@ function ServiceEditor({
           </Field>
         </div>
         <Field label="טיפול הבא (אופציונלי)" hint="ייכנס אוטומטית לתזכורות">
-          <Input
-            type="date"
-            value={r.nextDueDate ?? ''}
-            onChange={(e) => setR({ ...r, nextDueDate: e.target.value })}
-          />
+          <DateInput value={r.nextDueDate ?? ''} onChange={(v) => setR({ ...r, nextDueDate: v })} />
         </Field>
         <Field label="הערות">
           <TextArea value={r.notes ?? ''} onChange={(e) => setR({ ...r, notes: e.target.value })} />

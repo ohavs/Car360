@@ -7,6 +7,7 @@ import {
   BottomSheet,
   Button,
   ConfirmDialog,
+  DateInput,
   Field,
   Input,
   Select,
@@ -287,16 +288,12 @@ export default function CarFormPage() {
         {/* key dates */}
         <section className="space-y-3 rounded-card bg-card p-4 shadow-card">
           <h2 className="font-bold">תאריכים חשובים</h2>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3">
             <Field label="תוקף טסט">
-              <Input type="date" value={draft.testExpiry ?? ''} onChange={(e) => set('testExpiry', e.target.value)} />
+              <DateInput value={draft.testExpiry ?? ''} onChange={(v) => set('testExpiry', v)} />
             </Field>
             <Field label="תוקף רישיון נהיגה">
-              <Input
-                type="date"
-                value={draft.licenseExpiry ?? ''}
-                onChange={(e) => set('licenseExpiry', e.target.value)}
-              />
+              <DateInput value={draft.licenseExpiry ?? ''} onChange={(v) => set('licenseExpiry', v)} />
             </Field>
           </div>
           <p className="text-xs leading-relaxed text-ink-3">
@@ -444,7 +441,7 @@ function BlockEditorSheet({
         </Field>
         <Field label="ערך">
           {b.type === 'date' ? (
-            <Input type="date" value={b.value} onChange={(e) => setB({ ...b, value: e.target.value })} />
+            <DateInput value={b.value} onChange={(v) => setB({ ...b, value: v })} />
           ) : (
             <Input
               value={b.value}

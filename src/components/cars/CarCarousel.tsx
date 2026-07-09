@@ -1,3 +1,4 @@
+import { motion } from 'motion/react'
 import { useEffect, useRef } from 'react'
 import type { Car } from '../../types'
 import { cn } from '../../lib/utils'
@@ -68,16 +69,25 @@ export default function CarCarousel({
         {cars.map((car) => (
           <div key={car.id} className="w-full shrink-0 snap-center px-6">
             <div className="relative flex h-44 items-center justify-center">
-              {car.imageUrl ? (
-                <img
-                  src={car.imageUrl}
-                  alt={car.nickname || `${car.make} ${car.model}`}
-                  className="max-h-44 w-auto max-w-full object-contain drop-shadow-[0_18px_16px_rgb(0_0_0/0.22)]"
-                  draggable={false}
-                />
-              ) : (
-                <CarSilhouette className="h-36 w-auto text-ink drop-shadow-[0_18px_16px_rgb(0_0_0/0.18)]" />
-              )}
+              <motion.div
+                animate={{
+                  scale: car.id === activeId ? 1 : 0.88,
+                  opacity: car.id === activeId ? 1 : 0.55,
+                }}
+                transition={{ type: 'spring', stiffness: 260, damping: 26 }}
+                className="flex max-w-full items-center justify-center"
+              >
+                {car.imageUrl ? (
+                  <img
+                    src={car.imageUrl}
+                    alt={car.nickname || `${car.make} ${car.model}`}
+                    className="max-h-44 w-auto max-w-full object-contain drop-shadow-[0_18px_16px_rgb(0_0_0/0.22)]"
+                    draggable={false}
+                  />
+                ) : (
+                  <CarSilhouette className="h-36 w-auto max-w-full text-ink drop-shadow-[0_18px_16px_rgb(0_0_0/0.18)]" />
+                )}
+              </motion.div>
               {/* soft floor shadow like the reference design */}
               <div className="absolute bottom-1 left-1/2 h-4 w-3/5 -translate-x-1/2 rounded-[100%] bg-black/15 blur-md dark:bg-black/40" />
             </div>
@@ -94,7 +104,7 @@ export default function CarCarousel({
               onClick={() => onChange(car.id)}
               className={cn(
                 'h-1.5 rounded-full transition-all duration-300',
-                car.id === activeId ? 'w-6 bg-ink' : 'w-1.5 bg-ink-3/50',
+                car.id === activeId ? 'w-6 bg-cta' : 'w-1.5 bg-ink-3/50',
               )}
             />
           ))}

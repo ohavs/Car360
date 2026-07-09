@@ -1,9 +1,20 @@
+import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useCars } from '../../contexts/CarsContext'
 import { cn } from '../../lib/utils'
-import { IconBell, IconFile, IconHome, IconPlus, IconSettings, IconWrench, IconShield, IconCar, IconCamera } from '../icons'
-import { BottomSheet } from '../ui'
+import {
+  IconBell,
+  IconCamera,
+  IconCar,
+  IconFile,
+  IconHome,
+  IconPlus,
+  IconSettings,
+  IconShield,
+  IconWrench,
+} from '../icons'
+import { BottomSheet, listItem, listStagger, spring } from '../ui'
 
 const tabs = [
   { to: '/', label: 'בית', icon: IconHome },
@@ -35,69 +46,89 @@ export default function AppShell() {
   ]
 
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-lg flex-col">
+    <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col">
       <main className="flex-1 pb-28">
         <Outlet />
       </main>
 
       <nav className="fixed inset-x-0 bottom-0 z-50">
-        <div className="mx-auto w-full max-w-lg px-4 pb-3 pb-safe">
-          <div className="flex items-center justify-between rounded-[1.75rem] bg-card px-3 py-2 shadow-float ring-1 ring-line">
+        <div className="mx-auto w-full max-w-md px-4 pb-3 pb-safe">
+          <motion.div
+            initial={{ y: 80, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 28, delay: 0.1 }}
+            className="flex items-center justify-between rounded-[2rem] bg-card px-3 py-2 shadow-float ring-1 ring-line"
+          >
             {tabs.map((tab) =>
               tab.to === null ? (
-                <button
+                <motion.button
                   key="add"
                   aria-label="הוספה מהירה"
                   onClick={() => setQuickAdd(true)}
-                  className="flex size-14 -translate-y-4 items-center justify-center rounded-full bg-accent text-accent-ink shadow-float transition-transform active:scale-90"
+                  whileTap={{ scale: 0.85 }}
+                  transition={spring}
+                  className="flex size-15 -translate-y-5 items-center justify-center rounded-full bg-cta text-white shadow-float"
                 >
-                  <IconPlus size={26} />
-                </button>
+                  <motion.span animate={{ rotate: quickAdd ? 135 : 0 }} transition={spring}>
+                    <IconPlus size={28} />
+                  </motion.span>
+                </motion.button>
               ) : (
                 <NavLink
                   key={tab.to}
                   to={tab.to}
                   className={({ isActive }) =>
                     cn(
-                      'flex min-w-14 flex-col items-center gap-0.5 rounded-2xl px-2 py-1.5 text-[11px] font-medium transition-colors',
+                      'relative flex min-w-14 flex-col items-center gap-0.5 rounded-2xl px-2 py-1.5 text-[11px] font-bold transition-colors',
                       isActive ? 'text-ink' : 'text-ink-3',
                     )
                   }
                 >
                   {({ isActive }) => (
                     <>
-                      <tab.icon size={22} strokeWidth={isActive ? 2.2 : 1.8} />
+                      <tab.icon size={22} strokeWidth={isActive ? 2.3 : 1.8} />
                       <span>{tab.label}</span>
+                      {isActive && (
+                        <motion.span
+                          layoutId="nav-dot"
+                          transition={spring}
+                          className="absolute -bottom-0.5 size-1.5 rounded-full bg-cta"
+                        />
+                      )}
                     </>
                   )}
                 </NavLink>
               ),
             )}
-          </div>
+          </motion.div>
         </div>
       </nav>
 
-      {quickAdd && (
-        <BottomSheet title="מה מוסיפים?" onClose={() => setQuickAdd(false)}>
-          <div className="grid gap-3">
-            {quickActions.map((a) => (
-              <button
-                key={a.label}
-                onClick={a.action}
-                className="flex items-center gap-4 rounded-card bg-card p-4 text-start shadow-card transition-transform active:scale-[0.98]"
-              >
-                <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-card-2 text-ink">
-                  <a.icon size={22} />
-                </span>
-                <span>
-                  <span className="block font-semibold">{a.label}</span>
-                  <span className="block text-sm text-ink-3">{a.desc}</span>
-                </span>
-              </button>
-            ))}
-          </div>
-        </BottomSheet>
-      )}
+      <AnimatePresence>
+        {quickAdd && (
+          <BottomSheet title="מה מוסיפים?" onClose={() => setQuickAdd(false)}>
+            <motion.div variants={listStagger} initial="hidden" animate="show" className="grid gap-3">
+              {quickActions.map((a) => (
+                <motion.button
+                  key={a.label}
+                  variants={listItem}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={a.action}
+                  className="flex items-center gap-4 rounded-card bg-card p-4 text-start shadow-card"
+                >
+                  <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-card-2 text-ink">
+                    <a.icon size={22} />
+                  </span>
+                  <span>
+                    <span className="block font-bold">{a.label}</span>
+                    <span className="block text-sm text-ink-3">{a.desc}</span>
+                  </span>
+                </motion.button>
+              ))}
+            </motion.div>
+          </BottomSheet>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

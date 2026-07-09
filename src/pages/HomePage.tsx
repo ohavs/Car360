@@ -1,3 +1,4 @@
+import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import CarCarousel from '../components/cars/CarCarousel'
@@ -15,7 +16,7 @@ import {
   IconSun,
   IconWrench,
 } from '../components/icons'
-import { Badge, Card, EmptyState, Spinner } from '../components/ui'
+import { Badge, Card, EmptyState, Spinner, listItem, listStagger, spring } from '../components/ui'
 import { useAuth } from '../contexts/AuthContext'
 import { useCars } from '../contexts/CarsContext'
 import { useTheme } from '../contexts/ThemeContext'
@@ -28,13 +29,13 @@ const statusTone = { none: 'neutral', ok: 'ok', warn: 'warn', danger: 'danger' }
 function blockIcon(block: InfoBlock) {
   switch (block.type) {
     case 'date':
-      return <IconCalendar size={18} />
+      return <IconCalendar size={17} />
     case 'phone':
-      return <IconPhone size={18} />
+      return <IconPhone size={17} />
     case 'link':
-      return <IconLink size={18} />
+      return <IconLink size={17} />
     default:
-      return <IconCar size={18} />
+      return <IconCar size={17} />
   }
 }
 
@@ -42,16 +43,14 @@ function BlockValue({ block }: { block: InfoBlock }) {
   if (block.type === 'date') {
     return (
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-lg font-bold">{formatDate(block.value)}</span>
-        {block.value && (
-          <Badge tone={statusTone[dueStatus(block.value)]}>{dueLabel(block.value)}</Badge>
-        )}
+        <span className="text-xl font-black">{formatDate(block.value)}</span>
+        {block.value && <Badge tone={statusTone[dueStatus(block.value)]}>{dueLabel(block.value)}</Badge>}
       </div>
     )
   }
   if (block.type === 'phone') {
     return (
-      <a href={`tel:${block.value}`} dir="ltr" className="text-lg font-bold underline-offset-4 hover:underline">
+      <a href={`tel:${block.value}`} dir="ltr" className="text-xl font-black underline-offset-4 hover:underline">
         {block.value}
       </a>
     )
@@ -63,13 +62,13 @@ function BlockValue({ block }: { block: InfoBlock }) {
         target="_blank"
         rel="noreferrer"
         dir="ltr"
-        className="block truncate text-base font-bold text-ink underline underline-offset-4"
+        className="block truncate text-base font-black text-ink underline underline-offset-4"
       >
         {block.value.replace(/^https?:\/\//, '')}
       </a>
     )
   }
-  return <span className="whitespace-pre-wrap text-lg font-bold">{block.value || '—'}</span>
+  return <span className="whitespace-pre-wrap text-xl font-black">{block.value || '—'}</span>
 }
 
 export default function HomePage() {
@@ -108,24 +107,51 @@ export default function HomePage() {
   return (
     <div className="px-4 pt-safe">
       {/* top bar */}
-      <header className="flex items-center justify-between py-4">
-        <button
+      <motion.header
+        initial={{ opacity: 0, y: -12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={spring}
+        className="flex items-center justify-between py-4"
+      >
+        <motion.button
           onClick={toggle}
+          whileTap={{ scale: 0.85, rotate: 40 }}
+          transition={spring}
           aria-label={theme === 'dark' ? 'מעבר למצב בהיר' : 'מעבר למצב כהה'}
-          className="flex size-11 items-center justify-center rounded-full bg-card text-ink shadow-card ring-1 ring-line transition-transform active:rotate-45 active:scale-90"
+          className="flex size-11 items-center justify-center rounded-full bg-card text-ink shadow-card ring-1 ring-line"
         >
-          {theme === 'dark' ? <IconSun size={20} /> : <IconMoon size={20} />}
-        </button>
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.span
+              key={theme}
+              initial={{ rotate: -60, opacity: 0, scale: 0.6 }}
+              animate={{ rotate: 0, opacity: 1, scale: 1 }}
+              exit={{ rotate: 60, opacity: 0, scale: 0.6 }}
+              transition={{ duration: 0.18 }}
+            >
+              {theme === 'dark' ? <IconSun size={20} /> : <IconMoon size={20} />}
+            </motion.span>
+          </AnimatePresence>
+        </motion.button>
 
         <div className="text-center">
-          <h1 className="text-lg font-bold leading-tight">
-            {activeCar ? carDisplayName(activeCar) : 'Car360'}
-          </h1>
-          {activeCar && (
-            <p className="text-xs text-ink-3" dir="ltr">
-              {formatPlate(activeCar.plate)}
-            </p>
-          )}
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={activeCarId ?? 'none'}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.15 }}
+            >
+              <h1 className="text-lg font-black leading-tight">
+                {activeCar ? carDisplayName(activeCar) : 'Car360'}
+              </h1>
+              {activeCar && (
+                <p className="text-xs font-medium text-ink-3" dir="ltr">
+                  {formatPlate(activeCar.plate)}
+                </p>
+              )}
+            </motion.div>
+          </AnimatePresence>
         </div>
 
         <Link
@@ -136,12 +162,12 @@ export default function HomePage() {
           {user?.photoUrl ? (
             <img src={user.photoUrl} alt="" className="size-full object-cover" referrerPolicy="no-referrer" />
           ) : (
-            <span className="flex size-full items-center justify-center text-sm font-bold">
+            <span className="flex size-full items-center justify-center text-sm font-black">
               {(user?.displayName ?? '?').slice(0, 1)}
             </span>
           )}
         </Link>
-      </header>
+      </motion.header>
 
       {cars.length === 0 ? (
         <EmptyState
@@ -149,117 +175,145 @@ export default function HomePage() {
           title="עדיין אין רכבים"
           subtitle="נתחיל בהוספת הרכב הראשון שלך"
           action={
-            <Link
-              to="/car/new"
-              className="mt-2 inline-flex min-h-12 items-center gap-2 rounded-full bg-accent px-6 font-semibold text-accent-ink shadow-card"
-            >
-              <IconPlus size={20} />
-              הוספת רכב
-            </Link>
+            <motion.div whileTap={{ scale: 0.96 }}>
+              <Link
+                to="/car/new"
+                className="mt-2 inline-flex min-h-13 items-center gap-2 rounded-full bg-cta px-7 font-bold text-white shadow-float"
+              >
+                <IconPlus size={20} />
+                הוספת רכב
+              </Link>
+            </motion.div>
           }
         />
       ) : (
         <>
-          <CarCarousel cars={cars} activeId={activeCarId} onChange={setActiveCarId} />
+          <motion.div initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} transition={{ ...spring, delay: 0.05 }}>
+            <CarCarousel cars={cars} activeId={activeCarId} onChange={setActiveCarId} />
+          </motion.div>
 
           {activeCar && (
-            <div className="mt-5 space-y-4 pb-4">
+            <motion.div
+              key={activeCar.id}
+              variants={listStagger}
+              initial="hidden"
+              animate="show"
+              className="mt-5 space-y-4 pb-4"
+            >
               {/* quick status row */}
-              <div className="grid grid-cols-2 gap-3">
+              <motion.div variants={listItem} className="grid grid-cols-2 gap-3">
                 <Card onClick={() => navigate(`/car/${activeCar.id}/edit`)} className="space-y-1.5">
-                  <p className="text-sm text-ink-3">טסט (רישוי שנתי)</p>
-                  <p className="text-xl font-bold">{formatDate(activeCar.testExpiry)}</p>
+                  <p className="text-[13px] font-semibold text-ink-3">טסט (רישוי שנתי)</p>
+                  <p className="text-2xl font-black tracking-tight">{formatDate(activeCar.testExpiry)}</p>
                   {activeCar.testExpiry && (
-                    <Badge tone={statusTone[dueStatus(activeCar.testExpiry)]}>
-                      {dueLabel(activeCar.testExpiry)}
-                    </Badge>
+                    <Badge tone={statusTone[dueStatus(activeCar.testExpiry)]}>{dueLabel(activeCar.testExpiry)}</Badge>
                   )}
                 </Card>
                 <Card onClick={() => navigate(`/car/${activeCar.id}/insurance`)} className="space-y-1.5">
-                  <p className="text-sm text-ink-3">ביטוח</p>
+                  <p className="text-[13px] font-semibold text-ink-3">ביטוח</p>
                   <InsuranceStatus reminders={carReminders} />
                 </Card>
-              </div>
+              </motion.div>
 
               {/* action buttons row */}
-              <div className="flex justify-between px-2">
+              <motion.div variants={listItem} className="flex justify-between px-2">
                 {[
                   { label: 'עריכה', icon: IconEdit, to: `/car/${activeCar.id}/edit` },
                   { label: 'טיפולים', icon: IconWrench, to: `/car/${activeCar.id}/services` },
                   { label: 'ביטוחים', icon: IconShield, to: `/car/${activeCar.id}/insurance` },
                   { label: 'שיתוף', icon: IconShare, to: `/car/${activeCar.id}/share` },
                 ].map((a) => (
-                  <Link key={a.label} to={a.to} className="flex flex-col items-center gap-1.5">
-                    <span className="flex size-14 items-center justify-center rounded-full bg-card text-ink shadow-card ring-1 ring-line transition-transform active:scale-90">
-                      <a.icon size={22} />
-                    </span>
-                    <span className="text-xs font-medium text-ink-2">{a.label}</span>
-                  </Link>
+                  <motion.div key={a.label} whileTap={{ scale: 0.88 }} transition={spring}>
+                    <Link to={a.to} className="flex flex-col items-center gap-1.5">
+                      <span className="flex size-14 items-center justify-center rounded-full bg-card text-ink shadow-card ring-1 ring-line">
+                        <a.icon size={22} />
+                      </span>
+                      <span className="text-xs font-bold text-ink-2">{a.label}</span>
+                    </Link>
+                  </motion.div>
                 ))}
-              </div>
+              </motion.div>
 
               {/* upcoming reminders for this car */}
               {urgent.length > 0 && (
-                <Card className="!bg-warn-soft">
-                  <Link to="/reminders" className="flex items-center gap-3">
-                    <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-card text-warn shadow-card">
-                      <IconBell size={20} />
-                    </span>
-                    <span className="flex-1">
-                      <span className="block text-sm font-semibold">
-                        {urgent[0].title} — {dueLabel(urgent[0].dueDate)}
-                      </span>
-                      {urgent.length > 1 && (
-                        <span className="block text-xs text-ink-2">
-                          ועוד {urgent.length - 1} תזכורות קרובות
-                        </span>
+                <motion.div variants={listItem}>
+                  <Link to="/reminders">
+                    <motion.div
+                      whileTap={{ scale: 0.98 }}
+                      className={cn(
+                        'flex items-center gap-3 rounded-card p-4 shadow-card',
+                        urgent[0].daysLeft <= 7 ? 'bg-danger-soft' : 'bg-warn-soft',
                       )}
-                    </span>
+                    >
+                      <motion.span
+                        animate={{ rotate: [0, -12, 12, -8, 8, 0] }}
+                        transition={{ duration: 0.8, delay: 1, repeat: 2, repeatDelay: 4 }}
+                        className={cn(
+                          'flex size-10 shrink-0 items-center justify-center rounded-full bg-card shadow-card',
+                          urgent[0].daysLeft <= 7 ? 'text-danger' : 'text-warn',
+                        )}
+                      >
+                        <IconBell size={20} />
+                      </motion.span>
+                      <span className="flex-1">
+                        <span className="block text-sm font-black">
+                          {urgent[0].title} — {dueLabel(urgent[0].dueDate)}
+                        </span>
+                        {urgent.length > 1 && (
+                          <span className="block text-xs font-medium text-ink-2">
+                            ועוד {urgent.length - 1} תזכורות קרובות
+                          </span>
+                        )}
+                      </span>
+                    </motion.div>
                   </Link>
-                </Card>
+                </motion.div>
               )}
 
               {/* user info blocks */}
-              <div className="flex items-center justify-between pt-1">
-                <h2 className="font-bold">פרטי הרכב</h2>
+              <motion.div variants={listItem} className="flex items-center justify-between pt-1">
+                <h2 className="text-xl font-black">פרטי הרכב</h2>
                 <Link
                   to={`/car/${activeCar.id}/edit#blocks`}
-                  className="flex items-center gap-1 text-sm font-medium text-ink-2"
+                  className="flex items-center gap-1 rounded-full bg-card px-3 py-1.5 text-[13px] font-bold text-ink-2 shadow-card"
                 >
-                  <IconPlus size={16} />
+                  <IconPlus size={15} />
                   בלוק מידע
                 </Link>
-              </div>
+              </motion.div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <motion.div variants={listItem} className="grid grid-cols-2 gap-3">
                 <Card className="space-y-1.5">
-                  <p className="text-sm text-ink-3">לוחית רישוי</p>
-                  <p className="rounded-lg bg-warn-soft px-2 py-1 text-center text-lg font-black tracking-wider ring-1 ring-warn/40" dir="ltr">
+                  <p className="text-[13px] font-semibold text-ink-3">לוחית רישוי</p>
+                  <p
+                    className="rounded-xl bg-warn-soft px-2 py-1.5 text-center text-xl font-black tracking-widest ring-1 ring-warn/40"
+                    dir="ltr"
+                  >
                     {formatPlate(activeCar.plate)}
                   </p>
                 </Card>
                 {activeCar.year != null && (
                   <Card className="space-y-1.5">
-                    <p className="text-sm text-ink-3">שנת ייצור</p>
-                    <p className="text-lg font-bold">{activeCar.year}</p>
+                    <p className="text-[13px] font-semibold text-ink-3">שנת ייצור</p>
+                    <p className="text-2xl font-black tracking-tight">{activeCar.year}</p>
                   </Card>
                 )}
                 {activeCar.color && (
                   <Card className="space-y-1.5">
-                    <p className="text-sm text-ink-3">צבע</p>
-                    <p className="text-lg font-bold">{activeCar.color}</p>
+                    <p className="text-[13px] font-semibold text-ink-3">צבע</p>
+                    <p className="text-xl font-black">{activeCar.color}</p>
                   </Card>
                 )}
                 {activeCar.fuelType && (
                   <Card className="space-y-1.5">
-                    <p className="text-sm text-ink-3">סוג דלק</p>
-                    <p className="text-lg font-bold">{activeCar.fuelType}</p>
+                    <p className="text-[13px] font-semibold text-ink-3">סוג דלק</p>
+                    <p className="text-xl font-black">{activeCar.fuelType}</p>
                   </Card>
                 )}
                 {activeCar.vin && (
                   <Card className="col-span-2 space-y-1.5">
-                    <p className="text-sm text-ink-3">מספר שלדה (VIN)</p>
-                    <p className="text-base font-bold tracking-wide" dir="ltr">
+                    <p className="text-[13px] font-semibold text-ink-3">מספר שלדה (VIN)</p>
+                    <p className="text-base font-black tracking-wide" dir="ltr">
                       {activeCar.vin}
                     </p>
                   </Card>
@@ -269,22 +323,24 @@ export default function HomePage() {
                     key={block.id}
                     className={cn('space-y-1.5', block.type === 'text' && block.value.length > 40 && 'col-span-2')}
                   >
-                    <p className="flex items-center gap-1.5 text-sm text-ink-3">
-                      <span className="text-ink-3">{blockIcon(block)}</span>
+                    <p className="flex items-center gap-1.5 text-[13px] font-semibold text-ink-3">
+                      {blockIcon(block)}
                       {block.title}
                     </p>
                     <BlockValue block={block} />
                   </Card>
                 ))}
-              </div>
+              </motion.div>
 
               {activeCar.notes && (
-                <Card className="space-y-1.5">
-                  <p className="text-sm text-ink-3">הערות</p>
-                  <p className="whitespace-pre-wrap text-sm leading-relaxed">{activeCar.notes}</p>
-                </Card>
+                <motion.div variants={listItem}>
+                  <Card className="space-y-1.5">
+                    <p className="text-[13px] font-semibold text-ink-3">הערות</p>
+                    <p className="whitespace-pre-wrap text-sm leading-relaxed">{activeCar.notes}</p>
+                  </Card>
+                </motion.div>
               )}
-            </div>
+            </motion.div>
           )}
         </>
       )}
@@ -295,11 +351,11 @@ export default function HomePage() {
 function InsuranceStatus({ reminders }: { reminders: DerivedReminder[] }) {
   const ins = reminders.find((r) => r.source === 'insurance')
   if (!ins) {
-    return <p className="text-xl font-bold text-ink-3">—</p>
+    return <p className="text-2xl font-black text-ink-3">—</p>
   }
   return (
     <>
-      <p className="text-xl font-bold">{formatDate(ins.dueDate)}</p>
+      <p className="text-2xl font-black tracking-tight">{formatDate(ins.dueDate)}</p>
       <Badge tone={statusTone[dueStatus(ins.dueDate)]}>{dueLabel(ins.dueDate)}</Badge>
     </>
   )

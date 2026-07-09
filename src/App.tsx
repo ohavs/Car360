@@ -1,3 +1,4 @@
+import { MotionConfig } from 'motion/react'
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import AppShell from './components/layout/AppShell'
@@ -52,5 +53,9 @@ const router = createBrowserRouter([
 ])
 
 export default function App() {
-  return <RouterProvider router={router} />
+  return (
+    <MotionConfig reducedMotion="user">
+      <RouterProvider router={router} />
+    </MotionConfig>
+  )
 }

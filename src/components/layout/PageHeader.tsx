@@ -1,6 +1,8 @@
+import { motion } from 'motion/react'
 import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { IconChevronRight } from '../icons'
+import { spring } from '../ui'
 
 /** Sticky sub-page header: back chevron (points "forward" in RTL), title,
  *  optional trailing action. */
@@ -19,17 +21,24 @@ export default function PageHeader({
   return (
     <header className="sticky top-0 z-40 -mx-4 mb-4 bg-canvas/85 px-4 py-3 pt-safe backdrop-blur-md">
       <div className="flex items-center gap-3">
-        <button
+        <motion.button
           aria-label="חזרה"
+          whileTap={{ scale: 0.85 }}
+          transition={spring}
           onClick={onBack ?? (() => navigate(-1))}
-          className="flex size-11 shrink-0 items-center justify-center rounded-full bg-card text-ink shadow-card ring-1 ring-line active:scale-90"
+          className="flex size-11 shrink-0 items-center justify-center rounded-full bg-card text-ink shadow-card ring-1 ring-line"
         >
           <IconChevronRight size={22} />
-        </button>
-        <div className="min-w-0 flex-1">
-          <h1 className="truncate text-lg font-bold leading-tight">{title}</h1>
-          {subtitle && <p className="truncate text-xs text-ink-3">{subtitle}</p>}
-        </div>
+        </motion.button>
+        <motion.div
+          initial={{ opacity: 0, x: 16 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={spring}
+          className="min-w-0 flex-1"
+        >
+          <h1 className="truncate text-xl font-black leading-tight">{title}</h1>
+          {subtitle && <p className="truncate text-xs font-medium text-ink-3">{subtitle}</p>}
+        </motion.div>
         {action}
       </div>
     </header>
