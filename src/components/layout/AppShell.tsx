@@ -47,12 +47,12 @@ export default function AppShell() {
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col">
-      <main className="flex-1 pb-28">
+      <main className="flex-1 pb-36">
         <Outlet />
       </main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-50">
-        <div className="mx-auto w-full max-w-md px-4 pb-3 pb-safe">
+      <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-50">
+        <div className="mx-auto w-full max-w-md px-4 pb-5 pb-safe [&>*]:pointer-events-auto">
           <motion.div
             initial={{ y: 80, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}

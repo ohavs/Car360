@@ -253,12 +253,20 @@ export function Switch({
       aria-checked={checked}
       aria-label={label}
       onClick={() => onChange(!checked)}
+      // Colors are explicit (not the re-skinnable card/line tokens) so the
+      // track and knob never merge into one blob under glass/neu skins.
       className={cn(
-        'relative flex h-8 w-14 shrink-0 items-center rounded-full px-1 transition-colors duration-200',
-        checked ? 'justify-end bg-accent' : 'justify-start bg-line',
+        'relative flex h-8 w-14 shrink-0 items-center rounded-full px-1 ring-1 ring-inset transition-colors duration-200',
+        checked
+          ? 'justify-end bg-[var(--color-cta)] ring-black/10'
+          : 'justify-start bg-black/20 ring-black/5 dark:bg-white/20 dark:ring-white/10',
       )}
     >
-      <motion.span layout transition={spring} className="size-6 rounded-full bg-card shadow-card" />
+      <motion.span
+        layout
+        transition={spring}
+        className="size-6 rounded-full bg-white shadow-[0_2px_6px_rgb(0_0_0/0.35)] ring-1 ring-black/5"
+      />
     </button>
   )
 }
