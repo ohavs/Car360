@@ -1,7 +1,9 @@
-import { AnimatePresence, motion } from 'motion/react'
-import { useEffect, useMemo, useState } from 'react'
+import { motion } from 'motion/react'
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import CarCarousel from '../components/cars/CarCarousel'
+import GlassPanel from '../components/cockpit/GlassPanel'
+import StatusTile from '../components/cockpit/StatusTile'
 import {
   IconBell,
   IconCalendar,
@@ -18,11 +20,11 @@ import {
   IconSun,
   IconWrench,
 } from '../components/icons'
-import { Badge, Card, EmptyState, HomeSkeleton, spring } from '../components/ui'
-import CarHealthRing from '../components/cars/CarHealthRing'
+import { Badge, EmptyState, HomeSkeleton, spring } from '../components/ui'
 import { useAuth } from '../contexts/AuthContext'
 import { useCars } from '../contexts/CarsContext'
 import { useTheme } from '../contexts/ThemeContext'
+import { extractCarColor, type CarColor } from '../lib/colorExtract'
 import { carHealth } from '../lib/health'
 import { carDisplayName, collectReminders, notifyUpcoming } from '../lib/reminders'
 import { cn, dueLabel, dueStatus, formatDate, formatPlate } from '../lib/utils'
@@ -33,13 +35,13 @@ const statusTone = { none: 'neutral', ok: 'ok', warn: 'warn', danger: 'danger' }
 function blockIcon(block: InfoBlock) {
   switch (block.type) {
     case 'date':
-      return <IconCalendar size={17} />
+      return <IconCalendar size={16} />
     case 'phone':
-      return <IconPhone size={17} />
+      return <IconPhone size={16} />
     case 'link':
-      return <IconLink size={17} />
+      return <IconLink size={16} />
     default:
-      return <IconCar size={17} />
+      return <IconCar size={16} />
   }
 }
 
@@ -47,14 +49,14 @@ function BlockValue({ block }: { block: InfoBlock }) {
   if (block.type === 'date') {
     return (
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xl font-black">{formatDate(block.value)}</span>
+        <span className="text-lg font-black">{formatDate(block.value)}</span>
         {block.value && <Badge tone={statusTone[dueStatus(block.value)]}>{dueLabel(block.value)}</Badge>}
       </div>
     )
   }
   if (block.type === 'phone') {
     return (
-      <a href={`tel:${block.value}`} dir="ltr" className="text-xl font-black underline-offset-4 hover:underline">
+      <a href={`tel:${block.value}`} dir="ltr" className="text-lg font-black underline-offset-4 hover:underline">
         {block.value}
       </a>
     )
@@ -72,7 +74,30 @@ function BlockValue({ block }: { block: InfoBlock }) {
       </a>
     )
   }
-  return <span className="whitespace-pre-wrap text-xl font-black">{block.value || '—'}</span>
+  return <span className="whitespace-pre-wrap text-lg font-black">{block.value || '—'}</span>
+}
+
+/** Small labelled cockpit tile. */
+function InfoTile({
+  label,
+  icon,
+  children,
+  span,
+}: {
+  label: string
+  icon?: ReactNode
+  children: ReactNode
+  span?: boolean
+}) {
+  return (
+    <GlassPanel className={cn('!p-3.5', span && 'col-span-2')}>
+      <p className="flex items-center gap-1.5 text-[12px] font-semibold text-ink-3">
+        {icon}
+        {label}
+      </p>
+      <div className="mt-1">{children}</div>
+    </GlassPanel>
+  )
 }
 
 export default function HomePage() {
@@ -80,18 +105,30 @@ export default function HomePage() {
   const { cars, loading, activeCar, activeCarId, setActiveCarId } = useCars()
   const { theme, toggle } = useTheme()
   const [reminders, setReminders] = useState<DerivedReminder[]>([])
+  const [carColor, setCarColor] = useState<CarColor | null>(null)
 
   useEffect(() => {
     if (cars.length === 0) return
     let cancelled = false
-    void collectReminders(cars).then((r) => {
-      if (!cancelled) setReminders(r)
-    })
+    void collectReminders(cars).then((r) => !cancelled && setReminders(r))
     void notifyUpcoming(cars)
     return () => {
       cancelled = true
     }
   }, [cars])
+
+  // theme the cockpit from the active car's photo
+  useEffect(() => {
+    let cancelled = false
+    if (activeCar?.imageUrl) {
+      void extractCarColor(activeCar.imageUrl).then((c) => !cancelled && setCarColor(c))
+    } else {
+      setCarColor(null)
+    }
+    return () => {
+      cancelled = true
+    }
+  }, [activeCar?.imageUrl])
 
   const carReminders = useMemo(
     () => reminders.filter((r) => r.carId === activeCarId),
@@ -102,63 +139,47 @@ export default function HomePage() {
     () => (activeCar ? carHealth(activeCar, carReminders) : null),
     [activeCar, carReminders],
   )
+  const insuranceR = useMemo(() => carReminders.find((r) => r.source === 'insurance'), [carReminders])
 
   if (loading) return <HomeSkeleton />
 
   return (
-    <div className="px-4 pt-safe">
+    <div
+      className="cockpit min-h-dvh px-4 pt-safe"
+      style={carColor ? ({ ['--car-color']: carColor.hex } as CSSProperties) : undefined}
+    >
       {/* top bar */}
       <motion.header
-        initial={{ opacity: 0, y: -12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={spring}
-        className="flex items-center justify-between py-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.2 }}
+        className="flex items-center justify-between py-3"
       >
         <motion.button
           onClick={toggle}
           whileTap={{ scale: 0.85, rotate: 40 }}
           transition={spring}
           aria-label={theme === 'dark' ? 'מעבר למצב בהיר' : 'מעבר למצב כהה'}
-          className="flex size-11 items-center justify-center rounded-full bg-card text-ink shadow-card ring-1 ring-line"
+          className="glass-bar flex size-11 items-center justify-center rounded-full text-ink"
         >
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.span
-              key={theme}
-              initial={{ rotate: -60, opacity: 0, scale: 0.6 }}
-              animate={{ rotate: 0, opacity: 1, scale: 1 }}
-              exit={{ rotate: 60, opacity: 0, scale: 0.6 }}
-              transition={{ duration: 0.18 }}
-            >
-              {theme === 'dark' ? <IconSun size={20} /> : <IconMoon size={20} />}
-            </motion.span>
-          </AnimatePresence>
+          {theme === 'dark' ? <IconSun size={20} /> : <IconMoon size={20} />}
         </motion.button>
 
         <div className="text-center">
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div
-              key={activeCarId ?? 'none'}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.15 }}
-            >
-              <h1 className="text-lg font-black leading-tight">
-                {activeCar ? carDisplayName(activeCar) : 'Car360'}
-              </h1>
-              {activeCar && (
-                <p className="text-xs font-medium text-ink-3" dir="ltr">
-                  {formatPlate(activeCar.plate)}
-                </p>
-              )}
-            </motion.div>
-          </AnimatePresence>
+          <h1 className="text-lg font-black leading-tight">
+            {activeCar ? carDisplayName(activeCar) : 'Car360'}
+          </h1>
+          {activeCar && (
+            <p className="text-xs font-medium text-ink-3" dir="ltr">
+              {formatPlate(activeCar.plate)}
+            </p>
+          )}
         </div>
 
         <Link
           to="/settings"
           aria-label="פרופיל והגדרות"
-          className="block size-11 overflow-hidden rounded-full bg-card shadow-card ring-1 ring-line"
+          className="glass-bar block size-11 overflow-hidden rounded-full"
         >
           {user?.photoUrl ? (
             <img src={user.photoUrl} alt="" className="size-full object-cover" referrerPolicy="no-referrer" />
@@ -199,135 +220,161 @@ export default function HomePage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.22 }}
-              className="mt-4 space-y-3.5 pb-4"
+              className="mt-4 grid grid-cols-2 gap-3 pb-4"
             >
-              {/* consolidated, self-animating status (gauge + live bars) */}
-              {health && <CarHealthRing score={health.score} factors={health.factors} />}
+              {/* hero status */}
+              {health && <StatusTile score={health.score} factors={health.factors} />}
 
-              {/* quick actions — horizontal squircle chips (restyle per language) */}
-              <div className="no-scrollbar -mx-4 flex gap-2.5 overflow-x-auto px-4">
-                {[
-                  { label: 'טיפולים', icon: IconWrench, to: `/car/${activeCar.id}/services` },
-                  { label: 'ביטוחים', icon: IconShield, to: `/car/${activeCar.id}/insurance` },
-                  { label: 'מסמכים', icon: IconFile, to: `/car/${activeCar.id}/documents` },
-                  { label: 'ציר זמן', icon: IconClock, to: `/car/${activeCar.id}/timeline` },
-                  { label: 'שיתוף', icon: IconShare, to: `/car/${activeCar.id}/share` },
-                  { label: 'עריכה', icon: IconEdit, to: `/car/${activeCar.id}/edit` },
-                ].map((a) => (
-                  <motion.div key={a.label} whileTap={{ scale: 0.9 }} transition={spring} className="shrink-0">
-                    <Link to={a.to} className="flex w-16 flex-col items-center gap-1.5">
-                      <span className="quick-chip flex size-13 items-center justify-center rounded-2xl bg-card text-ink shadow-card ring-1 ring-line">
-                        <a.icon size={21} />
-                      </span>
-                      <span className="text-[11px] font-bold text-ink-2">{a.label}</span>
-                    </Link>
-                  </motion.div>
-                ))}
-              </div>
+              {/* test + insurance */}
+              <GlassPanel className="!p-3.5">
+                <Link to={`/car/${activeCar.id}/edit`} className="block">
+                  <p className="flex items-center gap-1.5 text-[12px] font-semibold text-ink-3">
+                    <IconCalendar size={15} /> טסט
+                  </p>
+                  <p className="mt-1 text-lg font-black tracking-tight">{formatDate(activeCar.testExpiry)}</p>
+                  {activeCar.testExpiry && (
+                    <Badge className="mt-1" tone={statusTone[dueStatus(activeCar.testExpiry)]}>
+                      {dueLabel(activeCar.testExpiry)}
+                    </Badge>
+                  )}
+                </Link>
+              </GlassPanel>
 
-              {/* upcoming reminders for this car */}
-              {urgent.length > 0 && (
-                <Link to="/reminders" className="block">
-                  <motion.div
-                    whileTap={{ scale: 0.98 }}
-                    className={cn(
-                      'flex items-center gap-3 rounded-card p-3.5 shadow-card',
-                      urgent[0].daysLeft <= 7 ? 'bg-danger-soft' : 'bg-warn-soft',
-                    )}
+              <GlassPanel className="!p-3.5">
+                <Link to={`/car/${activeCar.id}/insurance`} className="block">
+                  <p className="flex items-center gap-1.5 text-[12px] font-semibold text-ink-3">
+                    <IconShield size={15} /> ביטוח
+                  </p>
+                  {insuranceR ? (
+                    <>
+                      <p className="mt-1 text-lg font-black tracking-tight">{formatDate(insuranceR.dueDate)}</p>
+                      <Badge className="mt-1" tone={statusTone[dueStatus(insuranceR.dueDate)]}>
+                        {dueLabel(insuranceR.dueDate)}
+                      </Badge>
+                    </>
+                  ) : (
+                    <p className="mt-1 text-lg font-black text-ink-3">—</p>
+                  )}
+                </Link>
+              </GlassPanel>
+
+              {/* plate */}
+              <GlassPanel className="col-span-2 !p-3.5">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-[12px] font-semibold text-ink-3">לוחית רישוי</p>
+                  <p
+                    className="rounded-lg bg-amber-300/90 px-3 py-1.5 text-center text-xl font-black tracking-widest text-black ring-1 ring-black/10"
+                    dir="ltr"
                   >
-                    <motion.span
-                      animate={{ rotate: [0, -12, 12, -8, 8, 0] }}
-                      transition={{ duration: 0.8, delay: 0.8, repeat: 2, repeatDelay: 4 }}
-                      className={cn(
-                        'flex size-10 shrink-0 items-center justify-center rounded-full bg-card shadow-card',
-                        urgent[0].daysLeft <= 7 ? 'text-danger' : 'text-warn',
-                      )}
-                    >
-                      <IconBell size={20} />
-                    </motion.span>
-                    <span className="flex-1">
-                      <span className="block text-sm font-black">
-                        {urgent[0].title} — {dueLabel(urgent[0].dueDate)}
-                      </span>
-                      {urgent.length > 1 && (
-                        <span className="block text-xs font-medium text-ink-2">
-                          ועוד {urgent.length - 1} תזכורות קרובות
+                    {formatPlate(activeCar.plate)}
+                  </p>
+                </div>
+              </GlassPanel>
+
+              {/* quick actions */}
+              <GlassPanel className="col-span-2 !p-3">
+                <div className="no-scrollbar flex justify-between gap-1 overflow-x-auto">
+                  {[
+                    { label: 'טיפולים', icon: IconWrench, to: `/car/${activeCar.id}/services` },
+                    { label: 'ביטוחים', icon: IconShield, to: `/car/${activeCar.id}/insurance` },
+                    { label: 'מסמכים', icon: IconFile, to: `/car/${activeCar.id}/documents` },
+                    { label: 'ציר זמן', icon: IconClock, to: `/car/${activeCar.id}/timeline` },
+                    { label: 'שיתוף', icon: IconShare, to: `/car/${activeCar.id}/share` },
+                    { label: 'עריכה', icon: IconEdit, to: `/car/${activeCar.id}/edit` },
+                  ].map((a) => (
+                    <motion.div key={a.label} whileTap={{ scale: 0.9 }} transition={spring} className="shrink-0">
+                      <Link to={a.to} className="flex w-14 flex-col items-center gap-1">
+                        <span className="flex size-11 items-center justify-center rounded-2xl bg-white/50 text-ink ring-1 ring-white/50 dark:bg-white/10 dark:ring-white/10">
+                          <a.icon size={19} />
                         </span>
-                      )}
-                    </span>
-                  </motion.div>
+                        <span className="text-[10px] font-bold text-ink-2">{a.label}</span>
+                      </Link>
+                    </motion.div>
+                  ))}
+                </div>
+              </GlassPanel>
+
+              {/* urgent reminders */}
+              {urgent.length > 0 && (
+                <Link to="/reminders" className="col-span-2 block">
+                  <GlassPanel
+                    className="!p-3.5"
+                    style={{ background: urgent[0].daysLeft <= 7 ? 'rgb(239 68 68 / 0.16)' : 'rgb(245 158 11 / 0.16)' }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <motion.span
+                        animate={{ rotate: [0, -12, 12, -8, 8, 0] }}
+                        transition={{ duration: 0.8, delay: 0.8, repeat: 2, repeatDelay: 4 }}
+                        className={cn(
+                          'flex size-10 shrink-0 items-center justify-center rounded-full bg-white/70 dark:bg-white/10',
+                          urgent[0].daysLeft <= 7 ? 'text-danger' : 'text-warn',
+                        )}
+                      >
+                        <IconBell size={20} />
+                      </motion.span>
+                      <span className="flex-1">
+                        <span className="block text-sm font-black">
+                          {urgent[0].title} — {dueLabel(urgent[0].dueDate)}
+                        </span>
+                        {urgent.length > 1 && (
+                          <span className="block text-xs font-medium text-ink-2">
+                            ועוד {urgent.length - 1} תזכורות קרובות
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  </GlassPanel>
                 </Link>
               )}
 
-              {/* user info blocks */}
-              <div className="flex items-center justify-between pt-0.5">
+              {/* section header */}
+              <div className="col-span-2 flex items-center justify-between pt-0.5">
                 <h2 className="text-lg font-black">פרטי הרכב</h2>
                 <Link
                   to={`/car/${activeCar.id}/edit#blocks`}
-                  className="flex items-center gap-1 rounded-full bg-card px-3 py-1.5 text-[12px] font-bold text-ink-2 shadow-card"
+                  className="glass-bar flex items-center gap-1 rounded-full px-3 py-1.5 text-[12px] font-bold text-ink-2"
                 >
                   <IconPlus size={14} />
                   בלוק מידע
                 </Link>
               </div>
 
-              <div className="grid grid-cols-2 gap-2.5">
-                <Card className="!p-3.5">
-                  <p className="text-[12px] font-semibold text-ink-3">לוחית רישוי</p>
-                  <p
-                    className="mt-1 rounded-lg bg-warn-soft px-2 py-1 text-center text-lg font-black tracking-widest ring-1 ring-warn/40"
-                    dir="ltr"
-                  >
-                    {formatPlate(activeCar.plate)}
+              {activeCar.year != null && (
+                <InfoTile label="שנת ייצור">
+                  <p className="text-lg font-black tracking-tight">{activeCar.year}</p>
+                </InfoTile>
+              )}
+              {activeCar.color && (
+                <InfoTile label="צבע">
+                  <p className="text-lg font-black">{activeCar.color}</p>
+                </InfoTile>
+              )}
+              {activeCar.fuelType && (
+                <InfoTile label="סוג דלק">
+                  <p className="text-lg font-black">{activeCar.fuelType}</p>
+                </InfoTile>
+              )}
+              {activeCar.vin && (
+                <InfoTile label="מספר שלדה (VIN)" span>
+                  <p className="text-base font-black tracking-wide" dir="ltr">
+                    {activeCar.vin}
                   </p>
-                </Card>
-                {activeCar.year != null && (
-                  <Card className="!p-3.5">
-                    <p className="text-[12px] font-semibold text-ink-3">שנת ייצור</p>
-                    <p className="mt-1 text-lg font-black tracking-tight">{activeCar.year}</p>
-                  </Card>
-                )}
-                {activeCar.color && (
-                  <Card className="!p-3.5">
-                    <p className="text-[12px] font-semibold text-ink-3">צבע</p>
-                    <p className="mt-1 text-lg font-black">{activeCar.color}</p>
-                  </Card>
-                )}
-                {activeCar.fuelType && (
-                  <Card className="!p-3.5">
-                    <p className="text-[12px] font-semibold text-ink-3">סוג דלק</p>
-                    <p className="mt-1 text-lg font-black">{activeCar.fuelType}</p>
-                  </Card>
-                )}
-                {activeCar.vin && (
-                  <Card className="col-span-2 !p-3.5">
-                    <p className="text-[12px] font-semibold text-ink-3">מספר שלדה (VIN)</p>
-                    <p className="mt-1 text-base font-black tracking-wide" dir="ltr">
-                      {activeCar.vin}
-                    </p>
-                  </Card>
-                )}
-                {activeCar.blocks.map((block) => (
-                  <Card
-                    key={block.id}
-                    className={cn('!p-3.5', block.type === 'text' && block.value.length > 40 && 'col-span-2')}
-                  >
-                    <p className="flex items-center gap-1.5 text-[12px] font-semibold text-ink-3">
-                      {blockIcon(block)}
-                      {block.title}
-                    </p>
-                    <div className="mt-1">
-                      <BlockValue block={block} />
-                    </div>
-                  </Card>
-                ))}
-              </div>
-
+                </InfoTile>
+              )}
+              {activeCar.blocks.map((block) => (
+                <InfoTile
+                  key={block.id}
+                  label={block.title}
+                  icon={blockIcon(block)}
+                  span={block.type === 'text' && block.value.length > 40}
+                >
+                  <BlockValue block={block} />
+                </InfoTile>
+              ))}
               {activeCar.notes && (
-                <Card className="!p-3.5">
-                  <p className="text-[12px] font-semibold text-ink-3">הערות</p>
-                  <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed">{activeCar.notes}</p>
-                </Card>
+                <InfoTile label="הערות" span>
+                  <p className="whitespace-pre-wrap text-sm font-medium leading-relaxed">{activeCar.notes}</p>
+                </InfoTile>
               )}
             </motion.div>
           )}

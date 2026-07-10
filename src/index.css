@@ -493,6 +493,78 @@ body {
   padding-top: max(env(safe-area-inset-top), 14px);
 }
 
+/* ==========================================================
+   LIQUID GLASS COCKPIT — the redesign's core surface language.
+   Bento tiles are frosted glass floating over a per-car color glow.
+   ========================================================== */
+
+.cockpit {
+  position: relative;
+}
+.cockpit::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(64% 42% at 50% 8%, color-mix(in srgb, var(--car-color, var(--color-cta)) 42%, transparent), transparent 72%),
+    radial-gradient(52% 30% at 84% 54%, color-mix(in srgb, var(--car-color, var(--color-cta)) 22%, transparent), transparent 70%),
+    radial-gradient(46% 30% at 12% 78%, color-mix(in srgb, var(--car-color, var(--color-cta)) 16%, transparent), transparent 70%);
+  filter: blur(26px);
+  transition: background 0.6s ease;
+}
+
+.glass-tile {
+  position: relative;
+  border-radius: 1.6rem;
+  background: rgb(255 255 255 / 0.5);
+  border: 1px solid rgb(255 255 255 / 0.6);
+  backdrop-filter: blur(22px) saturate(1.45);
+  -webkit-backdrop-filter: blur(22px) saturate(1.45);
+  box-shadow:
+    0 12px 30px -16px rgb(15 23 42 / 0.45),
+    inset 0 1px 0 rgb(255 255 255 / 0.7);
+  overflow: hidden;
+}
+.dark .glass-tile {
+  background: rgb(22 27 44 / 0.52);
+  border-color: rgb(255 255 255 / 0.12);
+  box-shadow:
+    0 16px 38px -14px rgb(0 0 0 / 0.62),
+    inset 0 1px 0 rgb(255 255 255 / 0.1);
+}
+/* specular sheen across the top of each tile */
+.glass-tile::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 42%;
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.35), transparent);
+  pointer-events: none;
+}
+.dark .glass-tile::after {
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.08), transparent);
+}
+.glass-tile > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* a floating glass action pill (nav / controls in the cockpit) */
+.glass-bar {
+  background: rgb(255 255 255 / 0.55);
+  border: 1px solid rgb(255 255 255 / 0.6);
+  backdrop-filter: blur(26px) saturate(1.5);
+  -webkit-backdrop-filter: blur(26px) saturate(1.5);
+  box-shadow: 0 18px 44px -14px rgb(15 23 42 / 0.4), inset 0 1px 0 rgb(255 255 255 / 0.7);
+}
+.dark .glass-bar {
+  background: rgb(20 24 40 / 0.6);
+  border-color: rgb(255 255 255 / 0.14);
+  box-shadow: 0 20px 48px -14px rgb(0 0 0 / 0.6), inset 0 1px 0 rgb(255 255 255 / 0.12);
+}
+
 /* Native date/time indicator is hidden — we render our own field UI and
    only borrow the OS picker. */
 input.native-picker::-webkit-calendar-picker-indicator {

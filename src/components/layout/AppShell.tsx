@@ -76,7 +76,7 @@ export default function AppShell() {
             initial={{ y: 80, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ type: 'spring', stiffness: 300, damping: 28, delay: 0.1 }}
-            className="nav-bar flex items-center justify-between rounded-[2rem] bg-card px-3 py-2 shadow-float ring-1 ring-line"
+            className="nav-bar glass-bar flex items-center justify-between rounded-[2rem] px-3 py-2"
           >
             {tabs.map((tab) =>
               tab.to === null ? (
