@@ -1,8 +1,8 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import PageHeader from '../components/layout/PageHeader'
 import PhotoPicker from '../components/PhotoPicker'
-import { IconPhone, IconPlus, IconShield, IconTrash } from '../components/icons'
+import { IconPhone, IconPlus, IconShield, IconSparkles, IconTrash } from '../components/icons'
 import { motion } from 'motion/react'
 import {
   Badge,
@@ -14,6 +14,7 @@ import {
   Field,
   Input,
   ListSkeleton,
+  Spinner,
   TextArea,
   listItem,
   listStagger,
@@ -23,6 +24,8 @@ import { useCars } from '../contexts/CarsContext'
 import { useToast } from '../contexts/ToastContext'
 import { repo } from '../data'
 import { useCollection } from '../hooks/useCollection'
+import { compressToDataUrl } from '../lib/images'
+import { scanDocument } from '../lib/ocr'
 import { carDisplayName } from '../lib/reminders'
 import { dueLabel, dueStatus, formatDate, formatMoney, newId, todayISO } from '../lib/utils'
 import type { InsuranceKind, InsuranceRecord } from '../types'
@@ -192,11 +195,56 @@ function InsuranceEditor({
 }) {
   const [r, setR] = useState(record)
   const [saving, setSaving] = useState(false)
+  const [scanning, setScanning] = useState(false)
+  const [scanPct, setScanPct] = useState(0)
+  const scanRef = useRef<HTMLInputElement>(null)
+  const { toast } = useToast()
   const isNew = !record.createdAt
+
+  const runScan = async (file: File) => {
+    setScanning(true)
+    setScanPct(0)
+    try {
+      const res = await scanDocument(file, setScanPct)
+      setR((prev) => ({
+        ...prev,
+        endDate: res.date || prev.endDate,
+        policyNumber: res.number || prev.policyNumber,
+      }))
+      // also keep the scanned image as an attachment
+      const dataUrl = await compressToDataUrl(file, 'document')
+      setR((prev) => ({ ...prev, photos: [...prev.photos, dataUrl] }))
+      toast(res.date || res.number ? 'זוהו פרטים — בדקו ואשרו' : 'לא זוהו פרטים ברורים, מלאו ידנית', res.date || res.number ? 'success' : 'info')
+    } catch {
+      toast('הסריקה נכשלה, נסו שוב', 'error')
+    } finally {
+      setScanning(false)
+    }
+  }
 
   return (
     <BottomSheet title={isNew ? 'פוליסה חדשה' : 'עריכת פוליסה'} onClose={onClose}>
       <div className="space-y-4">
+        {/* smart scan */}
+        <button
+          onClick={() => scanRef.current?.click()}
+          disabled={scanning}
+          className="flex w-full items-center justify-center gap-2 rounded-full bg-accent py-3.5 text-base font-black text-accent-ink shadow-card active:scale-[0.98] disabled:opacity-60"
+        >
+          {scanning ? <Spinner className="size-5 border-2 border-accent-ink/30 border-t-accent-ink" /> : <IconSparkles size={20} />}
+          {scanning ? `סורק… ${Math.round(scanPct * 100)}%` : 'סריקה חכמה של הפוליסה'}
+        </button>
+        <input
+          ref={scanRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0]
+            if (f) void runScan(f)
+            e.target.value = ''
+          }}
+        />
         <div className="grid grid-cols-2 gap-3">
           <Field label="סוג ביטוח">
             <Select

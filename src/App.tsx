@@ -12,6 +12,7 @@ import GloveboxPage from './pages/GloveboxPage'
 import HomePage from './pages/HomePage'
 import InsurancePage from './pages/InsurancePage'
 import LoginPage from './pages/LoginPage'
+import PassportPage from './pages/PassportPage'
 import RemindersPage from './pages/RemindersPage'
 import ServicesPage from './pages/ServicesPage'
 import SettingsPage from './pages/SettingsPage'
@@ -32,6 +33,14 @@ function RequireAuth({ children }: { children: ReactNode }) {
 
 const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
+  {
+    path: '/car/:id/passport',
+    element: (
+      <RequireAuth>
+        <PassportPage />
+      </RequireAuth>
+    ),
+  },
   {
     path: '/',
     element: (

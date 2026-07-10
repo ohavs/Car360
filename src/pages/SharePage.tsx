@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import PageHeader from '../components/layout/PageHeader'
-import { IconPlus, IconUsers, IconX } from '../components/icons'
+import { IconChevronLeft, IconFile, IconPlus, IconUsers, IconX } from '../components/icons'
 import { Button, Card, ConfirmDialog, Field, Input } from '../components/ui'
 import { useAuth } from '../contexts/AuthContext'
 import { useCars } from '../contexts/CarsContext'
@@ -70,6 +70,20 @@ export default function SharePage() {
             README). בינתיים אפשר לנהל כאן את רשימת המשותפים והיא תסונכרן ברגע שהענן יחובר.
           </Card>
         )}
+
+        {/* car passport export (great for selling) */}
+        <Link to={`/car/${car.id}/passport`}>
+          <Card onClick={() => {}} className="flex items-center gap-3">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-accent text-accent-ink">
+              <IconFile size={22} />
+            </span>
+            <span className="flex-1">
+              <span className="block text-lg font-black">דרכון רכב (PDF)</span>
+              <span className="block text-sm text-ink-3">מסמך מסודר עם כל ההיסטוריה — מצוין למכירת הרכב</span>
+            </span>
+            <IconChevronLeft size={22} className="text-ink-3" />
+          </Card>
+        </Link>
 
         <Card className="space-y-3">
           <div className="flex items-center gap-3">
