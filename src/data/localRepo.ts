@@ -3,6 +3,7 @@ import type {
   CarDocument,
   CustomReminder,
   InsuranceRecord,
+  PublicPassport,
   ServiceRecord,
   UserProfile,
 } from '../types'
@@ -76,6 +77,10 @@ export const localRepo: Repo = {
   // local mode keeps compressed images inline as data URLs
   uploadImage: async (_path, dataUrl) => dataUrl,
   deleteImage: async () => {},
+
+  publishPassport: (passport) => idbSet(`public:${passport.token}`, passport),
+  getPublicPassport: (token) => idbGet<PublicPassport>(`public:${token}`).then((p) => p ?? null),
+  unpublishPassport: (token) => idbDelete(`public:${token}`),
 
   async exportAll(user: UserProfile) {
     const cars = await getList<Car>(K.cars)

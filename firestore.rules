@@ -22,6 +22,13 @@ service cloud.firestore {
       allow read, write: if isSignedIn() && request.auth.uid == uid;
     }
 
+    // public, read-only car passports — anyone with the (unguessable) token
+    // may read; only signed-in users can publish or revoke a link.
+    match /publicPassports/{token} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
     match /cars/{carId} {
       allow read: if canAccessCar(resource.data);
       allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;

@@ -3,6 +3,7 @@ import type {
   CarDocument,
   CustomReminder,
   InsuranceRecord,
+  PublicPassport,
   ServiceRecord,
   UserProfile,
 } from '../types'
@@ -121,6 +122,22 @@ export const firebaseRepo: Repo = {
     } catch {
       // already gone / no permission — non-fatal
     }
+  },
+
+  async publishPassport(passport) {
+    const { fs, store } = await db()
+    await fs.setDoc(fs.doc(store, 'publicPassports', passport.token), clean(passport))
+  },
+
+  async getPublicPassport(token) {
+    const { fs, store } = await db()
+    const snap = await fs.getDoc(fs.doc(store, 'publicPassports', token))
+    return snap.exists() ? (snap.data() as PublicPassport) : null
+  },
+
+  async unpublishPassport(token) {
+    const { fs, store } = await db()
+    await fs.deleteDoc(fs.doc(store, 'publicPassports', token))
   },
 
   async exportAll(user: UserProfile) {

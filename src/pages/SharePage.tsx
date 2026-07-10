@@ -1,13 +1,24 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import PageHeader from '../components/layout/PageHeader'
-import { IconChevronLeft, IconFile, IconPlus, IconUsers, IconX } from '../components/icons'
+import {
+  IconCheck,
+  IconChevronLeft,
+  IconFile,
+  IconLink,
+  IconPlus,
+  IconTrash,
+  IconUsers,
+  IconX,
+} from '../components/icons'
 import { Button, Card, ConfirmDialog, Field, Input } from '../components/ui'
 import { useAuth } from '../contexts/AuthContext'
 import { useCars } from '../contexts/CarsContext'
 import { useToast } from '../contexts/ToastContext'
 import { repo } from '../data'
 import { carDisplayName } from '../lib/reminders'
+import { newToken } from '../lib/utils'
+import type { PublicPassport } from '../types'
 
 export default function SharePage() {
   const { id: carId } = useParams()
@@ -19,6 +30,9 @@ export default function SharePage() {
   const [email, setEmail] = useState('')
   const [removeEmail, setRemoveEmail] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [linkBusy, setLinkBusy] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const [revokeLink, setRevokeLink] = useState(false)
 
   if (!car) return <div className="px-4"><PageHeader title="שיתוף הרכב" /></div>
 
@@ -59,6 +73,77 @@ export default function SharePage() {
     toast('השיתוף הוסר')
   }
 
+  const publicUrl = car.publicToken ? `${location.origin}/p/${car.publicToken}` : null
+
+  const buildSnapshot = async (token: string): Promise<PublicPassport> => {
+    const [services, insurances] = await Promise.all([
+      repo.listServices(car.id),
+      repo.listInsurances(car.id),
+    ])
+    return {
+      token,
+      car: {
+        nickname: car.nickname,
+        make: car.make,
+        model: car.model,
+        year: car.year,
+        plate: car.plate,
+        color: car.color,
+        vin: car.vin,
+        fuelType: car.fuelType,
+        imageUrl: car.imageUrl,
+        testExpiry: car.testExpiry,
+      },
+      services,
+      insurances,
+      publishedAt: Date.now(),
+    }
+  }
+
+  const publishLink = async (isUpdate: boolean) => {
+    setLinkBusy(true)
+    try {
+      const token = car.publicToken ?? newToken()
+      await repo.publishPassport(await buildSnapshot(token))
+      if (!car.publicToken) {
+        await repo.saveCar({ ...car, publicToken: token, updatedAt: Date.now() })
+        await refresh()
+      }
+      toast(isUpdate ? 'הקישור עודכן לנתונים העדכניים' : 'קישור ציבורי נוצר')
+    } catch {
+      toast('הפעולה נכשלה, נסו שוב', 'error')
+    } finally {
+      setLinkBusy(false)
+    }
+  }
+
+  const revoke = async () => {
+    if (!car.publicToken) return
+    setLinkBusy(true)
+    try {
+      await repo.unpublishPassport(car.publicToken)
+      await repo.saveCar({ ...car, publicToken: undefined, updatedAt: Date.now() })
+      await refresh()
+      toast('הקישור בוטל')
+    } catch {
+      toast('הביטול נכשל, נסו שוב', 'error')
+    } finally {
+      setLinkBusy(false)
+      setRevokeLink(false)
+    }
+  }
+
+  const copyLink = async () => {
+    if (!publicUrl) return
+    try {
+      await navigator.clipboard.writeText(publicUrl)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1600)
+    } catch {
+      toast('ההעתקה נכשלה — סמנו והעתיקו ידנית', 'info')
+    }
+  }
+
   return (
     <div className="px-4">
       <PageHeader title="שיתוף הרכב" subtitle={carDisplayName(car)} />
@@ -84,6 +169,64 @@ export default function SharePage() {
             <IconChevronLeft size={22} className="text-ink-3" />
           </Card>
         </Link>
+
+        {/* public read-only passport link */}
+        <Card className="space-y-3">
+          <div className="flex items-center gap-3">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-card-2">
+              <IconLink size={20} />
+            </span>
+            <div>
+              <p className="font-bold">קישור ציבורי לצפייה</p>
+              <p className="text-xs text-ink-3">
+                כל מי שיש לו את הקישור רואה דרכון לקריאה בלבד — בלי חשבון. לא כולל מסמכים או פרטי קשר.
+              </p>
+            </div>
+          </div>
+
+          {publicUrl ? (
+            <>
+              <div className="flex items-center gap-2">
+                <Input
+                  readOnly
+                  dir="ltr"
+                  value={publicUrl}
+                  onFocus={(e) => e.currentTarget.select()}
+                  className="flex-1 !text-xs"
+                />
+                <button
+                  onClick={() => void copyLink()}
+                  aria-label="העתקת הקישור"
+                  className="flex size-11 shrink-0 items-center justify-center rounded-field bg-accent text-accent-ink active:scale-90"
+                >
+                  {copied ? <IconCheck size={18} /> : <IconLink size={18} />}
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Button variant="secondary" onClick={() => void publishLink(true)} disabled={linkBusy}>
+                  עדכון הקישור
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="!text-danger"
+                  onClick={() => setRevokeLink(true)}
+                  disabled={linkBusy}
+                >
+                  <IconTrash size={16} />
+                  ביטול
+                </Button>
+              </div>
+              <p className="text-[11px] text-ink-3">
+                הקישור מציג צילום מצב מרגע היצירה/עדכון. הוספתם טיפול? לחצו “עדכון הקישור”.
+              </p>
+            </>
+          ) : (
+            <Button className="w-full" onClick={() => void publishLink(false)} disabled={linkBusy}>
+              <IconLink size={18} />
+              {linkBusy ? 'יוצר…' : 'יצירת קישור ציבורי'}
+            </Button>
+          )}
+        </Card>
 
         <Card className="space-y-3">
           <div className="flex items-center gap-3">
@@ -154,6 +297,16 @@ export default function SharePage() {
           confirmLabel="הסרה"
           onConfirm={() => void remove()}
           onCancel={() => setRemoveEmail(null)}
+        />
+      )}
+
+      {revokeLink && (
+        <ConfirmDialog
+          title="לבטל את הקישור הציבורי?"
+          message="כל מי שיש לו את הקישור לא יוכל יותר לצפות בדרכון הרכב."
+          confirmLabel="ביטול הקישור"
+          onConfirm={() => void revoke()}
+          onCancel={() => setRevokeLink(false)}
         />
       )}
     </div>

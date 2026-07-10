@@ -36,8 +36,31 @@ export interface Car {
   blocks: InfoBlock[]
   /** emails of users the car is shared with */
   sharedWith: string[]
+  /** random token for a public, read-only passport link (owner-generated) */
+  publicToken?: string
   createdAt: number
   updatedAt: number
+}
+
+/** A frozen, read-only snapshot of a car's passport, published under a random
+ *  token so anyone with the link can view it without an account. */
+export interface PublicPassport {
+  token: string
+  car: {
+    nickname?: string
+    make: string
+    model: string
+    year?: number
+    plate: string
+    color?: string
+    vin?: string
+    fuelType?: string
+    imageUrl?: string
+    testExpiry?: string
+  }
+  services: ServiceRecord[]
+  insurances: InsuranceRecord[]
+  publishedAt: number
 }
 
 export interface ServiceRecord {

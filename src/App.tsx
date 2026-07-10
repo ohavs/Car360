@@ -13,6 +13,7 @@ import HomePage from './pages/HomePage'
 import InsurancePage from './pages/InsurancePage'
 import LoginPage from './pages/LoginPage'
 import PassportPage from './pages/PassportPage'
+import PublicPassportPage from './pages/PublicPassportPage'
 import RemindersPage from './pages/RemindersPage'
 import ServicesPage from './pages/ServicesPage'
 import SettingsPage from './pages/SettingsPage'
@@ -33,6 +34,7 @@ function RequireAuth({ children }: { children: ReactNode }) {
 
 const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
+  { path: '/p/:token', element: <PublicPassportPage /> },
   {
     path: '/car/:id/passport',
     element: (

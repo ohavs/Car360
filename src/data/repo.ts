@@ -3,6 +3,7 @@ import type {
   CarDocument,
   CustomReminder,
   InsuranceRecord,
+  PublicPassport,
   ServiceRecord,
   UserProfile,
 } from '../types'
@@ -38,6 +39,13 @@ export interface Repo {
    *  local mode: the data URL itself. firebase mode: Storage download URL. */
   uploadImage(path: string, dataUrl: string): Promise<string>
   deleteImage(url: string): Promise<void>
+
+  /** Publish (or refresh) a public read-only passport snapshot under a token. */
+  publishPassport(passport: PublicPassport): Promise<void>
+  /** Read a public passport by token — no auth required. */
+  getPublicPassport(token: string): Promise<PublicPassport | null>
+  /** Revoke a public passport link. */
+  unpublishPassport(token: string): Promise<void>
 
   /** Export everything owned by the user as a JSON blob (backup). */
   exportAll(user: UserProfile): Promise<string>

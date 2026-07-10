@@ -10,6 +10,13 @@ export function newId(): string {
   )
 }
 
+/** Long, unguessable URL-safe token for public share links. */
+export function newToken(): string {
+  const bytes = new Uint8Array(18)
+  crypto.getRandomValues(bytes)
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
+}
+
 export function todayISO(): string {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
