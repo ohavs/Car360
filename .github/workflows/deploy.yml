@@ -27,6 +27,12 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          # Optional: enables Gemini-powered "smart scan". Without the secret the
+          # app falls back to on-device Tesseract OCR. Set it under
+          # Settings → Secrets and variables → Actions.
+          VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY }}
+          VITE_GEMINI_MODEL: ${{ secrets.VITE_GEMINI_MODEL }}
 
       - name: Deploy hosting + Firestore rules
         run: npx firebase-tools@13 deploy --only hosting,firestore:rules --project car360-50b44 --non-interactive --force

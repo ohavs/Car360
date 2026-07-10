@@ -25,6 +25,7 @@ import { useToast } from '../contexts/ToastContext'
 import { repo } from '../data'
 import { useCollection } from '../hooks/useCollection'
 import { compressToDataUrl } from '../lib/images'
+import { extractInsurance, isGeminiConfigured } from '../lib/gemini'
 import { scanDocument } from '../lib/ocr'
 import { carDisplayName } from '../lib/reminders'
 import { dueLabel, dueStatus, formatDate, formatMoney, newId, todayISO } from '../lib/utils'
@@ -201,22 +202,53 @@ function InsuranceEditor({
   const { toast } = useToast()
   const isNew = !record.createdAt
 
+  const runTesseract = async (file: File) => {
+    const res = await scanDocument(file, setScanPct)
+    setR((prev) => ({
+      ...prev,
+      endDate: res.date || prev.endDate,
+      policyNumber: res.number || prev.policyNumber,
+    }))
+    return Boolean(res.date || res.number)
+  }
+
   const runScan = async (file: File) => {
     setScanning(true)
     setScanPct(0)
     try {
-      const res = await scanDocument(file, setScanPct)
-      setR((prev) => ({
-        ...prev,
-        endDate: res.date || prev.endDate,
-        policyNumber: res.number || prev.policyNumber,
-      }))
-      // also keep the scanned image as an attachment
+      // always keep the scanned image as an attachment
       const dataUrl = await compressToDataUrl(file, 'document')
       setR((prev) => ({ ...prev, photos: [...prev.photos, dataUrl] }))
-      toast(res.date || res.number ? 'זוהו פרטים — בדקו ואשרו' : 'לא זוהו פרטים ברורים, מלאו ידנית', res.date || res.number ? 'success' : 'info')
+
+      if (isGeminiConfigured) {
+        setScanPct(0.4)
+        const f = await extractInsurance(file)
+        setScanPct(1)
+        const got = Object.keys(f).length > 0
+        setR((prev) => ({
+          ...prev,
+          company: f.company ?? prev.company,
+          kind: f.kind ?? prev.kind,
+          policyNumber: f.policyNumber ?? prev.policyNumber,
+          startDate: f.startDate ?? prev.startDate,
+          endDate: f.endDate ?? prev.endDate,
+          cost: f.cost ?? prev.cost,
+          agentName: f.agentName ?? prev.agentName,
+          agentPhone: f.agentPhone ?? prev.agentPhone,
+        }))
+        toast(got ? 'הפרטים זוהו — בדקו ואשרו' : 'לא זוהו פרטים ברורים, מלאו ידנית', got ? 'success' : 'info')
+      } else {
+        const got = await runTesseract(file)
+        toast(got ? 'זוהו פרטים — בדקו ואשרו' : 'לא זוהו פרטים ברורים, מלאו ידנית', got ? 'success' : 'info')
+      }
     } catch {
-      toast('הסריקה נכשלה, נסו שוב', 'error')
+      // Gemini failed (offline / quota / bad key) — fall back to on-device OCR
+      try {
+        const got = await runTesseract(file)
+        toast(got ? 'זוהו פרטים בסריקה מקומית — בדקו ואשרו' : 'הסריקה לא זיהתה פרטים, מלאו ידנית', 'info')
+      } catch {
+        toast('הסריקה נכשלה, נסו שוב', 'error')
+      }
     } finally {
       setScanning(false)
     }
@@ -232,7 +264,11 @@ function InsuranceEditor({
           className="flex w-full items-center justify-center gap-2 rounded-full bg-accent py-3.5 text-base font-black text-accent-ink shadow-card active:scale-[0.98] disabled:opacity-60"
         >
           {scanning ? <Spinner className="size-5 border-2 border-accent-ink/30 border-t-accent-ink" /> : <IconSparkles size={20} />}
-          {scanning ? `סורק… ${Math.round(scanPct * 100)}%` : 'סריקה חכמה של הפוליסה'}
+          {scanning
+            ? isGeminiConfigured
+              ? 'מנתח את המסמך…'
+              : `סורק… ${Math.round(scanPct * 100)}%`
+            : 'סריקה חכמה של הפוליסה'}
         </button>
         <input
           ref={scanRef}
