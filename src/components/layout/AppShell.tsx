@@ -1,7 +1,8 @@
 import { AnimatePresence, motion } from 'motion/react'
-import { useState } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useCars } from '../../contexts/CarsContext'
+import { extractCarColor, type CarColor } from '../../lib/colorExtract'
 import { cn } from '../../lib/utils'
 import {
   IconBell,
@@ -26,8 +27,22 @@ const tabs = [
 
 export default function AppShell() {
   const [quickAdd, setQuickAdd] = useState(false)
-  const { activeCarId } = useCars()
+  const { activeCarId, activeCar } = useCars()
+  const [carColor, setCarColor] = useState<CarColor | null>(null)
   const navigate = useNavigate()
+
+  // theme the whole cockpit from the active car's photo (app-wide glow)
+  useEffect(() => {
+    let cancelled = false
+    if (activeCar?.imageUrl) {
+      void extractCarColor(activeCar.imageUrl).then((c) => !cancelled && setCarColor(c))
+    } else {
+      setCarColor(null)
+    }
+    return () => {
+      cancelled = true
+    }
+  }, [activeCar?.imageUrl])
   const location = useLocation()
   // group routes into "sections" so navigating between top-level tabs animates,
   // but query-only changes (e.g. ?add=1) don't remount the page
@@ -58,7 +73,10 @@ export default function AppShell() {
   ]
 
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col">
+    <div
+      className="cockpit mx-auto flex min-h-dvh w-full max-w-md flex-col"
+      style={carColor ? ({ ['--car-color']: carColor.hex } as CSSProperties) : undefined}
+    >
       <main className="flex-1 pb-36">
         <motion.div
           key={routeKey}

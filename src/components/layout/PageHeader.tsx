@@ -19,14 +19,14 @@ export default function PageHeader({
 }) {
   const navigate = useNavigate()
   return (
-    <header className="sticky top-0 z-40 -mx-4 mb-4 bg-canvas/85 px-4 py-3 pt-safe backdrop-blur-md">
+    <header className="sticky top-0 z-40 -mx-4 mb-4 bg-canvas/50 px-4 py-3 pt-safe backdrop-blur-xl">
       <div className="flex items-center gap-3">
         <motion.button
           aria-label="חזרה"
           whileTap={{ scale: 0.85 }}
           transition={spring}
           onClick={onBack ?? (() => navigate(-1))}
-          className="flex size-11 shrink-0 items-center justify-center rounded-full bg-card text-ink shadow-card ring-1 ring-line"
+          className="glass-bar flex size-11 shrink-0 items-center justify-center rounded-full text-ink"
         >
           <IconChevronRight size={22} />
         </motion.button>

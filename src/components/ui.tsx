@@ -111,13 +111,13 @@ export function Card({
         onClick={onClick}
         whileTap={{ scale: 0.98 }}
         transition={spring}
-        className={cn('block w-full rounded-card bg-card p-4 text-start shadow-card', className)}
+        className={cn('glass-tile block w-full p-4 text-start', className)}
       >
         {children}
       </motion.button>
     )
   }
-  return <div className={cn('block w-full rounded-card bg-card p-4 text-start shadow-card', className)}>{children}</div>
+  return <div className={cn('glass-tile block w-full p-4 text-start', className)}>{children}</div>
 }
 
 export function Badge({
@@ -219,7 +219,7 @@ export function Modal({
         initial={{ opacity: 0, scale: 0.92, y: 14 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={springSoft}
-        className="relative z-10 m-4 w-full max-w-md rounded-card bg-card p-5 shadow-float"
+        className="glass-tile relative z-10 m-4 w-full max-w-md p-5"
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-black">{title}</h2>
@@ -248,9 +248,9 @@ export function BottomSheet({
         initial={{ y: '100%' }}
         animate={{ y: 0 }}
         transition={{ type: 'spring', stiffness: 380, damping: 40 }}
-        className="relative z-10 max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-t-[2.25rem] bg-canvas shadow-float sm:rounded-card"
+        className="relative z-10 max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-t-[2.25rem] border-t border-white/40 bg-canvas/85 shadow-float backdrop-blur-2xl sm:rounded-card dark:border-white/12"
       >
-        <div className="sticky top-0 z-10 bg-canvas px-5 pb-2 pt-3">
+        <div className="sticky top-0 z-10 bg-canvas/70 px-5 pb-2 pt-3 backdrop-blur-xl">
           <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-line" />
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-black">{title}</h2>
@@ -286,7 +286,7 @@ export function ConfirmDialog({
         initial={{ opacity: 0, scale: 0.9, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={springSoft}
-        className="relative z-10 m-4 w-full max-w-sm rounded-card bg-card p-6 text-center shadow-float"
+        className="glass-tile relative z-10 m-4 w-full max-w-sm p-6 text-center"
       >
         <motion.div
           initial={{ scale: 0.5, rotate: -8 }}

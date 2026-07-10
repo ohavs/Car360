@@ -1,5 +1,5 @@
 import { motion } from 'motion/react'
-import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import CarCarousel from '../components/cars/CarCarousel'
 import GlassPanel from '../components/cockpit/GlassPanel'
@@ -24,7 +24,6 @@ import { Badge, EmptyState, HomeSkeleton, spring } from '../components/ui'
 import { useAuth } from '../contexts/AuthContext'
 import { useCars } from '../contexts/CarsContext'
 import { useTheme } from '../contexts/ThemeContext'
-import { extractCarColor, type CarColor } from '../lib/colorExtract'
 import { carHealth } from '../lib/health'
 import { carDisplayName, collectReminders, notifyUpcoming } from '../lib/reminders'
 import { cn, dueLabel, dueStatus, formatDate, formatPlate } from '../lib/utils'
@@ -105,7 +104,6 @@ export default function HomePage() {
   const { cars, loading, activeCar, activeCarId, setActiveCarId } = useCars()
   const { theme, toggle } = useTheme()
   const [reminders, setReminders] = useState<DerivedReminder[]>([])
-  const [carColor, setCarColor] = useState<CarColor | null>(null)
 
   useEffect(() => {
     if (cars.length === 0) return
@@ -116,19 +114,6 @@ export default function HomePage() {
       cancelled = true
     }
   }, [cars])
-
-  // theme the cockpit from the active car's photo
-  useEffect(() => {
-    let cancelled = false
-    if (activeCar?.imageUrl) {
-      void extractCarColor(activeCar.imageUrl).then((c) => !cancelled && setCarColor(c))
-    } else {
-      setCarColor(null)
-    }
-    return () => {
-      cancelled = true
-    }
-  }, [activeCar?.imageUrl])
 
   const carReminders = useMemo(
     () => reminders.filter((r) => r.carId === activeCarId),
@@ -144,10 +129,7 @@ export default function HomePage() {
   if (loading) return <HomeSkeleton />
 
   return (
-    <div
-      className="cockpit min-h-dvh px-4 pt-safe"
-      style={carColor ? ({ ['--car-color']: carColor.hex } as CSSProperties) : undefined}
-    >
+    <div className="px-4 pt-safe">
       {/* top bar */}
       <motion.header
         initial={{ opacity: 0 }}
