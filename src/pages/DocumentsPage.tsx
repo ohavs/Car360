@@ -1,7 +1,9 @@
-import { useCallback, useMemo, useState } from 'react'
-import { Navigate, useParams, useSearchParams } from 'react-router-dom'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import PageHeader from '../components/layout/PageHeader'
-import { IconDownload, IconFile, IconPlus, IconTrash } from '../components/icons'
+import CarSilhouette from '../components/cars/CarSilhouette'
+import GlassPanel from '../components/cockpit/GlassPanel'
+import { IconChevronLeft, IconDownload, IconFile, IconPlus, IconTrash } from '../components/icons'
 import { motion } from 'motion/react'
 import {
   BottomSheet,
@@ -10,8 +12,8 @@ import {
   EmptyState,
   Field,
   Input,
+  ListSkeleton,
   Skeleton,
-  Spinner,
   listItem,
   listStagger,
 } from '../components/ui'
@@ -23,29 +25,92 @@ import { useCollection } from '../hooks/useCollection'
 import { compressToDataUrl } from '../lib/images'
 import { carDisplayName } from '../lib/reminders'
 import { cn, formatDate, newId } from '../lib/utils'
-import type { CarDocument, DocumentCategory } from '../types'
+import type { Car, CarDocument, DocumentCategory } from '../types'
 
 const CATEGORIES: DocumentCategory[] = ['רישיון רכב', 'ביטוח', 'טסט', 'קבלה', 'תמונה', 'אחר']
 
-/** /documents (bottom-nav tab) redirects to the active car's documents. */
+/** /documents tab — organised by car, each with its (background-removed)
+ *  photo and a strip of its document thumbnails. */
 export function DocumentsTab() {
-  const { activeCarId, loading, cars } = useCars()
-  if (loading) {
-    return (
-      <div className="flex min-h-[70dvh] items-center justify-center">
-        <Spinner />
-      </div>
+  const { cars, loading } = useCars()
+  const [docs, setDocs] = useState<Record<string, CarDocument[]>>({})
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    if (loading) return
+    let cancelled = false
+    void Promise.all(cars.map((c) => repo.listDocuments(c.id).then((d) => [c.id, d] as const))).then(
+      (pairs) => {
+        if (cancelled) return
+        setDocs(Object.fromEntries(pairs))
+        setReady(true)
+      },
     )
-  }
-  if (!activeCarId || cars.length === 0) {
-    return (
-      <div className="px-4">
-        <PageHeader title="מסמכים" />
+    return () => {
+      cancelled = true
+    }
+  }, [cars, loading])
+
+  return (
+    <div className="px-4">
+      <PageHeader title="מסמכים ותמונות" subtitle="מאורגן לפי רכבים" />
+      {loading || !ready ? (
+        <ListSkeleton />
+      ) : cars.length === 0 ? (
         <EmptyState icon={<IconFile size={26} />} title="אין רכבים עדיין" subtitle="הוסיפו רכב כדי לשמור מסמכים" />
-      </div>
-    )
-  }
-  return <Navigate to={`/car/${activeCarId}/documents`} replace />
+      ) : (
+        <motion.div variants={listStagger} initial="hidden" animate="show" className="space-y-3 pb-8">
+          {cars.map((car) => (
+            <motion.div key={car.id} variants={listItem}>
+              <CarDocsCard car={car} docs={docs[car.id] ?? []} />
+            </motion.div>
+          ))}
+        </motion.div>
+      )}
+    </div>
+  )
+}
+
+function CarDocsCard({ car, docs }: { car: Car; docs: CarDocument[] }) {
+  const recent = [...docs].sort((a, b) => b.createdAt - a.createdAt).slice(0, 6)
+  return (
+    <GlassPanel className="!p-3.5">
+      <Link to={`/car/${car.id}/documents`} className="flex items-center gap-3">
+        <span className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white/40 dark:bg-white/10">
+          {car.imageUrl ? (
+            <img src={car.imageUrl} alt="" className="size-full object-contain p-0.5" />
+          ) : (
+            <CarSilhouette className="h-8 w-auto text-ink-3" />
+          )}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-black">{carDisplayName(car)}</p>
+          <p className="text-xs text-ink-3">{docs.length ? `${docs.length} מסמכים` : 'אין מסמכים עדיין'}</p>
+        </div>
+        <IconChevronLeft size={20} className="text-ink-3" />
+      </Link>
+
+      {recent.length > 0 && (
+        <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto">
+          {recent.map((doc) => (
+            <Link
+              key={doc.id}
+              to={`/car/${car.id}/documents`}
+              className="size-16 shrink-0 overflow-hidden rounded-xl ring-1 ring-white/40 dark:ring-white/10"
+            >
+              <img src={doc.imageUrl} alt={doc.title} className="size-full object-cover" loading="lazy" />
+            </Link>
+          ))}
+          <Link
+            to={`/car/${car.id}/documents?add=1`}
+            className="flex size-16 shrink-0 flex-col items-center justify-center rounded-xl bg-white/40 text-ink-3 ring-1 ring-dashed ring-white/50 dark:bg-white/5 dark:ring-white/15"
+          >
+            <IconPlus size={20} />
+          </Link>
+        </div>
+      )}
+    </GlassPanel>
+  )
 }
 
 export default function DocumentsPage() {

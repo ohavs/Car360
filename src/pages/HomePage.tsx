@@ -10,7 +10,6 @@ import {
   IconCar,
   IconClock,
   IconEdit,
-  IconFile,
   IconLink,
   IconMoon,
   IconPhone,
@@ -74,6 +73,18 @@ function BlockValue({ block }: { block: InfoBlock }) {
     )
   }
   return <span className="whitespace-pre-wrap text-lg font-black">{block.value || '—'}</span>
+}
+
+/** One compact row in the spec sheet. */
+function SpecRow({ label, value, ltr }: { label: string; value: string; ltr?: boolean }) {
+  return (
+    <div className="flex items-center justify-between gap-3 px-4 py-2.5">
+      <dt className="text-[13px] font-semibold text-ink-3">{label}</dt>
+      <dd className={cn('truncate text-[15px] font-black', ltr && 'tracking-wide')} dir={ltr ? 'ltr' : undefined}>
+        {value}
+      </dd>
+    </div>
+  )
 }
 
 /** Small labelled cockpit tile. */
@@ -259,7 +270,6 @@ export default function HomePage() {
                   {[
                     { label: 'טיפולים', icon: IconWrench, to: `/car/${activeCar.id}/services` },
                     { label: 'ביטוחים', icon: IconShield, to: `/car/${activeCar.id}/insurance` },
-                    { label: 'מסמכים', icon: IconFile, to: `/car/${activeCar.id}/documents` },
                     { label: 'ציר זמן', icon: IconClock, to: `/car/${activeCar.id}/timeline` },
                     { label: 'שיתוף', icon: IconShare, to: `/car/${activeCar.id}/share` },
                     { label: 'עריכה', icon: IconEdit, to: `/car/${activeCar.id}/edit` },
@@ -321,27 +331,16 @@ export default function HomePage() {
                 </Link>
               </div>
 
-              {activeCar.year != null && (
-                <InfoTile label="שנת ייצור">
-                  <p className="text-lg font-black tracking-tight">{activeCar.year}</p>
-                </InfoTile>
-              )}
-              {activeCar.color && (
-                <InfoTile label="צבע">
-                  <p className="text-lg font-black">{activeCar.color}</p>
-                </InfoTile>
-              )}
-              {activeCar.fuelType && (
-                <InfoTile label="סוג דלק">
-                  <p className="text-lg font-black">{activeCar.fuelType}</p>
-                </InfoTile>
-              )}
-              {activeCar.vin && (
-                <InfoTile label="מספר שלדה (VIN)" span>
-                  <p className="text-base font-black tracking-wide" dir="ltr">
-                    {activeCar.vin}
-                  </p>
-                </InfoTile>
+              {/* compact spec sheet */}
+              {(activeCar.year != null || activeCar.color || activeCar.fuelType || activeCar.vin) && (
+                <GlassPanel className="col-span-2 !p-0">
+                  <dl className="divide-y divide-white/10 dark:divide-white/5">
+                    {activeCar.year != null && <SpecRow label="שנת ייצור" value={String(activeCar.year)} />}
+                    {activeCar.color && <SpecRow label="צבע" value={activeCar.color} />}
+                    {activeCar.fuelType && <SpecRow label="סוג דלק" value={activeCar.fuelType} />}
+                    {activeCar.vin && <SpecRow label="מספר שלדה" value={activeCar.vin} ltr />}
+                  </dl>
+                </GlassPanel>
               )}
               {activeCar.blocks.map((block) => (
                 <InfoTile

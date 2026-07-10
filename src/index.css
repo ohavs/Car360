@@ -508,10 +508,13 @@ body {
   z-index: -1;
   pointer-events: none;
   opacity: var(--cockpit-glow, 1);
+  /* Two layers: a palette wash (always present, so switching palette is felt)
+     + the per-car accent from the photo. */
   background:
-    radial-gradient(64% 42% at 50% 8%, color-mix(in srgb, var(--car-color, var(--color-cta)) 42%, transparent), transparent 72%),
-    radial-gradient(52% 30% at 84% 54%, color-mix(in srgb, var(--car-color, var(--color-cta)) 22%, transparent), transparent 70%),
-    radial-gradient(46% 30% at 12% 78%, color-mix(in srgb, var(--car-color, var(--color-cta)) 16%, transparent), transparent 70%);
+    radial-gradient(70% 46% at 50% 4%, color-mix(in srgb, var(--color-cta) 26%, transparent), transparent 72%),
+    radial-gradient(60% 40% at 88% 96%, color-mix(in srgb, var(--color-cta) 18%, transparent), transparent 72%),
+    radial-gradient(58% 38% at 50% 10%, color-mix(in srgb, var(--car-color, var(--color-cta)) 40%, transparent), transparent 70%),
+    radial-gradient(50% 30% at 84% 56%, color-mix(in srgb, var(--car-color, var(--color-cta)) 20%, transparent), transparent 70%);
   filter: blur(26px);
   transition: background 0.6s ease, opacity 0.3s ease;
 }
@@ -564,6 +567,17 @@ body {
   background: rgb(20 24 40 / 0.6);
   border-color: rgb(255 255 255 / 0.14);
   box-shadow: 0 20px 48px -14px rgb(0 0 0 / 0.6), inset 0 1px 0 rgb(255 255 255 / 0.12);
+}
+
+/* the bottom nav needs to stay legible over any content behind it — more
+   opaque than a generic glass bar */
+.nav-bar {
+  background: rgb(255 255 255 / 0.86);
+  border-color: rgb(255 255 255 / 0.75);
+}
+.dark .nav-bar {
+  background: rgb(15 19 32 / 0.9);
+  border-color: rgb(255 255 255 / 0.14);
 }
 
 /* Native date/time indicator is hidden — we render our own field UI and

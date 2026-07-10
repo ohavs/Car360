@@ -105,6 +105,7 @@ export interface DerivedReminder {
   key: string
   carId: string
   carName: string
+  carImage?: string
   title: string
   dueDate: string
   time?: string

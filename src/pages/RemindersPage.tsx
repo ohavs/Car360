@@ -123,13 +123,26 @@ export default function RemindersPage() {
                 <Card className="flex items-center gap-3">
                 <span
                   className={cn(
-                    'flex size-11 shrink-0 items-center justify-center rounded-full',
-                    st === 'danger' && 'bg-danger-soft text-danger',
-                    st === 'warn' && 'bg-warn-soft text-warn',
-                    (st === 'ok' || st === 'none') && 'bg-ok-soft text-ok',
+                    'flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl ring-2',
+                    st === 'danger' && 'ring-danger',
+                    st === 'warn' && 'ring-warn',
+                    (st === 'ok' || st === 'none') && 'ring-ok',
                   )}
                 >
-                  <IconBell size={20} />
+                  {r.carImage ? (
+                    <img src={r.carImage} alt={r.carName} className="size-full object-contain p-0.5" />
+                  ) : (
+                    <span
+                      className={cn(
+                        'flex size-full items-center justify-center',
+                        st === 'danger' && 'bg-danger-soft text-danger',
+                        st === 'warn' && 'bg-warn-soft text-warn',
+                        (st === 'ok' || st === 'none') && 'bg-ok-soft text-ok',
+                      )}
+                    >
+                      <IconBell size={20} />
+                    </span>
+                  )}
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-bold">{r.title}</p>

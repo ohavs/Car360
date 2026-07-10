@@ -14,8 +14,8 @@ export async function collectReminders(cars: Car[]): Promise<DerivedReminder[]> 
 
   for (const car of cars) {
     const name = carDisplayName(car)
-    const push = (r: Omit<DerivedReminder, 'daysLeft' | 'carId' | 'carName'>) =>
-      out.push({ ...r, carId: car.id, carName: name, daysLeft: daysUntil(r.dueDate) })
+    const push = (r: Omit<DerivedReminder, 'daysLeft' | 'carId' | 'carName' | 'carImage'>) =>
+      out.push({ ...r, carId: car.id, carName: name, carImage: car.imageUrl, daysLeft: daysUntil(r.dueDate) })
 
     if (car.testExpiry)
       push({ key: `test:${car.id}`, title: 'חידוש טסט (רישוי שנתי)', dueDate: car.testExpiry, source: 'test' })
