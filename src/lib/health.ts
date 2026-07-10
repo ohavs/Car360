@@ -31,7 +31,6 @@ export function carHealth(car: Car, reminders: DerivedReminder[]): {
   const factors: HealthFactor[] = [
     { key: 'test', label: 'טסט', ...fromDate(car.testExpiry) },
     { key: 'insurance', label: 'ביטוח', ...fromDate(insurance?.dueDate) },
-    { key: 'license', label: 'רישיון', ...fromDate(car.licenseExpiry) },
   ]
 
   const score = Math.round(factors.reduce((s, f) => s + f.score, 0) / factors.length)

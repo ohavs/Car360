@@ -10,10 +10,13 @@ export default function CarCarousel({
   cars,
   activeId,
   onChange,
+  onImageClick,
 }: {
   cars: Car[]
   activeId: string | null
   onChange: (id: string) => void
+  /** tap the centred (active) car photo */
+  onImageClick?: (id: string) => void
 }) {
   const trackRef = useRef<HTMLDivElement>(null)
   const suppressScroll = useRef(false)
@@ -115,21 +118,24 @@ export default function CarCarousel({
             className={cn('shrink-0 snap-center px-2', cars.length > 1 ? 'w-[78%]' : 'w-full px-6')}
           >
             <div
-              className="relative flex h-44 items-center justify-center will-change-transform"
-              style={{ transform: 'perspective(900px)' }}
+              role="button"
+              aria-label={car.nickname || `${car.make} ${car.model}`}
+              onClick={() => (car.id === activeId ? onImageClick?.(car.id) : onChange(car.id))}
+              className="relative flex h-60 items-center justify-center will-change-transform"
+              style={{ transform: 'perspective(1000px)' }}
             >
               {car.imageUrl ? (
                 <img
                   src={car.imageUrl}
                   alt={car.nickname || `${car.make} ${car.model}`}
-                  className="max-h-44 w-auto max-w-full object-contain drop-shadow-[0_18px_16px_rgb(0_0_0/0.22)]"
+                  className="max-h-60 w-auto max-w-full object-contain drop-shadow-[0_22px_20px_rgb(0_0_0/0.24)]"
                   draggable={false}
                 />
               ) : (
-                <CarSilhouette className="h-36 w-auto max-w-full text-ink drop-shadow-[0_18px_16px_rgb(0_0_0/0.18)]" />
+                <CarSilhouette className="h-48 w-auto max-w-full text-ink drop-shadow-[0_22px_20px_rgb(0_0_0/0.18)]" />
               )}
               {/* soft floor shadow like the reference design */}
-              <div className="absolute bottom-1 left-1/2 h-4 w-3/5 -translate-x-1/2 rounded-[100%] bg-black/15 blur-md dark:bg-black/40" />
+              <div className="absolute bottom-1 left-1/2 h-5 w-3/5 -translate-x-1/2 rounded-[100%] bg-black/15 blur-md dark:bg-black/40" />
             </div>
           </div>
         ))}

@@ -239,6 +239,14 @@ export const IconFuel = (p: P) => (
   </Svg>
 )
 
+export const IconLifeBuoy = (p: P) => (
+  <Svg {...p}>
+    <circle cx="12" cy="12" r="10" />
+    <circle cx="12" cy="12" r="4" />
+    <path d="M4.9 4.9l4.2 4.2M14.9 14.9l4.2 4.2M14.9 9.1l4.2-4.2M14.9 9.1l3.5-3.5M4.9 19.1l4.2-4.2" />
+  </Svg>
+)
+
 export const IconSparkles = (p: P) => (
   <Svg {...p}>
     <path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3Z" />

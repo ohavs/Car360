@@ -76,18 +76,22 @@ function CarDocsCard({ car, docs }: { car: Car; docs: CarDocument[] }) {
   return (
     <GlassPanel className="!p-3.5">
       <Link to={`/car/${car.id}/documents`} className="flex items-center gap-3">
-        <span className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white/40 dark:bg-white/10">
+        <span className="flex h-20 w-24 shrink-0 items-center justify-center">
           {car.imageUrl ? (
-            <img src={car.imageUrl} alt="" className="size-full object-contain p-0.5" />
+            <img
+              src={car.imageUrl}
+              alt=""
+              className="max-h-20 w-auto max-w-full object-contain drop-shadow-[0_10px_10px_rgb(0_0_0/0.22)]"
+            />
           ) : (
-            <CarSilhouette className="h-8 w-auto text-ink-3" />
+            <CarSilhouette className="h-14 w-auto text-ink-3" />
           )}
         </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate font-black">{carDisplayName(car)}</p>
-          <p className="text-xs text-ink-3">{docs.length ? `${docs.length} מסמכים` : 'אין מסמכים עדיין'}</p>
+          <p className="truncate text-lg font-black">{carDisplayName(car)}</p>
+          <p className="text-sm text-ink-3">{docs.length ? `${docs.length} מסמכים` : 'אין מסמכים עדיין'}</p>
         </div>
-        <IconChevronLeft size={20} className="text-ink-3" />
+        <IconChevronLeft size={22} className="text-ink-3" />
       </Link>
 
       {recent.length > 0 && (

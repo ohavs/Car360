@@ -458,6 +458,12 @@ body,
   height: 100%;
 }
 
+/* Global scale-up: everything sized in rem grows proportionally — larger,
+   bolder, more mobile-friendly. */
+html {
+  font-size: 18px;
+}
+
 /* The app is mobile-only: content never exceeds phone width and the page
    can never pan horizontally. */
 html,
@@ -569,15 +575,17 @@ body {
   box-shadow: 0 20px 48px -14px rgb(0 0 0 / 0.6), inset 0 1px 0 rgb(255 255 255 / 0.12);
 }
 
-/* the bottom nav needs to stay legible over any content behind it — more
-   opaque than a generic glass bar */
+/* the bottom nav must stay fully legible — essentially solid so content
+   behind it never bleeds through */
 .nav-bar {
-  background: rgb(255 255 255 / 0.86);
-  border-color: rgb(255 255 255 / 0.75);
+  background: rgb(248 249 251 / 0.98);
+  border-color: rgb(0 0 0 / 0.06);
+  box-shadow: 0 -2px 12px rgb(15 23 42 / 0.06), 0 18px 44px -14px rgb(15 23 42 / 0.35);
 }
 .dark .nav-bar {
-  background: rgb(15 19 32 / 0.9);
-  border-color: rgb(255 255 255 / 0.14);
+  background: rgb(14 18 30 / 0.99);
+  border-color: rgb(255 255 255 / 0.1);
+  box-shadow: 0 -2px 12px rgb(0 0 0 / 0.4), 0 20px 48px -14px rgb(0 0 0 / 0.6);
 }
 
 /* Native date/time indicator is hidden — we render our own field UI and

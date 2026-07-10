@@ -19,8 +19,6 @@ export async function collectReminders(cars: Car[]): Promise<DerivedReminder[]> 
 
     if (car.testExpiry)
       push({ key: `test:${car.id}`, title: 'חידוש טסט (רישוי שנתי)', dueDate: car.testExpiry, source: 'test' })
-    if (car.licenseExpiry)
-      push({ key: `license:${car.id}`, title: 'חידוש רישיון נהיגה', dueDate: car.licenseExpiry, source: 'license' })
 
     for (const block of car.blocks) {
       if (block.type === 'date' && block.remind && block.value)

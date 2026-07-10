@@ -376,16 +376,11 @@ export default function CarFormPage() {
         {/* key dates */}
         <section className="space-y-3 rounded-card bg-card p-4 shadow-card">
           <h2 className="font-bold">תאריכים חשובים</h2>
-          <div className="grid gap-3">
-            <Field label="תוקף טסט">
-              <DateInput value={draft.testExpiry ?? ''} onChange={(v) => set('testExpiry', v)} />
-            </Field>
-            <Field label="תוקף רישיון נהיגה">
-              <DateInput value={draft.licenseExpiry ?? ''} onChange={(v) => set('licenseExpiry', v)} />
-            </Field>
-          </div>
+          <Field label="תוקף טסט">
+            <DateInput value={draft.testExpiry ?? ''} onChange={(v) => set('testExpiry', v)} />
+          </Field>
           <p className="text-xs leading-relaxed text-ink-3">
-            תאריכים אלו מזינים את מסך התזכורות ואת ההתראות באופן אוטומטי.
+            תאריך זה מזין את מסך התזכורות ואת ההתראות באופן אוטומטי.
           </p>
         </section>
 

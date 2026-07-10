@@ -1,6 +1,6 @@
 import { motion } from 'motion/react'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import CarCarousel from '../components/cars/CarCarousel'
 import GlassPanel from '../components/cockpit/GlassPanel'
 import StatusTile from '../components/cockpit/StatusTile'
@@ -8,8 +8,8 @@ import {
   IconBell,
   IconCalendar,
   IconCar,
-  IconClock,
   IconEdit,
+  IconLifeBuoy,
   IconLink,
   IconMoon,
   IconPhone,
@@ -114,6 +114,7 @@ export default function HomePage() {
   const { user } = useAuth()
   const { cars, loading, activeCar, activeCarId, setActiveCarId } = useCars()
   const { theme, toggle } = useTheme()
+  const navigate = useNavigate()
   const [reminders, setReminders] = useState<DerivedReminder[]>([])
 
   useEffect(() => {
@@ -204,7 +205,12 @@ export default function HomePage() {
       ) : (
         <>
           <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ ...spring, delay: 0.05 }}>
-            <CarCarousel cars={cars} activeId={activeCarId} onChange={setActiveCarId} />
+            <CarCarousel
+              cars={cars}
+              activeId={activeCarId}
+              onChange={setActiveCarId}
+              onImageClick={(id) => navigate(`/car/${id}/edit`)}
+            />
           </motion.div>
 
           {activeCar && (
@@ -270,7 +276,7 @@ export default function HomePage() {
                   {[
                     { label: 'טיפולים', icon: IconWrench, to: `/car/${activeCar.id}/services` },
                     { label: 'ביטוחים', icon: IconShield, to: `/car/${activeCar.id}/insurance` },
-                    { label: 'ציר זמן', icon: IconClock, to: `/car/${activeCar.id}/timeline` },
+                    { label: 'תא כפפות', icon: IconLifeBuoy, to: `/car/${activeCar.id}/glovebox` },
                     { label: 'שיתוף', icon: IconShare, to: `/car/${activeCar.id}/share` },
                     { label: 'עריכה', icon: IconEdit, to: `/car/${activeCar.id}/edit` },
                   ].map((a) => (

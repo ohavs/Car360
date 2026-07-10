@@ -8,6 +8,7 @@ import { Spinner } from './components/ui'
 import { useAuth } from './contexts/AuthContext'
 import CarFormPage from './pages/CarFormPage'
 import DocumentsPage, { DocumentsTab } from './pages/DocumentsPage'
+import GloveboxPage from './pages/GloveboxPage'
 import HomePage from './pages/HomePage'
 import InsurancePage from './pages/InsurancePage'
 import LoginPage from './pages/LoginPage'
@@ -15,7 +16,6 @@ import RemindersPage from './pages/RemindersPage'
 import ServicesPage from './pages/ServicesPage'
 import SettingsPage from './pages/SettingsPage'
 import SharePage from './pages/SharePage'
-import TimelinePage from './pages/TimelinePage'
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth()
@@ -47,7 +47,7 @@ const router = createBrowserRouter([
       { path: 'car/:id/insurance', element: <InsurancePage /> },
       { path: 'car/:id/documents', element: <DocumentsPage /> },
       { path: 'car/:id/share', element: <SharePage /> },
-      { path: 'car/:id/timeline', element: <TimelinePage /> },
+      { path: 'car/:id/glovebox', element: <GloveboxPage /> },
       { path: 'documents', element: <DocumentsTab /> },
       { path: 'reminders', element: <RemindersPage /> },
       { path: 'settings', element: <SettingsPage /> },
