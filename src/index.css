@@ -407,6 +407,51 @@
   filter: blur(58px) brightness(1.15);
 }
 
+/* ==========================================================
+   Component-level skin deepening — so switching a language is
+   felt on the nav, the active pill, chips and layout, not just cards.
+   ========================================================== */
+
+[data-skin='glass'] .nav-bar,
+[data-skin='aurora'] .nav-bar {
+  border-radius: 2.25rem;
+}
+[data-skin='neu'] .nav-bar {
+  border-radius: 1.5rem;
+}
+
+[data-skin='glass'] .nav-pill {
+  background: rgb(255 255 255 / 0.4);
+  border: 1px solid rgb(255 255 255 / 0.65);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.8);
+  backdrop-filter: blur(8px);
+}
+.dark[data-skin='glass'] .nav-pill {
+  background: rgb(255 255 255 / 0.12);
+  border-color: rgb(255 255 255 / 0.18);
+}
+[data-skin='neu'] .nav-pill {
+  background: var(--c-canvas);
+  box-shadow:
+    inset 3px 3px 6px color-mix(in srgb, var(--c-ink) 14%, transparent),
+    inset -3px -3px 6px rgb(255 255 255 / 0.85);
+}
+.dark[data-skin='neu'] .nav-pill {
+  box-shadow: inset 3px 3px 7px rgb(0 0 0 / 0.5), inset -3px -3px 6px rgb(255 255 255 / 0.05);
+}
+[data-skin='aurora'] .nav-pill {
+  background: color-mix(in srgb, var(--c-cta) 24%, transparent);
+  box-shadow: 0 0 16px -2px color-mix(in srgb, var(--c-cta) 65%, transparent);
+}
+
+[data-skin='neu'] .quick-chip {
+  border: none;
+}
+[data-skin='glass'] .quick-chip,
+[data-skin='aurora'] .quick-chip {
+  border-radius: 1.25rem;
+}
+
 html,
 body,
 #root {
@@ -439,12 +484,13 @@ body {
   display: none;
 }
 
-/* Safe-area padding for standalone PWA */
+/* Safe-area padding for standalone PWA — with gentle minimums so content
+   never kisses the very top/bottom edges even without a notch/home-bar. */
 .pb-safe {
-  padding-bottom: max(env(safe-area-inset-bottom), 0px);
+  padding-bottom: max(env(safe-area-inset-bottom), 10px);
 }
 .pt-safe {
-  padding-top: max(env(safe-area-inset-top), 0px);
+  padding-top: max(env(safe-area-inset-top), 14px);
 }
 
 /* Native date/time indicator is hidden — we render our own field UI and

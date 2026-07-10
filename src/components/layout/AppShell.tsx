@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useCars } from '../../contexts/CarsContext'
 import { cn } from '../../lib/utils'
 import {
@@ -33,6 +33,14 @@ export default function AppShell() {
   // but query-only changes (e.g. ?add=1) don't remount the page
   const routeKey = location.pathname
 
+  // active-tab detection that survives redirects (e.g. /documents → /car/:id/documents)
+  const isTabActive = (to: string) => {
+    const p = location.pathname
+    if (to === '/') return p === '/'
+    if (to === '/documents') return p === '/documents' || p.endsWith('/documents')
+    return p.startsWith(to)
+  }
+
   const go = (path: string) => {
     setQuickAdd(false)
     navigate(path)
@@ -63,12 +71,12 @@ export default function AppShell() {
       </main>
 
       <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-50">
-        <div className="mx-auto w-full max-w-md px-4 pb-5 pb-safe [&>*]:pointer-events-auto">
+        <div className="mx-auto w-full max-w-md px-4 pb-6 pb-safe [&>*]:pointer-events-auto">
           <motion.div
             initial={{ y: 80, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ type: 'spring', stiffness: 300, damping: 28, delay: 0.1 }}
-            className="flex items-center justify-between rounded-[2rem] bg-card px-3 py-2 shadow-float ring-1 ring-line"
+            className="nav-bar flex items-center justify-between rounded-[2rem] bg-card px-3 py-2 shadow-float ring-1 ring-line"
           >
             {tabs.map((tab) =>
               tab.to === null ? (
@@ -85,32 +93,41 @@ export default function AppShell() {
                   </motion.span>
                 </motion.button>
               ) : (
-                <NavLink
-                  key={tab.to}
-                  to={tab.to}
-                  className={({ isActive }) =>
-                    cn(
-                      'relative flex min-w-14 flex-col items-center gap-0.5 rounded-2xl px-2 py-1.5 text-[11px] font-bold transition-colors',
-                      isActive ? 'text-cta' : 'text-ink-3',
-                    )
-                  }
-                >
-                  {({ isActive }) => (
-                    <>
-                      {isActive && (
-                        <motion.span
-                          layoutId="nav-pill"
-                          transition={spring}
-                          className="absolute inset-0 rounded-2xl bg-cta-soft"
+                (() => {
+                  const active = isTabActive(tab.to)
+                  return (
+                    <button
+                      key={tab.to}
+                      onClick={() => navigate(tab.to!)}
+                      aria-current={active ? 'page' : undefined}
+                      aria-label={tab.label}
+                      className="flex min-w-14 flex-col items-center gap-1 py-1 outline-none"
+                    >
+                      <span className="relative flex size-9 items-center justify-center">
+                        {active && (
+                          <motion.span
+                            layoutId="nav-pill"
+                            transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+                            className="nav-pill absolute inset-0 rounded-[14px] bg-cta-soft"
+                          />
+                        )}
+                        <tab.icon
+                          size={22}
+                          strokeWidth={active ? 2.4 : 1.8}
+                          className={cn('relative transition-colors', active ? 'text-cta' : 'text-ink-3')}
                         />
-                      )}
-                      <span className="relative">
-                        <tab.icon size={22} strokeWidth={isActive ? 2.3 : 1.8} />
                       </span>
-                      <span className="relative">{tab.label}</span>
-                    </>
-                  )}
-                </NavLink>
+                      <span
+                        className={cn(
+                          'text-[11px] font-bold transition-colors',
+                          active ? 'text-cta' : 'text-ink-3',
+                        )}
+                      >
+                        {tab.label}
+                      </span>
+                    </button>
+                  )
+                })()
               ),
             )}
           </motion.div>

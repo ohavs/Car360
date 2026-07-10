@@ -1,14 +1,14 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import CarCarousel from '../components/cars/CarCarousel'
 import {
   IconBell,
   IconCalendar,
   IconCar,
-  IconChevronLeft,
   IconClock,
   IconEdit,
+  IconFile,
   IconLink,
   IconMoon,
   IconPhone,
@@ -18,7 +18,7 @@ import {
   IconSun,
   IconWrench,
 } from '../components/icons'
-import { Badge, Card, EmptyState, HomeSkeleton, listItem, listStagger, spring } from '../components/ui'
+import { Badge, Card, EmptyState, HomeSkeleton, spring } from '../components/ui'
 import CarHealthRing from '../components/cars/CarHealthRing'
 import { useAuth } from '../contexts/AuthContext'
 import { useCars } from '../contexts/CarsContext'
@@ -79,7 +79,6 @@ export default function HomePage() {
   const { user } = useAuth()
   const { cars, loading, activeCar, activeCarId, setActiveCarId } = useCars()
   const { theme, toggle } = useTheme()
-  const navigate = useNavigate()
   const [reminders, setReminders] = useState<DerivedReminder[]>([])
 
   useEffect(() => {
@@ -190,158 +189,120 @@ export default function HomePage() {
         />
       ) : (
         <>
-          <motion.div initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} transition={{ ...spring, delay: 0.05 }}>
+          <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ ...spring, delay: 0.05 }}>
             <CarCarousel cars={cars} activeId={activeCarId} onChange={setActiveCarId} />
           </motion.div>
 
           {activeCar && (
             <motion.div
               key={activeCar.id}
-              variants={listStagger}
-              initial="hidden"
-              animate="show"
-              className="mt-5 space-y-4 pb-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.22 }}
+              className="mt-4 space-y-3.5 pb-4"
             >
-              {/* quick status row */}
-              <motion.div variants={listItem} className="grid grid-cols-2 gap-3">
-                <Card onClick={() => navigate(`/car/${activeCar.id}/edit`)} className="space-y-1.5">
-                  <p className="text-[13px] font-semibold text-ink-3">טסט (רישוי שנתי)</p>
-                  <p className="text-2xl font-black tracking-tight">{formatDate(activeCar.testExpiry)}</p>
-                  {activeCar.testExpiry && (
-                    <Badge tone={statusTone[dueStatus(activeCar.testExpiry)]}>{dueLabel(activeCar.testExpiry)}</Badge>
-                  )}
-                </Card>
-                <Card onClick={() => navigate(`/car/${activeCar.id}/insurance`)} className="space-y-1.5">
-                  <p className="text-[13px] font-semibold text-ink-3">ביטוח</p>
-                  <InsuranceStatus reminders={carReminders} />
-                </Card>
-              </motion.div>
+              {/* consolidated, self-animating status (gauge + live bars) */}
+              {health && <CarHealthRing score={health.score} factors={health.factors} />}
 
-              {/* action buttons row */}
-              <motion.div variants={listItem} className="flex justify-between px-2">
+              {/* quick actions — horizontal squircle chips (restyle per language) */}
+              <div className="no-scrollbar -mx-4 flex gap-2.5 overflow-x-auto px-4">
                 {[
-                  { label: 'עריכה', icon: IconEdit, to: `/car/${activeCar.id}/edit` },
                   { label: 'טיפולים', icon: IconWrench, to: `/car/${activeCar.id}/services` },
                   { label: 'ביטוחים', icon: IconShield, to: `/car/${activeCar.id}/insurance` },
+                  { label: 'מסמכים', icon: IconFile, to: `/car/${activeCar.id}/documents` },
+                  { label: 'ציר זמן', icon: IconClock, to: `/car/${activeCar.id}/timeline` },
                   { label: 'שיתוף', icon: IconShare, to: `/car/${activeCar.id}/share` },
+                  { label: 'עריכה', icon: IconEdit, to: `/car/${activeCar.id}/edit` },
                 ].map((a) => (
-                  <motion.div key={a.label} whileTap={{ scale: 0.88 }} transition={spring}>
-                    <Link to={a.to} className="flex flex-col items-center gap-1.5">
-                      <span className="flex size-14 items-center justify-center rounded-full bg-card text-ink shadow-card ring-1 ring-line">
-                        <a.icon size={22} />
+                  <motion.div key={a.label} whileTap={{ scale: 0.9 }} transition={spring} className="shrink-0">
+                    <Link to={a.to} className="flex w-16 flex-col items-center gap-1.5">
+                      <span className="quick-chip flex size-13 items-center justify-center rounded-2xl bg-card text-ink shadow-card ring-1 ring-line">
+                        <a.icon size={21} />
                       </span>
-                      <span className="text-xs font-bold text-ink-2">{a.label}</span>
+                      <span className="text-[11px] font-bold text-ink-2">{a.label}</span>
                     </Link>
                   </motion.div>
                 ))}
-              </motion.div>
-
-              {/* car health ring */}
-              {health && (
-                <motion.div variants={listItem}>
-                  <CarHealthRing score={health.score} factors={health.factors} />
-                </motion.div>
-              )}
-
-              {/* timeline entry */}
-              <motion.div variants={listItem}>
-                <Link to={`/car/${activeCar.id}/timeline`}>
-                  <motion.div
-                    whileTap={{ scale: 0.98 }}
-                    className="flex items-center gap-3 rounded-card bg-card p-4 shadow-card"
-                  >
-                    <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-card-2 text-ink">
-                      <IconClock size={20} />
-                    </span>
-                    <span className="flex-1">
-                      <span className="block text-sm font-bold">ציר הזמן של הרכב</span>
-                      <span className="block text-xs text-ink-3">כל הטיפולים, הביטוחים והמסמכים לפי סדר</span>
-                    </span>
-                    <IconChevronLeft size={20} className="text-ink-3" />
-                  </motion.div>
-                </Link>
-              </motion.div>
+              </div>
 
               {/* upcoming reminders for this car */}
               {urgent.length > 0 && (
-                <motion.div variants={listItem}>
-                  <Link to="/reminders">
-                    <motion.div
-                      whileTap={{ scale: 0.98 }}
+                <Link to="/reminders" className="block">
+                  <motion.div
+                    whileTap={{ scale: 0.98 }}
+                    className={cn(
+                      'flex items-center gap-3 rounded-card p-3.5 shadow-card',
+                      urgent[0].daysLeft <= 7 ? 'bg-danger-soft' : 'bg-warn-soft',
+                    )}
+                  >
+                    <motion.span
+                      animate={{ rotate: [0, -12, 12, -8, 8, 0] }}
+                      transition={{ duration: 0.8, delay: 0.8, repeat: 2, repeatDelay: 4 }}
                       className={cn(
-                        'flex items-center gap-3 rounded-card p-4 shadow-card',
-                        urgent[0].daysLeft <= 7 ? 'bg-danger-soft' : 'bg-warn-soft',
+                        'flex size-10 shrink-0 items-center justify-center rounded-full bg-card shadow-card',
+                        urgent[0].daysLeft <= 7 ? 'text-danger' : 'text-warn',
                       )}
                     >
-                      <motion.span
-                        animate={{ rotate: [0, -12, 12, -8, 8, 0] }}
-                        transition={{ duration: 0.8, delay: 1, repeat: 2, repeatDelay: 4 }}
-                        className={cn(
-                          'flex size-10 shrink-0 items-center justify-center rounded-full bg-card shadow-card',
-                          urgent[0].daysLeft <= 7 ? 'text-danger' : 'text-warn',
-                        )}
-                      >
-                        <IconBell size={20} />
-                      </motion.span>
-                      <span className="flex-1">
-                        <span className="block text-sm font-black">
-                          {urgent[0].title} — {dueLabel(urgent[0].dueDate)}
-                        </span>
-                        {urgent.length > 1 && (
-                          <span className="block text-xs font-medium text-ink-2">
-                            ועוד {urgent.length - 1} תזכורות קרובות
-                          </span>
-                        )}
+                      <IconBell size={20} />
+                    </motion.span>
+                    <span className="flex-1">
+                      <span className="block text-sm font-black">
+                        {urgent[0].title} — {dueLabel(urgent[0].dueDate)}
                       </span>
-                    </motion.div>
-                  </Link>
-                </motion.div>
+                      {urgent.length > 1 && (
+                        <span className="block text-xs font-medium text-ink-2">
+                          ועוד {urgent.length - 1} תזכורות קרובות
+                        </span>
+                      )}
+                    </span>
+                  </motion.div>
+                </Link>
               )}
 
               {/* user info blocks */}
-              <motion.div variants={listItem} className="flex items-center justify-between pt-1">
-                <h2 className="text-xl font-black">פרטי הרכב</h2>
+              <div className="flex items-center justify-between pt-0.5">
+                <h2 className="text-lg font-black">פרטי הרכב</h2>
                 <Link
                   to={`/car/${activeCar.id}/edit#blocks`}
-                  className="flex items-center gap-1 rounded-full bg-card px-3 py-1.5 text-[13px] font-bold text-ink-2 shadow-card"
+                  className="flex items-center gap-1 rounded-full bg-card px-3 py-1.5 text-[12px] font-bold text-ink-2 shadow-card"
                 >
-                  <IconPlus size={15} />
+                  <IconPlus size={14} />
                   בלוק מידע
                 </Link>
-              </motion.div>
+              </div>
 
-              <motion.div variants={listItem} className="grid grid-cols-2 gap-3">
-                <Card className="space-y-1.5">
-                  <p className="text-[13px] font-semibold text-ink-3">לוחית רישוי</p>
+              <div className="grid grid-cols-2 gap-2.5">
+                <Card className="!p-3.5">
+                  <p className="text-[12px] font-semibold text-ink-3">לוחית רישוי</p>
                   <p
-                    className="rounded-xl bg-warn-soft px-2 py-1.5 text-center text-xl font-black tracking-widest ring-1 ring-warn/40"
+                    className="mt-1 rounded-lg bg-warn-soft px-2 py-1 text-center text-lg font-black tracking-widest ring-1 ring-warn/40"
                     dir="ltr"
                   >
                     {formatPlate(activeCar.plate)}
                   </p>
                 </Card>
                 {activeCar.year != null && (
-                  <Card className="space-y-1.5">
-                    <p className="text-[13px] font-semibold text-ink-3">שנת ייצור</p>
-                    <p className="text-2xl font-black tracking-tight">{activeCar.year}</p>
+                  <Card className="!p-3.5">
+                    <p className="text-[12px] font-semibold text-ink-3">שנת ייצור</p>
+                    <p className="mt-1 text-lg font-black tracking-tight">{activeCar.year}</p>
                   </Card>
                 )}
                 {activeCar.color && (
-                  <Card className="space-y-1.5">
-                    <p className="text-[13px] font-semibold text-ink-3">צבע</p>
-                    <p className="text-xl font-black">{activeCar.color}</p>
+                  <Card className="!p-3.5">
+                    <p className="text-[12px] font-semibold text-ink-3">צבע</p>
+                    <p className="mt-1 text-lg font-black">{activeCar.color}</p>
                   </Card>
                 )}
                 {activeCar.fuelType && (
-                  <Card className="space-y-1.5">
-                    <p className="text-[13px] font-semibold text-ink-3">סוג דלק</p>
-                    <p className="text-xl font-black">{activeCar.fuelType}</p>
+                  <Card className="!p-3.5">
+                    <p className="text-[12px] font-semibold text-ink-3">סוג דלק</p>
+                    <p className="mt-1 text-lg font-black">{activeCar.fuelType}</p>
                   </Card>
                 )}
                 {activeCar.vin && (
-                  <Card className="col-span-2 space-y-1.5">
-                    <p className="text-[13px] font-semibold text-ink-3">מספר שלדה (VIN)</p>
-                    <p className="text-base font-black tracking-wide" dir="ltr">
+                  <Card className="col-span-2 !p-3.5">
+                    <p className="text-[12px] font-semibold text-ink-3">מספר שלדה (VIN)</p>
+                    <p className="mt-1 text-base font-black tracking-wide" dir="ltr">
                       {activeCar.vin}
                     </p>
                   </Card>
@@ -349,42 +310,29 @@ export default function HomePage() {
                 {activeCar.blocks.map((block) => (
                   <Card
                     key={block.id}
-                    className={cn('space-y-1.5', block.type === 'text' && block.value.length > 40 && 'col-span-2')}
+                    className={cn('!p-3.5', block.type === 'text' && block.value.length > 40 && 'col-span-2')}
                   >
-                    <p className="flex items-center gap-1.5 text-[13px] font-semibold text-ink-3">
+                    <p className="flex items-center gap-1.5 text-[12px] font-semibold text-ink-3">
                       {blockIcon(block)}
                       {block.title}
                     </p>
-                    <BlockValue block={block} />
+                    <div className="mt-1">
+                      <BlockValue block={block} />
+                    </div>
                   </Card>
                 ))}
-              </motion.div>
+              </div>
 
               {activeCar.notes && (
-                <motion.div variants={listItem}>
-                  <Card className="space-y-1.5">
-                    <p className="text-[13px] font-semibold text-ink-3">הערות</p>
-                    <p className="whitespace-pre-wrap text-sm leading-relaxed">{activeCar.notes}</p>
-                  </Card>
-                </motion.div>
+                <Card className="!p-3.5">
+                  <p className="text-[12px] font-semibold text-ink-3">הערות</p>
+                  <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed">{activeCar.notes}</p>
+                </Card>
               )}
             </motion.div>
           )}
         </>
       )}
     </div>
-  )
-}
-
-function InsuranceStatus({ reminders }: { reminders: DerivedReminder[] }) {
-  const ins = reminders.find((r) => r.source === 'insurance')
-  if (!ins) {
-    return <p className="text-2xl font-black text-ink-3">—</p>
-  }
-  return (
-    <>
-      <p className="text-2xl font-black tracking-tight">{formatDate(ins.dueDate)}</p>
-      <Badge tone={statusTone[dueStatus(ins.dueDate)]}>{dueLabel(ins.dueDate)}</Badge>
-    </>
   )
 }

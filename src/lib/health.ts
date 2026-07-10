@@ -7,14 +7,17 @@ export interface HealthFactor {
   label: string
   status: 'good' | 'warn' | 'bad' | 'missing'
   score: number // 0..100
+  date?: string
+  daysLeft?: number
 }
 
-function fromDate(iso?: string): { status: HealthFactor['status']; score: number } {
+function fromDate(iso?: string): Pick<HealthFactor, 'status' | 'score' | 'date' | 'daysLeft'> {
   if (!iso) return { status: 'missing', score: 0 }
   const d = daysUntil(iso)
-  if (d < 0) return { status: 'bad', score: 20 }
-  if (d <= 30) return { status: 'warn', score: 60 }
-  return { status: 'good', score: 100 }
+  const base = { date: iso, daysLeft: d }
+  if (d < 0) return { status: 'bad', score: 20, ...base }
+  if (d <= 30) return { status: 'warn', score: 60, ...base }
+  return { status: 'good', score: 100, ...base }
 }
 
 /** Overall car-care score (0-100) from its key dates + insurance state.
