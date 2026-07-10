@@ -121,18 +121,18 @@ export default function CarCarousel({
               role="button"
               aria-label={car.nickname || `${car.make} ${car.model}`}
               onClick={() => (car.id === activeId ? onImageClick?.(car.id) : onChange(car.id))}
-              className="relative flex h-80 items-center justify-center will-change-transform"
+              className="relative flex h-52 items-center justify-center will-change-transform"
               style={{ transform: 'perspective(1000px)' }}
             >
               {car.imageUrl ? (
                 <img
                   src={car.imageUrl}
                   alt={car.nickname || `${car.make} ${car.model}`}
-                  className="max-h-80 w-full max-w-full object-contain drop-shadow-[0_28px_24px_rgb(0_0_0/0.26)]"
+                  className="max-h-52 w-full max-w-full object-contain drop-shadow-[0_20px_20px_rgb(0_0_0/0.26)]"
                   draggable={false}
                 />
               ) : (
-                <CarSilhouette className="h-64 w-auto max-w-full text-ink drop-shadow-[0_28px_24px_rgb(0_0_0/0.18)]" />
+                <CarSilhouette className="h-44 w-auto max-w-full text-ink drop-shadow-[0_20px_20px_rgb(0_0_0/0.18)]" />
               )}
               {/* soft floor shadow like the reference design */}
               <div className="absolute bottom-1 left-1/2 h-5 w-3/5 -translate-x-1/2 rounded-[100%] bg-black/15 blur-md dark:bg-black/40" />
