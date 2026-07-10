@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 import PageHeader from '../components/layout/PageHeader'
 import { IconBell, IconCheck, IconPlus } from '../components/icons'
 import { motion } from 'motion/react'
@@ -121,48 +120,47 @@ export default function RemindersPage() {
             return (
               <motion.div key={r.key} variants={listItem}>
                 <Card className="flex items-center gap-3">
-                <span className="flex h-20 w-24 shrink-0 items-center justify-center">
-                  {r.carImage ? (
-                    <img
-                      src={r.carImage}
-                      alt={r.carName}
-                      className="max-h-20 w-auto max-w-full object-contain drop-shadow-[0_10px_10px_rgb(0_0_0/0.22)]"
-                    />
-                  ) : (
-                    <span
-                      className={cn(
-                        'flex size-14 items-center justify-center rounded-2xl',
-                        st === 'danger' && 'bg-danger-soft text-danger',
-                        st === 'warn' && 'bg-warn-soft text-warn',
-                        (st === 'ok' || st === 'none') && 'bg-ok-soft text-ok',
-                      )}
-                    >
-                      <IconBell size={24} />
-                    </span>
-                  )}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-bold">{r.title}</p>
-                  <p className="truncate text-xs text-ink-3">
-                    <Link to="/" className="underline-offset-2 hover:underline">
-                      {r.carName}
-                    </Link>{' '}
-                    · {formatDate(r.dueDate)}
-                    {r.time ? ` · ${r.time}` : ''} · {sourceLabel[r.source]}
-                  </p>
-                </div>
-                <div className="flex shrink-0 flex-col items-end gap-1.5">
-                  <Badge tone={statusTone[st]}>{dueLabel(r.dueDate)}</Badge>
-                  {r.source === 'custom' && (
-                    <button
-                      onClick={() => void markDone(r)}
-                      className="flex items-center gap-1 rounded-full bg-card-2 px-2.5 py-1 text-xs font-semibold text-ink-2 active:scale-95"
-                    >
-                      <IconCheck size={14} />
-                      בוצע
-                    </button>
-                  )}
-                </div>
+                  <span className="flex h-16 w-20 shrink-0 items-center justify-center">
+                    {r.carImage ? (
+                      <img
+                        src={r.carImage}
+                        alt={r.carName}
+                        className="max-h-16 w-auto max-w-full object-contain drop-shadow-[0_8px_8px_rgb(0_0_0/0.22)]"
+                      />
+                    ) : (
+                      <span
+                        className={cn(
+                          'flex size-12 items-center justify-center rounded-2xl',
+                          st === 'danger' && 'bg-danger-soft text-danger',
+                          st === 'warn' && 'bg-warn-soft text-warn',
+                          (st === 'ok' || st === 'none') && 'bg-ok-soft text-ok',
+                        )}
+                      >
+                        <IconBell size={22} />
+                      </span>
+                    )}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-base font-black leading-snug">{r.title}</p>
+                      <Badge tone={statusTone[st]} className="shrink-0">
+                        {dueLabel(r.dueDate)}
+                      </Badge>
+                    </div>
+                    <p className="mt-1 truncate text-xs font-medium text-ink-3">
+                      {r.carName} · {formatDate(r.dueDate)}
+                      {r.time ? ` · ${r.time}` : ''} · {sourceLabel[r.source]}
+                    </p>
+                    {r.source === 'custom' && (
+                      <button
+                        onClick={() => void markDone(r)}
+                        className="mt-2 flex items-center gap-1 rounded-full bg-white/40 px-3 py-1 text-xs font-bold text-ink-2 active:scale-95 dark:bg-white/10"
+                      >
+                        <IconCheck size={14} />
+                        בוצע
+                      </button>
+                    )}
+                  </div>
                 </Card>
               </motion.div>
             )

@@ -9,6 +9,9 @@ import {
   IconCalendar,
   IconCar,
   IconEdit,
+  IconLayoutBento,
+  IconLayoutGrid,
+  IconLayoutStack,
   IconLifeBuoy,
   IconLink,
   IconMoon,
@@ -76,16 +79,36 @@ function BlockValue({ block }: { block: InfoBlock }) {
   return <span className="whitespace-pre-wrap text-lg font-black">{block.value || '—'}</span>
 }
 
-/** One compact row in the spec sheet. */
+/** One compact row in the spec sheet. LTR values (e.g. VIN) render smaller so
+ *  they always fit on a single line. */
 function SpecRow({ label, value, ltr }: { label: string; value: string; ltr?: boolean }) {
   return (
     <div className="flex items-center justify-between gap-3 px-4 py-3">
-      <dt className="text-base font-bold text-ink-3">{label}</dt>
-      <dd className={cn('truncate text-lg font-black', ltr && 'tracking-wide')} dir={ltr ? 'ltr' : undefined}>
+      <dt className="shrink-0 text-base font-bold text-ink-3">{label}</dt>
+      <dd
+        className={cn(
+          'min-w-0 truncate font-black',
+          ltr ? 'text-sm tracking-wide tabular-nums' : 'text-lg',
+        )}
+        dir={ltr ? 'ltr' : undefined}
+      >
         {value}
       </dd>
     </div>
   )
+}
+
+type LayoutId = 'bento' | 'stack' | 'compact'
+
+const LAYOUT_OPTIONS: { id: LayoutId; label: string; icon: typeof IconLayoutBento }[] = [
+  { id: 'bento', label: 'לוח משבצות', icon: IconLayoutBento },
+  { id: 'stack', label: 'טור יחיד', icon: IconLayoutStack },
+  { id: 'compact', label: 'רשת קומפקטית', icon: IconLayoutGrid },
+]
+
+function initialLayout(): LayoutId {
+  const s = localStorage.getItem('car360:homeLayout')
+  return s === 'stack' || s === 'compact' ? s : 'bento'
 }
 
 /** Small labelled cockpit tile. */
@@ -119,6 +142,25 @@ export default function HomePage() {
   const [reminders, setReminders] = useState<DerivedReminder[]>([])
   const [servicesCount, setServicesCount] = useState<number | null>(null)
   const [lastService, setLastService] = useState<string | undefined>(undefined)
+  const [layout, setLayout] = useState<LayoutId>(initialLayout)
+
+  const changeLayout = (l: LayoutId) => {
+    setLayout(l)
+    localStorage.setItem('car360:homeLayout', l)
+  }
+
+  const stack = layout === 'stack'
+  const dense = layout === 'compact'
+  // stack uses flex-col (not grid-cols-1) so the many `col-span-2` children
+  // don't force an implicit second column — everything becomes one true column.
+  const gridClass = stack
+    ? 'flex flex-col gap-4'
+    : dense
+      ? 'grid grid-cols-2 gap-2'
+      : 'grid grid-cols-2 gap-3'
+  const tilePad = stack ? '!p-5' : dense ? '!p-3' : '!p-4'
+  const metricClass = stack ? 'text-3xl' : dense ? 'text-lg' : 'text-2xl'
+  const svcMetricClass = stack ? 'text-4xl' : dense ? 'text-xl' : 'text-3xl'
 
   useEffect(() => {
     if (cars.length === 0) return
@@ -232,23 +274,47 @@ export default function HomePage() {
           </motion.div>
 
           {activeCar && (
+            <div className="mt-3 flex items-center justify-between">
+              <span className="text-xs font-bold text-ink-3">תצוגת דף הבית</span>
+              <div className="glass-bar flex items-center gap-0.5 rounded-full p-1">
+                {LAYOUT_OPTIONS.map((o) => (
+                  <motion.button
+                    key={o.id}
+                    whileTap={{ scale: 0.88 }}
+                    transition={spring}
+                    onClick={() => changeLayout(o.id)}
+                    aria-label={o.label}
+                    aria-pressed={layout === o.id}
+                    className={cn(
+                      'flex size-9 items-center justify-center rounded-full transition-colors',
+                      layout === o.id ? 'bg-cta text-white shadow-card' : 'text-ink-3',
+                    )}
+                  >
+                    <o.icon size={18} />
+                  </motion.button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {activeCar && (
             <motion.div
-              key={activeCar.id}
+              key={`${activeCar.id}-${layout}`}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.22 }}
-              className="mt-4 grid grid-cols-2 gap-3 pb-4"
+              className={cn('mt-3 pb-4', gridClass)}
             >
               {/* hero status */}
               {health && <StatusTile score={health.score} factors={health.factors} />}
 
               {/* test + services */}
-              <GlassPanel className="!p-4">
+              <GlassPanel className={tilePad}>
                 <Link to={`/car/${activeCar.id}/edit`} className="block">
                   <p className="flex items-center gap-1.5 text-sm font-bold text-ink-3">
                     <IconCalendar size={17} /> טסט
                   </p>
-                  <p className="mt-1.5 text-2xl font-black tracking-tight">{formatDate(activeCar.testExpiry)}</p>
+                  <p className={cn('mt-1.5 font-black tracking-tight', metricClass)}>{formatDate(activeCar.testExpiry)}</p>
                   {activeCar.testExpiry && (
                     <Badge className="mt-1.5" tone={statusTone[dueStatus(activeCar.testExpiry)]}>
                       {dueLabel(activeCar.testExpiry)}
@@ -257,12 +323,12 @@ export default function HomePage() {
                 </Link>
               </GlassPanel>
 
-              <GlassPanel className="!p-4">
+              <GlassPanel className={tilePad}>
                 <Link to={`/car/${activeCar.id}/services`} className="block">
                   <p className="flex items-center gap-1.5 text-sm font-bold text-ink-3">
                     <IconWrench size={17} /> טיפולים
                   </p>
-                  <p className="mt-1.5 text-3xl font-black tracking-tight">{servicesCount ?? 0}</p>
+                  <p className={cn('mt-1.5 font-black tracking-tight', svcMetricClass)}>{servicesCount ?? 0}</p>
                   <p className="mt-1 text-sm font-semibold text-ink-3">
                     {lastService ? `אחרון: ${formatDate(lastService)}` : 'אין טיפולים מתועדים'}
                   </p>
@@ -280,11 +346,16 @@ export default function HomePage() {
                     { label: 'עריכה', icon: IconEdit, to: `/car/${activeCar.id}/edit` },
                   ].map((a) => (
                     <motion.div key={a.label} whileTap={{ scale: 0.9 }} transition={spring} className="shrink-0">
-                      <Link to={a.to} className="flex w-14 flex-col items-center gap-1">
-                        <span className="flex size-11 items-center justify-center rounded-2xl bg-white/50 text-ink ring-1 ring-white/50 dark:bg-white/10 dark:ring-white/10">
-                          <a.icon size={19} />
+                      <Link to={a.to} className={cn('flex flex-col items-center gap-1', dense ? 'w-12' : 'w-14')}>
+                        <span
+                          className={cn(
+                            'flex items-center justify-center rounded-2xl bg-white/50 text-ink ring-1 ring-white/50 dark:bg-white/10 dark:ring-white/10',
+                            dense ? 'size-10' : 'size-11',
+                          )}
+                        >
+                          <a.icon size={dense ? 18 : 19} />
                         </span>
-                        <span className="text-[10px] font-bold text-ink-2">{a.label}</span>
+                        {!dense && <span className="text-[10px] font-bold text-ink-2">{a.label}</span>}
                       </Link>
                     </motion.div>
                   ))}
@@ -326,7 +397,7 @@ export default function HomePage() {
 
               {/* section header */}
               <div className="col-span-2 flex items-center justify-between pt-1">
-                <h2 className="text-2xl font-black">פרטי הרכב</h2>
+                <h2 className={cn('font-black', dense ? 'text-xl' : 'text-2xl')}>פרטי הרכב</h2>
                 <Link
                   to={`/car/${activeCar.id}/edit#blocks`}
                   className="glass-bar flex items-center gap-1 rounded-full px-3.5 py-2 text-sm font-bold text-ink-2"
@@ -339,9 +410,9 @@ export default function HomePage() {
               {/* spec sheet (with the licence plate) */}
               <GlassPanel className="col-span-2 !p-0">
                 <div className="flex items-center justify-between gap-3 px-4 py-3.5">
-                  <dt className="text-base font-bold text-ink-3">לוחית רישוי</dt>
+                  <dt className="shrink-0 text-base font-bold text-ink-3">לוחית רישוי</dt>
                   <p
-                    className="rounded-lg bg-amber-300/90 px-4 py-2 text-center text-2xl font-black tracking-widest text-black ring-1 ring-black/10"
+                    className="whitespace-nowrap rounded-lg bg-amber-300/90 px-3.5 py-1.5 text-center text-xl font-black tracking-[0.18em] text-black ring-1 ring-black/10"
                     dir="ltr"
                   >
                     {formatPlate(activeCar.plate)}

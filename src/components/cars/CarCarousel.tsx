@@ -109,30 +109,30 @@ export default function CarCarousel({
         onScroll={onScroll}
         className={cn(
           'no-scrollbar flex snap-x snap-mandatory overflow-x-auto scroll-smooth',
-          cars.length > 1 && 'px-[11%]',
+          cars.length > 1 && 'px-[6%]',
         )}
       >
         {cars.map((car) => (
           <div
             key={car.id}
-            className={cn('shrink-0 snap-center px-2', cars.length > 1 ? 'w-[78%]' : 'w-full px-6')}
+            className={cn('shrink-0 snap-center px-2', cars.length > 1 ? 'w-[88%]' : 'w-full px-4')}
           >
             <div
               role="button"
               aria-label={car.nickname || `${car.make} ${car.model}`}
               onClick={() => (car.id === activeId ? onImageClick?.(car.id) : onChange(car.id))}
-              className="relative flex h-72 items-center justify-center will-change-transform"
+              className="relative flex h-80 items-center justify-center will-change-transform"
               style={{ transform: 'perspective(1000px)' }}
             >
               {car.imageUrl ? (
                 <img
                   src={car.imageUrl}
                   alt={car.nickname || `${car.make} ${car.model}`}
-                  className="max-h-72 w-auto max-w-full object-contain drop-shadow-[0_26px_22px_rgb(0_0_0/0.26)]"
+                  className="max-h-80 w-full max-w-full object-contain drop-shadow-[0_28px_24px_rgb(0_0_0/0.26)]"
                   draggable={false}
                 />
               ) : (
-                <CarSilhouette className="h-56 w-auto max-w-full text-ink drop-shadow-[0_26px_22px_rgb(0_0_0/0.18)]" />
+                <CarSilhouette className="h-64 w-auto max-w-full text-ink drop-shadow-[0_28px_24px_rgb(0_0_0/0.18)]" />
               )}
               {/* soft floor shadow like the reference design */}
               <div className="absolute bottom-1 left-1/2 h-5 w-3/5 -translate-x-1/2 rounded-[100%] bg-black/15 blur-md dark:bg-black/40" />
