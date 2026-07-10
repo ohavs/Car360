@@ -8,6 +8,7 @@ export interface DesignPrefs {
   palette: PaletteId
   skin: SkinId
   accent?: string | null
+  glow?: number
 }
 
 export async function loadDesignPrefs(uid: string): Promise<DesignPrefs | null> {

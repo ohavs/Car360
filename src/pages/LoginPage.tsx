@@ -35,14 +35,14 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col overflow-x-clip px-6 pb-safe pt-safe">
+    <div className="cockpit mx-auto flex min-h-dvh w-full max-w-md flex-col overflow-x-clip px-6 pb-safe pt-safe">
       <motion.header
         initial={{ opacity: 0, y: -14 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: 'spring', stiffness: 300, damping: 26 }}
         className="pt-12 text-center"
       >
-        <span className="inline-flex items-center gap-2 rounded-full bg-card px-4 py-2 text-sm font-bold shadow-card ring-1 ring-line">
+        <span className="glass-bar inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold">
           <span className="size-2 rounded-full bg-cta" />
           Car360
         </span>
@@ -67,7 +67,7 @@ export default function LoginPage() {
               hidden: { opacity: 0, y: 10, scale: 0.9 },
               show: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 400, damping: 26 } },
             }}
-            className="rounded-full bg-card px-3.5 py-1.5 text-[13px] font-bold text-ink-2 shadow-card"
+            className="glass-bar rounded-full px-3.5 py-1.5 text-[13px] font-bold text-ink-2"
           >
             {f}
           </motion.span>

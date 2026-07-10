@@ -32,7 +32,8 @@ window.addEventListener('beforeinstallprompt', (e) => {
 
 export default function SettingsPage() {
   const { user, signOut, isCloud } = useAuth()
-  const { theme, toggle, palette, setPalette, skin, setSkin, accent, setAccent, restyling } = useTheme()
+  const { theme, toggle, palette, setPalette, skin, setSkin, accent, setAccent, glow, setGlow, restyling } =
+    useTheme()
   const { toast } = useToast()
   const { cars } = useCars()
   const [confirmSignOut, setConfirmSignOut] = useState(false)
@@ -228,6 +229,24 @@ export default function SettingsPage() {
 
           {/* personal accent color */}
           <AccentPicker accent={accent} setAccent={setAccent} />
+
+          {/* cockpit glow intensity */}
+          <div>
+            <div className="mb-2.5 flex items-center justify-between">
+              <p className="text-[13px] font-semibold text-ink-2">עוצמת זוהר הרכב</p>
+              <span className="text-[11px] font-bold text-ink-3">{Math.round(glow * 100)}%</span>
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={140}
+              value={Math.round(glow * 100)}
+              onChange={(e) => setGlow(Number(e.target.value) / 100)}
+              aria-label="עוצמת זוהר הרכב"
+              className="h-3 w-full cursor-pointer appearance-none rounded-full bg-gradient-to-l from-cta/80 to-cta/10 [&::-webkit-slider-thumb]:size-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-[0_1px_4px_rgb(0_0_0/0.4)] [&::-webkit-slider-thumb]:ring-1 [&::-webkit-slider-thumb]:ring-black/10"
+            />
+            <p className="mt-1.5 text-[11px] text-ink-3">הזוהר הצבעוני שמאחורי האפליקציה נלקח מתמונת הרכב הפעיל</p>
+          </div>
         </Card>
 
         {/* appearance & notifications */}

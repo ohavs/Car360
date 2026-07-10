@@ -507,12 +507,13 @@ body {
   inset: 0;
   z-index: -1;
   pointer-events: none;
+  opacity: var(--cockpit-glow, 1);
   background:
     radial-gradient(64% 42% at 50% 8%, color-mix(in srgb, var(--car-color, var(--color-cta)) 42%, transparent), transparent 72%),
     radial-gradient(52% 30% at 84% 54%, color-mix(in srgb, var(--car-color, var(--color-cta)) 22%, transparent), transparent 70%),
     radial-gradient(46% 30% at 12% 78%, color-mix(in srgb, var(--car-color, var(--color-cta)) 16%, transparent), transparent 70%);
   filter: blur(26px);
-  transition: background 0.6s ease;
+  transition: background 0.6s ease, opacity 0.3s ease;
 }
 
 .glass-tile {
