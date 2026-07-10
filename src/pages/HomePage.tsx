@@ -23,6 +23,7 @@ import { Badge, EmptyState, HomeSkeleton, spring } from '../components/ui'
 import { useAuth } from '../contexts/AuthContext'
 import { useCars } from '../contexts/CarsContext'
 import { useTheme } from '../contexts/ThemeContext'
+import { repo } from '../data'
 import { carHealth } from '../lib/health'
 import { carDisplayName, collectReminders, notifyUpcoming } from '../lib/reminders'
 import { cn, dueLabel, dueStatus, formatDate, formatPlate } from '../lib/utils'
@@ -78,9 +79,9 @@ function BlockValue({ block }: { block: InfoBlock }) {
 /** One compact row in the spec sheet. */
 function SpecRow({ label, value, ltr }: { label: string; value: string; ltr?: boolean }) {
   return (
-    <div className="flex items-center justify-between gap-3 px-4 py-2.5">
-      <dt className="text-[13px] font-semibold text-ink-3">{label}</dt>
-      <dd className={cn('truncate text-[15px] font-black', ltr && 'tracking-wide')} dir={ltr ? 'ltr' : undefined}>
+    <div className="flex items-center justify-between gap-3 px-4 py-3">
+      <dt className="text-base font-bold text-ink-3">{label}</dt>
+      <dd className={cn('truncate text-lg font-black', ltr && 'tracking-wide')} dir={ltr ? 'ltr' : undefined}>
         {value}
       </dd>
     </div>
@@ -116,6 +117,8 @@ export default function HomePage() {
   const { theme, toggle } = useTheme()
   const navigate = useNavigate()
   const [reminders, setReminders] = useState<DerivedReminder[]>([])
+  const [servicesCount, setServicesCount] = useState<number | null>(null)
+  const [lastService, setLastService] = useState<string | undefined>(undefined)
 
   useEffect(() => {
     if (cars.length === 0) return
@@ -127,6 +130,22 @@ export default function HomePage() {
     }
   }, [cars])
 
+  useEffect(() => {
+    let cancelled = false
+    if (!activeCarId) {
+      setServicesCount(null)
+      return
+    }
+    void repo.listServices(activeCarId).then((list) => {
+      if (cancelled) return
+      setServicesCount(list.length)
+      setLastService([...list].sort((a, b) => b.date.localeCompare(a.date))[0]?.date)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [activeCarId])
+
   const carReminders = useMemo(
     () => reminders.filter((r) => r.carId === activeCarId),
     [reminders, activeCarId],
@@ -136,7 +155,6 @@ export default function HomePage() {
     () => (activeCar ? carHealth(activeCar, carReminders) : null),
     [activeCar, carReminders],
   )
-  const insuranceR = useMemo(() => carReminders.find((r) => r.source === 'insurance'), [carReminders])
 
   if (loading) return <HomeSkeleton />
 
@@ -224,50 +242,31 @@ export default function HomePage() {
               {/* hero status */}
               {health && <StatusTile score={health.score} factors={health.factors} />}
 
-              {/* test + insurance */}
-              <GlassPanel className="!p-3.5">
+              {/* test + services */}
+              <GlassPanel className="!p-4">
                 <Link to={`/car/${activeCar.id}/edit`} className="block">
-                  <p className="flex items-center gap-1.5 text-[12px] font-semibold text-ink-3">
-                    <IconCalendar size={15} /> טסט
+                  <p className="flex items-center gap-1.5 text-sm font-bold text-ink-3">
+                    <IconCalendar size={17} /> טסט
                   </p>
-                  <p className="mt-1 text-lg font-black tracking-tight">{formatDate(activeCar.testExpiry)}</p>
+                  <p className="mt-1.5 text-2xl font-black tracking-tight">{formatDate(activeCar.testExpiry)}</p>
                   {activeCar.testExpiry && (
-                    <Badge className="mt-1" tone={statusTone[dueStatus(activeCar.testExpiry)]}>
+                    <Badge className="mt-1.5" tone={statusTone[dueStatus(activeCar.testExpiry)]}>
                       {dueLabel(activeCar.testExpiry)}
                     </Badge>
                   )}
                 </Link>
               </GlassPanel>
 
-              <GlassPanel className="!p-3.5">
-                <Link to={`/car/${activeCar.id}/insurance`} className="block">
-                  <p className="flex items-center gap-1.5 text-[12px] font-semibold text-ink-3">
-                    <IconShield size={15} /> ביטוח
+              <GlassPanel className="!p-4">
+                <Link to={`/car/${activeCar.id}/services`} className="block">
+                  <p className="flex items-center gap-1.5 text-sm font-bold text-ink-3">
+                    <IconWrench size={17} /> טיפולים
                   </p>
-                  {insuranceR ? (
-                    <>
-                      <p className="mt-1 text-lg font-black tracking-tight">{formatDate(insuranceR.dueDate)}</p>
-                      <Badge className="mt-1" tone={statusTone[dueStatus(insuranceR.dueDate)]}>
-                        {dueLabel(insuranceR.dueDate)}
-                      </Badge>
-                    </>
-                  ) : (
-                    <p className="mt-1 text-lg font-black text-ink-3">—</p>
-                  )}
+                  <p className="mt-1.5 text-3xl font-black tracking-tight">{servicesCount ?? 0}</p>
+                  <p className="mt-1 text-sm font-semibold text-ink-3">
+                    {lastService ? `אחרון: ${formatDate(lastService)}` : 'אין טיפולים מתועדים'}
+                  </p>
                 </Link>
-              </GlassPanel>
-
-              {/* plate */}
-              <GlassPanel className="col-span-2 !p-3.5">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-[12px] font-semibold text-ink-3">לוחית רישוי</p>
-                  <p
-                    className="rounded-lg bg-amber-300/90 px-3 py-1.5 text-center text-xl font-black tracking-widest text-black ring-1 ring-black/10"
-                    dir="ltr"
-                  >
-                    {formatPlate(activeCar.plate)}
-                  </p>
-                </div>
               </GlassPanel>
 
               {/* quick actions */}
@@ -326,28 +325,35 @@ export default function HomePage() {
               )}
 
               {/* section header */}
-              <div className="col-span-2 flex items-center justify-between pt-0.5">
-                <h2 className="text-lg font-black">פרטי הרכב</h2>
+              <div className="col-span-2 flex items-center justify-between pt-1">
+                <h2 className="text-2xl font-black">פרטי הרכב</h2>
                 <Link
                   to={`/car/${activeCar.id}/edit#blocks`}
-                  className="glass-bar flex items-center gap-1 rounded-full px-3 py-1.5 text-[12px] font-bold text-ink-2"
+                  className="glass-bar flex items-center gap-1 rounded-full px-3.5 py-2 text-sm font-bold text-ink-2"
                 >
-                  <IconPlus size={14} />
+                  <IconPlus size={16} />
                   בלוק מידע
                 </Link>
               </div>
 
-              {/* compact spec sheet */}
-              {(activeCar.year != null || activeCar.color || activeCar.fuelType || activeCar.vin) && (
-                <GlassPanel className="col-span-2 !p-0">
-                  <dl className="divide-y divide-white/10 dark:divide-white/5">
-                    {activeCar.year != null && <SpecRow label="שנת ייצור" value={String(activeCar.year)} />}
-                    {activeCar.color && <SpecRow label="צבע" value={activeCar.color} />}
-                    {activeCar.fuelType && <SpecRow label="סוג דלק" value={activeCar.fuelType} />}
-                    {activeCar.vin && <SpecRow label="מספר שלדה" value={activeCar.vin} ltr />}
-                  </dl>
-                </GlassPanel>
-              )}
+              {/* spec sheet (with the licence plate) */}
+              <GlassPanel className="col-span-2 !p-0">
+                <div className="flex items-center justify-between gap-3 px-4 py-3.5">
+                  <dt className="text-base font-bold text-ink-3">לוחית רישוי</dt>
+                  <p
+                    className="rounded-lg bg-amber-300/90 px-4 py-2 text-center text-2xl font-black tracking-widest text-black ring-1 ring-black/10"
+                    dir="ltr"
+                  >
+                    {formatPlate(activeCar.plate)}
+                  </p>
+                </div>
+                <dl className="divide-y divide-white/10 dark:divide-white/5 border-t border-white/10 dark:border-white/5">
+                  {activeCar.year != null && <SpecRow label="שנת ייצור" value={String(activeCar.year)} />}
+                  {activeCar.color && <SpecRow label="צבע" value={activeCar.color} />}
+                  {activeCar.fuelType && <SpecRow label="סוג דלק" value={activeCar.fuelType} />}
+                  {activeCar.vin && <SpecRow label="מספר שלדה" value={activeCar.vin} ltr />}
+                </dl>
+              </GlassPanel>
               {activeCar.blocks.map((block) => (
                 <InfoTile
                   key={block.id}

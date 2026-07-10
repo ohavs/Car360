@@ -121,27 +121,23 @@ export default function RemindersPage() {
             return (
               <motion.div key={r.key} variants={listItem}>
                 <Card className="flex items-center gap-3">
-                <span
-                  className={cn(
-                    'flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl',
-                    !r.carImage && 'ring-2',
-                    st === 'danger' && 'ring-danger',
-                    st === 'warn' && 'ring-warn',
-                    (st === 'ok' || st === 'none') && 'ring-ok',
-                  )}
-                >
+                <span className="flex h-20 w-24 shrink-0 items-center justify-center">
                   {r.carImage ? (
-                    <img src={r.carImage} alt={r.carName} className="size-full object-contain" />
+                    <img
+                      src={r.carImage}
+                      alt={r.carName}
+                      className="max-h-20 w-auto max-w-full object-contain drop-shadow-[0_10px_10px_rgb(0_0_0/0.22)]"
+                    />
                   ) : (
                     <span
                       className={cn(
-                        'flex size-full items-center justify-center',
+                        'flex size-14 items-center justify-center rounded-2xl',
                         st === 'danger' && 'bg-danger-soft text-danger',
                         st === 'warn' && 'bg-warn-soft text-warn',
                         (st === 'ok' || st === 'none') && 'bg-ok-soft text-ok',
                       )}
                     >
-                      <IconBell size={20} />
+                      <IconBell size={24} />
                     </span>
                   )}
                 </span>
