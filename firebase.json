@@ -23,5 +23,9 @@
   },
   "storage": {
     "rules": "storage.rules"
+  },
+  "functions": {
+    "source": "functions",
+    "ignore": ["node_modules", ".git", "*.log"]
   }
 }

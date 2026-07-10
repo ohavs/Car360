@@ -2,6 +2,7 @@ import { MotionConfig } from 'motion/react'
 import { useEffect, useRef, type ReactNode } from 'react'
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
 import { useTheme } from './contexts/ThemeContext'
+import { listenForegroundPush } from './lib/push'
 import { loadDesignPrefs, saveDesignPrefs } from './data/prefs'
 import AppShell from './components/layout/AppShell'
 import { Spinner } from './components/ui'
@@ -93,6 +94,10 @@ function PrefsSync() {
 }
 
 export default function App() {
+  useEffect(() => {
+    void listenForegroundPush()
+  }, [])
+
   return (
     <MotionConfig reducedMotion="user">
       <PrefsSync />

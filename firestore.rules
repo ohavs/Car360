@@ -17,9 +17,12 @@ service cloud.firestore {
       return canAccessCar(get(/databases/$(database)/documents/cars/$(carId)).data);
     }
 
-    // per-user profile & design preferences
+    // per-user profile, design preferences & FCM push tokens
     match /users/{uid} {
       allow read, write: if isSignedIn() && request.auth.uid == uid;
+      match /{document=**} {
+        allow read, write: if isSignedIn() && request.auth.uid == uid;
+      }
     }
 
     // public, read-only car passports — anyone with the (unguessable) token

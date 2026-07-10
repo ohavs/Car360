@@ -22,6 +22,7 @@ import {
   notificationsSupported,
   requestNotificationPermission,
 } from '../lib/reminders'
+import { disablePush, enablePush, isPushConfigured } from '../lib/push'
 
 /** Captured install prompt for the "Install app" action (Chrome/Android). */
 let deferredInstallPrompt: (Event & { prompt: () => Promise<void> }) | null = null
@@ -48,9 +49,22 @@ export default function SettingsPage() {
 
   const toggleNotifications = async (v: boolean) => {
     if (!v) {
-      toast('כיבוי התראות מתבצע דרך הגדרות הדפדפן', 'info')
+      if (isPushConfigured && user) await disablePush(user.uid)
+      setNotifGranted(false)
+      toast('ההתראות כובו במכשיר הזה', 'info')
       return
     }
+    // real web-push when configured (works even when the app is closed)
+    if (isPushConfigured && user) {
+      const token = await enablePush(user.uid)
+      setNotifGranted(Boolean(token))
+      toast(
+        token ? 'התראות הופעלו — נזכיר גם כשהאפליקציה סגורה' : 'ההרשאה נדחתה בדפדפן',
+        token ? 'success' : 'error',
+      )
+      return
+    }
+    // fallback: on-device reminder notifications
     const ok = await requestNotificationPermission()
     setNotifGranted(ok)
     toast(ok ? 'התראות הופעלו' : 'ההרשאה נדחתה בדפדפן', ok ? 'success' : 'error')
@@ -261,7 +275,13 @@ export default function SettingsPage() {
           <SettingRow
             icon={<IconBell size={20} />}
             title="התראות"
-            subtitle={notificationsSupported() ? 'תזכורת יומית לתאריכים קרובים' : 'לא נתמך בדפדפן זה'}
+            subtitle={
+              !notificationsSupported()
+                ? 'לא נתמך בדפדפן זה'
+                : isPushConfigured
+                  ? 'תזכורת לתאריכים קרובים — גם כשהאפליקציה סגורה'
+                  : 'תזכורת יומית לתאריכים קרובים'
+            }
           >
             <Switch
               checked={notifGranted}

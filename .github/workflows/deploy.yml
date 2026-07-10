@@ -33,6 +33,8 @@ jobs:
           # Settings → Secrets and variables → Actions.
           VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY }}
           VITE_GEMINI_MODEL: ${{ secrets.VITE_GEMINI_MODEL }}
+          # Optional: enables real web-push. Without it, notifications stay on-device.
+          VITE_FCM_VAPID_KEY: ${{ secrets.VITE_FCM_VAPID_KEY }}
 
       - name: Deploy hosting + Firestore rules
         run: npx firebase-tools@13 deploy --only hosting,firestore:rules --project car360-50b44 --non-interactive --force
