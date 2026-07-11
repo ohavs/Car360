@@ -57,10 +57,10 @@ function FieldTrigger({
       whileTap={{ scale: 0.98 }}
       transition={spring}
       onClick={onClick}
-      className="field-well flex min-h-13 w-full items-center justify-between gap-3 rounded-field bg-white/60 px-4 text-start text-base font-medium text-ink ring-1 ring-black/10 focus:outline-none focus:ring-2 focus:ring-cta dark:bg-white/10 dark:ring-white/15"
+      className="field-well flex min-h-13 w-full items-center justify-between gap-2 rounded-field bg-white/60 px-3.5 text-start text-sm font-semibold text-ink ring-1 ring-black/10 focus:outline-none focus:ring-2 focus:ring-cta dark:bg-white/10 dark:ring-white/15"
     >
       <span className={cn('truncate', !filled && 'font-normal text-ink-3')}>{children}</span>
-      <span className="flex items-center gap-1.5">
+      <span className="flex shrink-0 items-center gap-1.5">
         {filled && onClear && (
           <span
             role="button"
@@ -74,7 +74,7 @@ function FieldTrigger({
             <IconX size={13} />
           </span>
         )}
-        <span className="flex size-9 items-center justify-center rounded-full bg-card-2 text-ink-2">
+        <span className="flex size-7 items-center justify-center rounded-full bg-card-2 text-ink-2">
           {icon}
         </span>
       </span>

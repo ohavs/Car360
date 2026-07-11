@@ -521,7 +521,7 @@ function NotifPrefRow({
   return (
     <div className="flex items-center justify-between gap-3 py-1.5">
       <span className="text-sm font-semibold text-ink-2">{label}</span>
-      <div className="w-40 shrink-0">
+      <div className="w-44 shrink-0">
         <Select
           title={label}
           value={String(value)}
