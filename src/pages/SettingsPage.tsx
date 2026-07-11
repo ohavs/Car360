@@ -9,9 +9,19 @@ import {
   IconLogout,
   IconMoon,
   IconShield,
+  IconSparkles,
 } from '../components/icons'
 import { Card, ConfirmDialog, Switch, spring } from '../components/ui'
+import { Select } from '../components/pickers'
 import { PALETTES, SKINS } from '../lib/palettes'
+import {
+  LEAD_OPTIONS,
+  loadNotifPrefs,
+  loadNotifPrefsCloud,
+  saveNotifPrefsCloud,
+  saveNotifPrefsLocal,
+  type NotificationPrefs,
+} from '../lib/notifyPrefs'
 import { cn } from '../lib/utils'
 import { useAuth } from '../contexts/AuthContext'
 import { useCars } from '../contexts/CarsContext'
@@ -42,10 +52,57 @@ export default function SettingsPage() {
     () => notificationsSupported() && Notification.permission === 'granted',
   )
   const [standalone, setStandalone] = useState(false)
+  const [notifPrefs, setNotifPrefs] = useState<NotificationPrefs>(() => loadNotifPrefs())
 
   useEffect(() => {
     setStandalone(window.matchMedia('(display-mode: standalone)').matches)
   }, [])
+
+  // pull cloud-synced notification prefs once on sign-in
+  useEffect(() => {
+    if (!user) return
+    void loadNotifPrefsCloud(user.uid).then((p) => {
+      if (p) {
+        setNotifPrefs(p)
+        saveNotifPrefsLocal(p)
+      }
+    })
+  }, [user])
+
+  const updateNotifPref = (key: keyof NotificationPrefs, value: number) => {
+    setNotifPrefs((prev) => {
+      const next = { ...prev, [key]: value }
+      saveNotifPrefsLocal(next)
+      if (user) void saveNotifPrefsCloud(user.uid, next)
+      return next
+    })
+  }
+
+  const sendTestNotification = async () => {
+    if (!notificationsSupported()) {
+      toast('התראות לא נתמכות בדפדפן זה', 'error')
+      return
+    }
+    let perm = Notification.permission
+    if (perm !== 'granted') perm = await Notification.requestPermission()
+    if (perm !== 'granted') {
+      toast('צריך לאשר התראות בדפדפן', 'error')
+      return
+    }
+    setNotifGranted(true)
+    const opts = {
+      body: 'זו התראת ניסיון — ההתראות עובדות! 🎉',
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
+      dir: 'rtl' as const,
+      lang: 'he',
+      tag: 'car360-test',
+    }
+    const reg = await navigator.serviceWorker?.getRegistration()
+    if (reg) await reg.showNotification('Car360 · בדיקה', opts)
+    else new Notification('Car360 · בדיקה', opts)
+    toast('נשלחה התראת ניסיון')
+  }
 
   const toggleNotifications = async (v: boolean) => {
     if (!v) {
@@ -289,6 +346,33 @@ export default function SettingsPage() {
               label="התראות"
             />
           </SettingRow>
+          <button className="w-full" onClick={() => void sendTestNotification()}>
+            <SettingRow
+              icon={<IconSparkles size={20} />}
+              title="שליחת התראת ניסיון"
+              subtitle="בדקו שההתראות מגיעות אליכם"
+            >
+              <span className="text-sm font-bold text-cta">שליחה</span>
+            </SettingRow>
+          </button>
+        </Card>
+
+        {/* when to alert — one place for every reminder type */}
+        <Card className="space-y-1 !p-4">
+          <div className="mb-1 flex items-center gap-3">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-card-2">
+              <IconBell size={20} />
+            </span>
+            <div>
+              <p className="font-bold">מתי להתריע</p>
+              <p className="text-xs text-ink-3">כמה זמן מראש להזכיר על כל סוג — הכל במקום אחד</p>
+            </div>
+          </div>
+          <NotifPrefRow label="טסט (רישוי שנתי)" value={notifPrefs.test} onChange={(v) => updateNotifPref('test', v)} />
+          <NotifPrefRow label="ביטוח" value={notifPrefs.insurance} onChange={(v) => updateNotifPref('insurance', v)} />
+          <NotifPrefRow label="טיפול קרוב" value={notifPrefs.service} onChange={(v) => updateNotifPref('service', v)} />
+          <NotifPrefRow label="תזכורות מותאמות" value={notifPrefs.custom} onChange={(v) => updateNotifPref('custom', v)} />
+          <NotifPrefRow label="בלוקים עם תזכורת" value={notifPrefs.block} onChange={(v) => updateNotifPref('block', v)} />
         </Card>
 
         {/* app actions */}
@@ -421,6 +505,30 @@ function AccentPicker({
         />
       </div>
       <p className="mt-1.5 text-[11px] text-ink-3">בחרו צבע מוכן או גררו לגוון מותאם אישית</p>
+    </div>
+  )
+}
+
+function NotifPrefRow({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: number
+  onChange: (v: number) => void
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 py-1.5">
+      <span className="text-sm font-semibold text-ink-2">{label}</span>
+      <div className="w-40 shrink-0">
+        <Select
+          title={label}
+          value={String(value)}
+          onChange={(v) => onChange(Number(v))}
+          options={LEAD_OPTIONS.map((o) => ({ value: String(o.value), label: o.label }))}
+        />
+      </div>
     </div>
   )
 }

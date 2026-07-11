@@ -1,4 +1,4 @@
-import { motion } from 'motion/react'
+import { motion, useScroll, useTransform } from 'motion/react'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import CarCarousel from '../components/cars/CarCarousel'
@@ -149,6 +149,12 @@ export default function HomePage() {
     localStorage.setItem('car360:homeLayout', l)
   }
 
+  // parallax: as the page scrolls, the car drifts up slower and fades, so the
+  // content panel rises up over it.
+  const { scrollY } = useScroll()
+  const carY = useTransform(scrollY, [0, 360], [0, 150])
+  const carFade = useTransform(scrollY, [0, 230, 360], [1, 1, 0])
+
   const stack = layout === 'stack'
   const dense = layout === 'compact'
   // stack uses flex-col (not grid-cols-1) so the many `col-span-2` children
@@ -264,17 +270,19 @@ export default function HomePage() {
         />
       ) : (
         <>
-          <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ ...spring, delay: 0.05 }}>
-            <CarCarousel
-              cars={cars}
-              activeId={activeCarId}
-              onChange={setActiveCarId}
-              onImageClick={(id) => navigate(`/car/${id}/edit`)}
-            />
+          <motion.div style={{ y: carY, opacity: carFade }} className="relative z-0 -mx-4">
+            <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ ...spring, delay: 0.05 }}>
+              <CarCarousel
+                cars={cars}
+                activeId={activeCarId}
+                onChange={setActiveCarId}
+                onImageClick={(id) => navigate(`/car/${id}/edit`)}
+              />
+            </motion.div>
           </motion.div>
 
           {activeCar && (
-            <div className="mt-3 flex items-center justify-between">
+            <div className="relative z-10 mt-3 flex items-center justify-between">
               <span className="text-xs font-bold text-ink-3">תצוגת דף הבית</span>
               <div className="glass-bar flex items-center gap-0.5 rounded-full p-1">
                 {LAYOUT_OPTIONS.map((o) => (
@@ -303,7 +311,7 @@ export default function HomePage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.22 }}
-              className={cn('mt-3 pb-4', gridClass)}
+              className={cn('relative z-10 mt-3 pb-4', gridClass)}
             >
               {/* hero status */}
               {health && <StatusTile score={health.score} factors={health.factors} />}

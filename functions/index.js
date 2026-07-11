@@ -1,9 +1,10 @@
 /**
  * Car360 — scheduled push reminders.
  *
- * Runs every morning, scans every car for test / insurance / custom reminders
- * that fall due on a milestone (14, 7, 3, 1 or 0 days away) and sends an FCM
- * push to the car owner's registered devices. Invalid tokens are pruned.
+ * Runs every morning, scans every car for test / insurance / service / custom /
+ * block reminders and sends an FCM push to the car owner's devices when an item
+ * is due — honouring the owner's per-type lead-time settings
+ * (users/{uid}.notifications). Invalid tokens are pruned.
  *
  * Deploy (needs the Blaze plan — scheduled functions require it):
  *   cd functions && npm install && cd ..
@@ -18,9 +19,12 @@ import { getMessaging } from 'firebase-admin/messaging'
 initializeApp()
 const db = getFirestore()
 
-/** Notify only on these day-counts so users aren't spammed daily. */
-const MILESTONES = new Set([14, 7, 3, 1, 0])
 const DAY = 24 * 60 * 60 * 1000
+/** Notify only on these day-counts (within the configured lead time) so users
+ *  aren't spammed daily. */
+const MILESTONES = [30, 14, 7, 3, 1, 0]
+
+const DEFAULT_PREFS = { test: 30, insurance: 14, service: 14, custom: 3, block: 7 }
 
 function daysLeft(iso) {
   if (!iso) return null
@@ -31,6 +35,12 @@ function daysLeft(iso) {
   return Math.round((due.getTime() - today.getTime()) / DAY)
 }
 
+/** Alert if the item is due within its lead window, on a milestone day. */
+function shouldNotify(dl, lead) {
+  if (!lead || lead <= 0 || dl == null || dl < 0 || dl > lead) return false
+  return MILESTONES.includes(dl) || dl === lead
+}
+
 function duePhrase(d) {
   if (d === 0) return 'היום'
   if (d === 1) return 'מחר'
@@ -38,20 +48,37 @@ function duePhrase(d) {
 }
 
 /** Build the notifications owed for one car (0..n). */
-function carNotifications(car, insurances, reminders) {
+function carNotifications(car, prefs, insurances, services, reminders) {
   const name = car.nickname || `${car.make || ''} ${car.model || ''}`.trim() || car.plate || 'הרכב'
   const out = []
-  const push = (dl, title) => {
-    if (dl != null && MILESTONES.has(dl)) out.push({ title, body: `${name} · ${duePhrase(dl)}` })
+  const add = (dl, lead, title) => {
+    if (shouldNotify(dl, lead)) out.push({ title, body: `${name} · ${duePhrase(dl)}` })
   }
 
-  push(daysLeft(car.testExpiry), 'תזכורת טסט')
+  add(daysLeft(car.testExpiry), prefs.test, 'חידוש טסט (רישוי שנתי)')
+
+  // latest end-date per insurance kind (mirrors the app)
+  const latestByKind = new Map()
   for (const ins of insurances) {
-    push(daysLeft(ins.endDate), `ביטוח ${ins.kind || ''}`.trim() + ' לקראת סיום')
+    const prev = latestByKind.get(ins.kind)
+    if (!prev || (ins.endDate || '') > prev) latestByKind.set(ins.kind, ins.endDate)
   }
-  for (const rem of reminders) {
-    if (!rem.done) push(daysLeft(rem.dueDate), rem.title || 'תזכורת')
+  for (const [kind, endDate] of latestByKind) {
+    add(daysLeft(endDate), prefs.insurance, `סיום ביטוח ${kind}`)
   }
+
+  for (const s of services) {
+    if (s.nextDueDate) add(daysLeft(s.nextDueDate), prefs.service, `טיפול קרוב: ${s.title || ''}`.trim())
+  }
+
+  for (const r of reminders) {
+    if (!r.done) add(daysLeft(r.dueDate), prefs.custom, r.title || 'תזכורת')
+  }
+
+  for (const b of car.blocks || []) {
+    if (b.type === 'date' && b.remind && b.value) add(daysLeft(b.value), prefs.block, b.title || 'תזכורת')
+  }
+
   return out
 }
 
@@ -59,19 +86,31 @@ export const dailyReminderPush = onSchedule(
   { schedule: '0 8 * * *', timeZone: 'Asia/Jerusalem', region: 'us-central1' },
   async () => {
     const carsSnap = await db.collection('cars').get()
+    const prefsCache = new Map()
     let sent = 0
 
     for (const carDoc of carsSnap.docs) {
       const car = carDoc.data()
       if (!car.ownerId) continue
 
-      const [insSnap, remSnap] = await Promise.all([
+      // per-owner notification preferences (cached)
+      let prefs = prefsCache.get(car.ownerId)
+      if (!prefs) {
+        const userSnap = await db.collection('users').doc(car.ownerId).get()
+        prefs = { ...DEFAULT_PREFS, ...(userSnap.data()?.notifications || {}) }
+        prefsCache.set(car.ownerId, prefs)
+      }
+
+      const [insSnap, svcSnap, remSnap] = await Promise.all([
         carDoc.ref.collection('insurances').get(),
+        carDoc.ref.collection('services').get(),
         carDoc.ref.collection('reminders').get(),
       ])
       const notifs = carNotifications(
         car,
+        prefs,
         insSnap.docs.map((d) => d.data()),
+        svcSnap.docs.map((d) => d.data()),
         remSnap.docs.map((d) => d.data()),
       )
       if (notifs.length === 0) continue
@@ -89,7 +128,6 @@ export const dailyReminderPush = onSchedule(
         })
         sent += res.successCount
 
-        // prune tokens the FCM service reports as gone
         res.responses.forEach((r, i) => {
           const code = r.error?.code
           if (code === 'messaging/registration-token-not-registered' || code === 'messaging/invalid-argument') {

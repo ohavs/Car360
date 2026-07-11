@@ -1,6 +1,7 @@
 import { repo } from '../data'
 import type { Car, DerivedReminder } from '../types'
 import { daysUntil } from './utils'
+import { leadDaysFor, loadNotifPrefs } from './notifyPrefs'
 
 export function carDisplayName(car: Car): string {
   return car.nickname || `${car.make} ${car.model}`.trim() || car.plate
@@ -76,7 +77,12 @@ export async function notifyUpcoming(cars: Car[]): Promise<void> {
   const today = new Date().toDateString()
   if (localStorage.getItem(NOTIFIED_KEY) === today) return
 
-  const reminders = (await collectReminders(cars)).filter((r) => r.daysLeft <= 14)
+  // honour the per-type lead times configured in Settings (0 = off)
+  const prefs = loadNotifPrefs()
+  const reminders = (await collectReminders(cars)).filter((r) => {
+    const lead = leadDaysFor(r.source, prefs)
+    return lead > 0 && r.daysLeft <= lead
+  })
   if (reminders.length === 0) return
   localStorage.setItem(NOTIFIED_KEY, today)
 
