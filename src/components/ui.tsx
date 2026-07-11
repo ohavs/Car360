@@ -5,6 +5,7 @@ import {
   type ReactNode,
   type TextareaHTMLAttributes,
 } from 'react'
+import { createPortal } from 'react-dom'
 import { cn } from '../lib/utils'
 import { IconAlert, IconX } from './icons'
 
@@ -190,7 +191,10 @@ function Overlay({ onClose, children }: { onClose?: () => void; children: ReactN
       document.body.style.overflow = orig
     }
   }, [])
-  return (
+  // Portal to <body> so the overlay escapes the page's transformed stacking
+  // context (AppShell's animated wrapper). Otherwise its z-index is trapped
+  // below the fixed bottom nav, which then covers the sheet.
+  return createPortal(
     <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center">
       <motion.div
         initial={{ opacity: 0 }}
@@ -200,7 +204,8 @@ function Overlay({ onClose, children }: { onClose?: () => void; children: ReactN
         onClick={onClose}
       />
       {children}
-    </div>
+    </div>,
+    document.body,
   )
 }
 
@@ -259,7 +264,7 @@ export function BottomSheet({
             </IconButton>
           </div>
         </div>
-        <div className="px-5 pb-8 pb-safe">{children}</div>
+        <div className="px-5 pt-3 pb-[calc(2.25rem+env(safe-area-inset-bottom))]">{children}</div>
       </motion.div>
     </Overlay>
   )
