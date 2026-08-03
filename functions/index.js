@@ -11,6 +11,7 @@
  *   npx firebase-tools@13 deploy --only functions --project car360-50b44
  */
 import { onSchedule } from 'firebase-functions/v2/scheduler'
+import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import { logger } from 'firebase-functions'
 import { initializeApp } from 'firebase-admin/app'
 import { getFirestore } from 'firebase-admin/firestore'
@@ -140,3 +141,30 @@ export const dailyReminderPush = onSchedule(
     logger.info(`Car360 reminder push complete — ${sent} messages sent.`)
   },
 )
+
+/** On-demand test push to the caller's own devices (for the "send test" button).
+ *  Lets a user confirm push works while the app is closed, without waiting for
+ *  the scheduled run. */
+export const sendTestPush = onCall({ region: 'us-central1' }, async (req) => {
+  const uid = req.auth?.uid
+  if (!uid) throw new HttpsError('unauthenticated', 'יש להתחבר')
+
+  const tokensSnap = await db.collection('users').doc(uid).collection('fcmTokens').get()
+  const tokens = tokensSnap.docs.map((d) => d.id)
+  if (tokens.length === 0) return { sent: 0 }
+
+  const res = await getMessaging().sendEachForMulticast({
+    tokens,
+    notification: { title: 'Car360 · בדיקה', body: 'התראת ניסיון מהשרת — זה עובד! 🎉' },
+    data: { url: '/reminders', tag: 'car360-test' },
+    webpush: { fcmOptions: { link: '/reminders' } },
+  })
+
+  res.responses.forEach((r, i) => {
+    const code = r.error?.code
+    if (code === 'messaging/registration-token-not-registered' || code === 'messaging/invalid-argument') {
+      void tokensSnap.docs[i].ref.delete()
+    }
+  })
+  return { sent: res.successCount }
+})

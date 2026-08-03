@@ -32,7 +32,7 @@ import {
   notificationsSupported,
   requestNotificationPermission,
 } from '../lib/reminders'
-import { disablePush, enablePush, isPushConfigured } from '../lib/push'
+import { disablePush, enablePush, isPushConfigured, sendServerTestPush } from '../lib/push'
 
 /** Captured install prompt for the "Install app" action (Chrome/Android). */
 let deferredInstallPrompt: (Event & { prompt: () => Promise<void> }) | null = null
@@ -83,6 +83,28 @@ export default function SettingsPage() {
       toast('התראות לא נתמכות בדפדפן זה', 'error')
       return
     }
+    // real push: register this device, then have the server push to it so the
+    // notification arrives even when the app is closed/backgrounded.
+    if (isPushConfigured && user) {
+      const token = await enablePush(user.uid)
+      if (!token) {
+        setNotifGranted(false)
+        toast('צריך לאשר התראות בדפדפן', 'error')
+        return
+      }
+      setNotifGranted(true)
+      try {
+        const sent = await sendServerTestPush()
+        toast(
+          sent > 0 ? 'נשלחה התראה לטלפון — מזערו את האפליקציה כדי לראות אותה מגיעה' : 'המכשיר נרשם — נסו שוב בעוד רגע',
+          sent > 0 ? 'success' : 'info',
+        )
+      } catch {
+        toast('שליחת הבדיקה נכשלה, נסו שוב', 'error')
+      }
+      return
+    }
+    // fallback (no VAPID configured): show a local notification
     let perm = Notification.permission
     if (perm !== 'granted') perm = await Notification.requestPermission()
     if (perm !== 'granted') {

@@ -70,6 +70,16 @@ export async function disablePush(uid: string): Promise<void> {
   }
 }
 
+/** Ask the server to push a test notification to this user's registered
+ *  devices. Returns how many were sent (0 if no device is registered). */
+export async function sendServerTestPush(): Promise<number> {
+  const app = await getFirebaseApp()
+  const { getFunctions, httpsCallable } = await import('firebase/functions')
+  const fn = httpsCallable<unknown, { sent: number }>(getFunctions(app, 'us-central1'), 'sendTestPush')
+  const res = await fn()
+  return res.data?.sent ?? 0
+}
+
 /** Show foreground messages (app open) as a native notification. Call once. */
 export async function listenForegroundPush(): Promise<void> {
   if (!isPushConfigured) return
