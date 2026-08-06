@@ -11,6 +11,7 @@ import {
   IconFile,
   IconHome,
   IconPlus,
+  IconSearch,
   IconSettings,
   IconShield,
   IconWrench,
@@ -63,6 +64,7 @@ export default function AppShell() {
 
   const quickActions = [
     { label: 'רכב חדש', desc: 'הוספת רכב לאוסף שלך', icon: IconCar, action: () => go('/car/new') },
+    { label: 'דוח רכב', desc: 'בדיקה מלאה לפי מספר רישוי', icon: IconSearch, action: () => go('/report') },
     ...(activeCarId
       ? [
           { label: 'טיפול / תיקון', desc: 'תיעוד טיפול לרכב הפעיל', icon: IconWrench, action: () => go(`/car/${activeCarId}/services?add=1`) },
@@ -88,7 +90,7 @@ export default function AppShell() {
         </motion.div>
       </main>
 
-      <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-50">
+      <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-50 print:hidden">
         <div className="mx-auto w-full max-w-md px-4 pb-6 pb-safe [&>*]:pointer-events-auto">
           <motion.div
             initial={{ y: 80, opacity: 0 }}

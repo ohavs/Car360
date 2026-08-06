@@ -652,6 +652,30 @@ input.native-picker::-webkit-calendar-picker-indicator {
   cursor: pointer;
 }
 
+/* Printed reports (vehicle report / passport) flatten to clean white paper —
+   no ambient glow, no frosted glass, no heavy shadows. */
+@media print {
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .cockpit::before,
+  [data-skin] body::before {
+    display: none !important;
+  }
+  .glass-tile {
+    background: #fff !important;
+    border: 1px solid #d4d4d8 !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    break-inside: avoid;
+  }
+  .glass-tile::after {
+    display: none !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

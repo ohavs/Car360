@@ -19,6 +19,7 @@ import RemindersPage from './pages/RemindersPage'
 import ServicesPage from './pages/ServicesPage'
 import SettingsPage from './pages/SettingsPage'
 import SharePage from './pages/SharePage'
+import VehicleReportPage from './pages/VehicleReportPage'
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth()
@@ -61,6 +62,7 @@ const router = createBrowserRouter([
       { path: 'car/:id/share', element: <SharePage /> },
       { path: 'car/:id/glovebox', element: <GloveboxPage /> },
       { path: 'documents', element: <DocumentsTab /> },
+      { path: 'report', element: <VehicleReportPage /> },
       { path: 'reminders', element: <RemindersPage /> },
       { path: 'settings', element: <SettingsPage /> },
       { path: '*', element: <Navigate to="/" replace /> },

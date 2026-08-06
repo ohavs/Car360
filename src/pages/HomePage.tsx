@@ -17,6 +17,7 @@ import {
   IconMoon,
   IconPhone,
   IconPlus,
+  IconSearch,
   IconShare,
   IconShield,
   IconSun,
@@ -349,6 +350,7 @@ export default function HomePage() {
                   {[
                     { label: 'טיפולים', icon: IconWrench, to: `/car/${activeCar.id}/services` },
                     { label: 'ביטוחים', icon: IconShield, to: `/car/${activeCar.id}/insurance` },
+                    { label: 'דוח רכב', icon: IconSearch, to: `/report?plate=${activeCar.plate.replace(/\D/g, '')}` },
                     { label: 'תא כפפות', icon: IconLifeBuoy, to: `/car/${activeCar.id}/glovebox` },
                     { label: 'שיתוף', icon: IconShare, to: `/car/${activeCar.id}/share` },
                     { label: 'עריכה', icon: IconEdit, to: `/car/${activeCar.id}/edit` },

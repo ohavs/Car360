@@ -268,6 +268,13 @@ export const IconInstall = (p: P) => (
   </Svg>
 )
 
+export const IconSearch = (p: P) => (
+  <Svg {...p}>
+    <circle cx="11" cy="11" r="7" />
+    <path d="m20 20-3.5-3.5" />
+  </Svg>
+)
+
 /* layout: bento — one wide tile + two small ones */
 export const IconLayoutBento = (p: P) => (
   <Svg {...p}>
