@@ -314,7 +314,7 @@ function AddDocumentSheet({
   }
 
   return (
-    <BottomSheet title="מסמך חדש" onClose={onClose}>
+    <BottomSheet title="מסמך חדש" onClose={onClose} dirty={Boolean(title.trim() || imageUrl)}>
       <div className="space-y-4">
         <label className="block cursor-pointer">
           <span className="mb-1.5 block text-sm font-medium text-ink-2">קובץ</span>

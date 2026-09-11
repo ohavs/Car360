@@ -3,6 +3,7 @@ import { compressToDataUrl } from '../lib/images'
 import { useToast } from '../contexts/ToastContext'
 import { IconCamera, IconX } from './icons'
 import PhotoViewer from './PhotoViewer'
+import { ConfirmDialog } from './ui'
 
 /** Multi-photo attachment strip with automatic compression. */
 export default function PhotoPicker({
@@ -17,6 +18,7 @@ export default function PhotoPicker({
   const fileRef = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
   const [viewing, setViewing] = useState<number | null>(null)
+  const [removing, setRemoving] = useState<number | null>(null)
   const { toast } = useToast()
 
   const add = async (files: FileList) => {
@@ -47,8 +49,12 @@ export default function PhotoPicker({
               <img src={p} alt="" className="h-20 w-20 rounded-2xl object-cover ring-1 ring-line" />
             </button>
             <button
-              aria-label="הסרת תמונה"
-              onClick={() => onChange(photos.filter((_, j) => j !== i))}
+              type="button"
+              aria-label={`הסרת תמונה ${i + 1}`}
+              onClick={(e) => {
+                e.stopPropagation()
+                setRemoving(i)
+              }}
               className="absolute -end-1 -top-1 flex size-6 items-center justify-center rounded-full bg-danger text-white shadow-card active:scale-90"
             >
               <IconX size={12} />
@@ -77,6 +83,18 @@ export default function PhotoPicker({
       />
       {viewing !== null && (
         <PhotoViewer photos={photos} index={viewing} title={label} onClose={() => setViewing(null)} />
+      )}
+      {removing !== null && (
+        <ConfirmDialog
+          title="להסיר את התמונה?"
+          message="התמונה תוסר מהרשומה. אפשר לצרף אותה מחדש בכל עת."
+          confirmLabel="הסרה"
+          onConfirm={() => {
+            onChange(photos.filter((_, j) => j !== removing))
+            setRemoving(null)
+          }}
+          onCancel={() => setRemoving(null)}
+        />
       )}
     </div>
   )

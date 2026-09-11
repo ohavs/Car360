@@ -282,7 +282,11 @@ function InsuranceEditor({
   }
 
   return (
-    <BottomSheet title={isNew ? 'פוליסה חדשה' : 'עריכת פוליסה'} onClose={onClose}>
+    <BottomSheet
+      title={isNew ? 'פוליסה חדשה' : 'עריכת פוליסה'}
+      onClose={onClose}
+      dirty={JSON.stringify(r) !== JSON.stringify(record)}
+    >
       <div className="space-y-4">
         {/* smart scan */}
         <button

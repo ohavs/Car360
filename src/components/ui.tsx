@@ -1,6 +1,7 @@
 import { motion, type HTMLMotionProps } from 'motion/react'
 import {
   useEffect,
+  useState,
   type InputHTMLAttributes,
   type ReactNode,
   type TextareaHTMLAttributes,
@@ -242,13 +243,24 @@ export function BottomSheet({
   title,
   onClose,
   children,
+  dirty = false,
+  discardTitle = 'לצאת בלי לשמור?',
+  discardMessage = 'יש שינויים שלא נשמרו. אם תצאו עכשיו הם יאבדו.',
 }: {
   title: string
   onClose: () => void
   children: ReactNode
+  /** when true, closing asks for confirmation first */
+  dirty?: boolean
+  discardTitle?: string
+  discardMessage?: string
 }) {
+  const [confirmingClose, setConfirmingClose] = useState(false)
+  // every close path (X button, backdrop tap) goes through here
+  const requestClose = () => (dirty ? setConfirmingClose(true) : onClose())
+
   return (
-    <Overlay onClose={onClose}>
+    <Overlay onClose={requestClose}>
       <motion.div
         initial={{ y: '100%' }}
         animate={{ y: 0 }}
@@ -259,13 +271,26 @@ export function BottomSheet({
           <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-line" />
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-black">{title}</h2>
-            <IconButton label="סגירה" onClick={onClose} className="!size-9">
+            <IconButton label="סגירה" onClick={requestClose} className="!size-9">
               <IconX size={18} />
             </IconButton>
           </div>
         </div>
         <div className="px-5 pt-3 pb-[calc(2.25rem+env(safe-area-inset-bottom))]">{children}</div>
       </motion.div>
+
+      {confirmingClose && (
+        <ConfirmDialog
+          title={discardTitle}
+          message={discardMessage}
+          confirmLabel="יציאה בלי לשמור"
+          onConfirm={() => {
+            setConfirmingClose(false)
+            onClose()
+          }}
+          onCancel={() => setConfirmingClose(false)}
+        />
+      )}
     </Overlay>
   )
 }

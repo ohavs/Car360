@@ -2,7 +2,7 @@ import { MotionConfig } from 'motion/react'
 import { useEffect, useRef, type ReactNode } from 'react'
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
 import { useTheme } from './contexts/ThemeContext'
-import { listenForegroundPush } from './lib/push'
+import { listenForegroundPush, ensurePushRegistered } from './lib/push'
 import { loadDesignPrefs, saveDesignPrefs } from './data/prefs'
 import AppShell from './components/layout/AppShell'
 import { Spinner } from './components/ui'
@@ -95,6 +95,22 @@ function PrefsSync() {
   return null
 }
 
+/** Keeps this device's push registration alive. Permission can predate push
+ *  being configured, and FCM rotates tokens — without this the switch can read
+ *  "on" while the server has no device to send to. */
+function PushSync() {
+  const { user } = useAuth()
+  const doneFor = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (!user || doneFor.current === user.uid) return
+    doneFor.current = user.uid
+    void ensurePushRegistered(user.uid)
+  }, [user])
+
+  return null
+}
+
 export default function App() {
   useEffect(() => {
     void listenForegroundPush()
@@ -103,6 +119,7 @@ export default function App() {
   return (
     <MotionConfig reducedMotion="user">
       <PrefsSync />
+      <PushSync />
       <RouterProvider router={router} />
     </MotionConfig>
   )

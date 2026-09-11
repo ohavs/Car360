@@ -89,6 +89,7 @@ export const dailyReminderPush = onSchedule(
     const carsSnap = await db.collection('cars').get()
     const prefsCache = new Map()
     let sent = 0
+    const stats = { cars: carsSnap.size, withDue: 0, owners: new Set(), noTokens: new Set(), tokens: 0 }
 
     for (const carDoc of carsSnap.docs) {
       const car = carDoc.data()
@@ -115,10 +116,17 @@ export const dailyReminderPush = onSchedule(
         remSnap.docs.map((d) => d.data()),
       )
       if (notifs.length === 0) continue
+      stats.withDue++
+      stats.owners.add(car.ownerId)
 
       const tokensSnap = await db.collection('users').doc(car.ownerId).collection('fcmTokens').get()
       const tokens = tokensSnap.docs.map((d) => d.id)
-      if (tokens.length === 0) continue
+      if (tokens.length === 0) {
+        // the common failure: reminders are due but no device is registered
+        stats.noTokens.add(car.ownerId)
+        continue
+      }
+      stats.tokens += tokens.length
 
       for (const n of notifs) {
         const res = await getMessaging().sendEachForMulticast({
@@ -138,7 +146,17 @@ export const dailyReminderPush = onSchedule(
       }
     }
 
-    logger.info(`Car360 reminder push complete — ${sent} messages sent.`)
+    logger.info(
+      `Car360 reminder push complete — ${sent} messages sent. ` +
+        `cars=${stats.cars} carsWithDueItems=${stats.withDue} ` +
+        `owners=${stats.owners.size} ownersWithoutDevice=${stats.noTokens.size} devices=${stats.tokens}`,
+    )
+    if (stats.withDue > 0 && stats.tokens === 0) {
+      logger.warn(
+        'Reminders were due but no device is registered for push — users granted notification ' +
+          'permission without an FCM token being stored (see ensurePushRegistered on the client).',
+      )
+    }
   },
 )
 

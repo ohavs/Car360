@@ -208,7 +208,7 @@ function AddReminderSheet({ onClose, onSaved }: { onClose: () => void; onSaved: 
   }
 
   return (
-    <BottomSheet title="תזכורת חדשה" onClose={onClose}>
+    <BottomSheet title="תזכורת חדשה" onClose={onClose} dirty={Boolean(title.trim() || dueDate || time)}>
       <div className="space-y-4">
         <Field label="רכב">
           <Select

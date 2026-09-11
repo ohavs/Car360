@@ -33,13 +33,9 @@ async function tokenDocRef(uid: string, token: string) {
   return { fs, ref: fs.doc(fs.getFirestore(app), 'users', uid, 'fcmTokens', token) }
 }
 
-/** Request permission, obtain an FCM token and persist it for this user.
- *  Returns the token on success, or null if permission was denied / failed. */
-export async function enablePush(uid: string): Promise<string | null> {
-  if (!isPushConfigured) return null
-  const permission = await Notification.requestPermission()
-  if (permission !== 'granted') return null
-
+/** Obtain the FCM token for this device and store it under the user.
+ *  Shared by the explicit opt-in and the silent self-heal below. */
+async function registerToken(uid: string): Promise<string | null> {
   const reg = await navigator.serviceWorker.register('/firebase-messaging-sw.js')
   const { m, messaging } = await messagingApi()
   const token = await m.getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: reg })
@@ -52,6 +48,32 @@ export async function enablePush(uid: string): Promise<string | null> {
     updatedAt: Date.now(),
   })
   return token
+}
+
+/** Request permission, obtain an FCM token and persist it for this user.
+ *  Returns the token on success, or null if permission was denied / failed. */
+export async function enablePush(uid: string): Promise<string | null> {
+  if (!isPushConfigured) return null
+  const permission = await Notification.requestPermission()
+  if (permission !== 'granted') return null
+  return registerToken(uid)
+}
+
+/** Make sure a device that already granted permission actually has a token
+ *  registered — never prompts. Called on every app start because:
+ *   - permission can predate push being configured (then no token was ever
+ *     stored, and the UI would still look "on"), and
+ *   - FCM rotates tokens, so a stored one can go stale.
+ *  getToken returns the existing token when it is still valid, so this is
+ *  cheap and idempotent. */
+export async function ensurePushRegistered(uid: string): Promise<string | null> {
+  if (!isPushConfigured) return null
+  if (Notification.permission !== 'granted') return null
+  try {
+    return await registerToken(uid)
+  } catch {
+    return null
+  }
 }
 
 /** Revoke this device's push token (best-effort). */

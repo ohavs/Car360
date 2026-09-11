@@ -32,7 +32,7 @@ import {
   notificationsSupported,
   requestNotificationPermission,
 } from '../lib/reminders'
-import { disablePush, enablePush, isPushConfigured, sendServerTestPush } from '../lib/push'
+import { disablePush, enablePush, ensurePushRegistered, isPushConfigured, sendServerTestPush } from '../lib/push'
 
 /** Captured install prompt for the "Install app" action (Chrome/Android). */
 let deferredInstallPrompt: (Event & { prompt: () => Promise<void> }) | null = null
@@ -57,6 +57,13 @@ export default function SettingsPage() {
   useEffect(() => {
     setStandalone(window.matchMedia('(display-mode: standalone)').matches)
   }, [])
+
+  // the switch must reflect whether this device is actually registered for
+  // push — browser permission alone does not mean the server can reach it
+  useEffect(() => {
+    if (!isPushConfigured || !user) return
+    void ensurePushRegistered(user.uid).then((token) => setNotifGranted(Boolean(token)))
+  }, [user])
 
   // pull cloud-synced notification prefs once on sign-in
   useEffect(() => {

@@ -219,7 +219,11 @@ function ServiceEditor({
   const isNew = !record.createdAt
 
   return (
-    <BottomSheet title={isNew ? 'טיפול חדש' : 'עריכת טיפול'} onClose={onClose}>
+    <BottomSheet
+      title={isNew ? 'טיפול חדש' : 'עריכת טיפול'}
+      onClose={onClose}
+      dirty={JSON.stringify(r) !== JSON.stringify(record)}
+    >
       <div className="space-y-4">
         <Field label="מה נעשה?">
           <Input

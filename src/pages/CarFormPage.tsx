@@ -89,6 +89,7 @@ export default function CarFormPage() {
   const [bgProgress, setBgProgress] = useState(0)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [blockEditor, setBlockEditor] = useState<InfoBlock | null>(null)
+  const [blockToDelete, setBlockToDelete] = useState<InfoBlock | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
   const blocker = useUnsavedChanges(dirty && !saving)
@@ -413,7 +414,7 @@ export default function CarFormPage() {
                   </button>
                   <button
                     aria-label={`מחיקת ${b.title}`}
-                    onClick={() => set('blocks', draft.blocks.filter((x) => x.id !== b.id))}
+                    onClick={() => setBlockToDelete(b)}
                     className="flex size-9 shrink-0 items-center justify-center rounded-full text-danger active:scale-90"
                   >
                     <IconTrash size={18} />
@@ -465,6 +466,19 @@ export default function CarFormPage() {
         />
       )}
 
+      {blockToDelete && (
+        <ConfirmDialog
+          title="למחוק את הבלוק?"
+          message={`"${blockToDelete.title}" יוסר מכרטיס הרכב.`}
+          confirmLabel="מחיקה"
+          onConfirm={() => {
+            set('blocks', draft.blocks.filter((x) => x.id !== blockToDelete.id))
+            setBlockToDelete(null)
+          }}
+          onCancel={() => setBlockToDelete(null)}
+        />
+      )}
+
       {/* unsaved-changes navigation guard */}
       {blocker.state === 'blocked' && (
         <ConfirmDialog
@@ -492,7 +506,11 @@ function BlockEditorSheet({
   const isNew = !block.title
 
   return (
-    <BottomSheet title={isNew ? 'בלוק מידע חדש' : 'עריכת בלוק'} onClose={onClose}>
+    <BottomSheet
+      title={isNew ? 'בלוק מידע חדש' : 'עריכת בלוק'}
+      onClose={onClose}
+      dirty={JSON.stringify(b) !== JSON.stringify(block)}
+    >
       <div className="space-y-4">
         {isNew && (
           <div className="flex flex-wrap gap-2">
