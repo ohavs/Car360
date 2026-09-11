@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import PageHeader from '../components/layout/PageHeader'
+import PhotoViewer from '../components/PhotoViewer'
 import CarSilhouette from '../components/cars/CarSilhouette'
 import GlassPanel from '../components/cockpit/GlassPanel'
 import { IconChevronLeft, IconDownload, IconFile, IconPlus, IconTrash } from '../components/icons'
@@ -129,6 +130,7 @@ export default function DocumentsPage() {
 
   const [adding, setAdding] = useState(() => Boolean(params.get('add')))
   const [viewing, setViewing] = useState<CarDocument | null>(null)
+  const [zoomed, setZoomed] = useState<string | null>(null)
   const [toDelete, setToDelete] = useState<CarDocument | null>(null)
   const [filter, setFilter] = useState<DocumentCategory | 'הכל'>('הכל')
 
@@ -243,7 +245,15 @@ export default function DocumentsPage() {
 
       {viewing && (
         <BottomSheet title={viewing.title} onClose={() => setViewing(null)}>
-          <img src={viewing.imageUrl} alt={viewing.title} className="w-full rounded-card" />
+          <button
+            type="button"
+            onClick={() => setZoomed(viewing.imageUrl)}
+            aria-label="הגדלת המסמך למסך מלא"
+            className="block w-full active:scale-[0.99]"
+          >
+            <img src={viewing.imageUrl} alt={viewing.title} className="w-full rounded-card" />
+          </button>
+          <p className="mt-2 text-center text-xs text-ink-3">הקישו על התמונה להגדלה למסך מלא</p>
           <div className="mt-4 grid grid-cols-2 gap-3">
             <a
               href={viewing.imageUrl}
@@ -260,6 +270,8 @@ export default function DocumentsPage() {
           </div>
         </BottomSheet>
       )}
+
+      {zoomed && <PhotoViewer photos={[zoomed]} onClose={() => setZoomed(null)} />}
 
       {toDelete && (
         <ConfirmDialog

@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { compressToDataUrl } from '../lib/images'
 import { useToast } from '../contexts/ToastContext'
 import { IconCamera, IconX } from './icons'
+import PhotoViewer from './PhotoViewer'
 
 /** Multi-photo attachment strip with automatic compression. */
 export default function PhotoPicker({
@@ -15,6 +16,7 @@ export default function PhotoPicker({
 }) {
   const fileRef = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
+  const [viewing, setViewing] = useState<number | null>(null)
   const { toast } = useToast()
 
   const add = async (files: FileList) => {
@@ -36,7 +38,14 @@ export default function PhotoPicker({
       <div className="no-scrollbar flex gap-2 overflow-x-auto">
         {photos.map((p, i) => (
           <div key={i} className="relative shrink-0">
-            <img src={p} alt="" className="h-20 w-20 rounded-2xl object-cover ring-1 ring-line" />
+            <button
+              type="button"
+              onClick={() => setViewing(i)}
+              aria-label={`הצגת תמונה ${i + 1}`}
+              className="block active:scale-95"
+            >
+              <img src={p} alt="" className="h-20 w-20 rounded-2xl object-cover ring-1 ring-line" />
+            </button>
             <button
               aria-label="הסרת תמונה"
               onClick={() => onChange(photos.filter((_, j) => j !== i))}
@@ -66,6 +75,9 @@ export default function PhotoPicker({
           e.target.value = ''
         }}
       />
+      {viewing !== null && (
+        <PhotoViewer photos={photos} index={viewing} title={label} onClose={() => setViewing(null)} />
+      )}
     </div>
   )
 }

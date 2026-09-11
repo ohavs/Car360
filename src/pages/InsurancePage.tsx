@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import PageHeader from '../components/layout/PageHeader'
 import PhotoPicker from '../components/PhotoPicker'
+import PhotoViewer from '../components/PhotoViewer'
 import { IconPhone, IconPlus, IconShield, IconSparkles, IconTrash } from '../components/icons'
 import { motion } from 'motion/react'
 import {
@@ -62,6 +63,7 @@ export default function InsurancePage() {
     params.get('add') && carId ? emptyInsurance(carId) : null,
   )
   const [toDelete, setToDelete] = useState<InsuranceRecord | null>(null)
+  const [viewing, setViewing] = useState<{ photos: string[]; index: number; title: string } | null>(null)
 
   const sorted = useMemo(() => [...items].sort((a, b) => b.endDate.localeCompare(a.endDate)), [items])
 
@@ -143,8 +145,24 @@ export default function InsurancePage() {
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge tone={statusTone[st]}>{dueLabel(rec.endDate)}</Badge>
                   {rec.agentName && <Badge>סוכן: {rec.agentName}</Badge>}
-                  {rec.photos.length > 0 && <Badge>{rec.photos.length} מסמכים</Badge>}
                 </div>
+                {rec.photos.length > 0 && (
+                  <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 pt-0.5">
+                    {rec.photos.map((p, i) => (
+                      <button
+                        key={i}
+                        aria-label={`מסמך ${i + 1} של ${rec.company}`}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setViewing({ photos: rec.photos, index: i, title: `${rec.kind} · ${rec.company}` })
+                        }}
+                        className="shrink-0 overflow-hidden rounded-xl ring-1 ring-line active:scale-95"
+                      >
+                        <img src={p} alt="" loading="lazy" className="size-16 object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                )}
                 {rec.agentPhone && (
                   <a
                     href={`tel:${rec.agentPhone}`}
@@ -177,6 +195,15 @@ export default function InsurancePage() {
           message={`פוליסת ${toDelete.kind} של ${toDelete.company} תימחק לצמיתות.`}
           onConfirm={() => void remove()}
           onCancel={() => setToDelete(null)}
+        />
+      )}
+
+      {viewing && (
+        <PhotoViewer
+          photos={viewing.photos}
+          index={viewing.index}
+          title={viewing.title}
+          onClose={() => setViewing(null)}
         />
       )}
     </div>
