@@ -3,12 +3,14 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import CarCarousel from '../components/cars/CarCarousel'
 import GlassPanel from '../components/cockpit/GlassPanel'
+import AttentionStrip from '../components/cockpit/AttentionStrip'
+import HomeSection, { SectionRow } from '../components/cockpit/HomeSection'
 import StatusTile from '../components/cockpit/StatusTile'
 import {
-  IconBell,
   IconCalendar,
   IconCar,
   IconEdit,
+  IconFile,
   IconLayoutBento,
   IconLayoutGrid,
   IconLayoutStack,
@@ -30,8 +32,14 @@ import { useTheme } from '../contexts/ThemeContext'
 import { repo } from '../data'
 import { carHealth } from '../lib/health'
 import { carDisplayName, collectReminders, notifyUpcoming } from '../lib/reminders'
-import { cn, dueLabel, dueStatus, formatDate, formatPlate } from '../lib/utils'
-import type { DerivedReminder, InfoBlock } from '../types'
+import { cn, dueLabel, dueStatus, formatDate, formatMoney, formatPlate } from '../lib/utils'
+import type {
+  CarDocument,
+  DerivedReminder,
+  InfoBlock,
+  InsuranceRecord,
+  ServiceRecord,
+} from '../types'
 
 const statusTone = { none: 'neutral', ok: 'ok', warn: 'warn', danger: 'danger' } as const
 
@@ -141,8 +149,11 @@ export default function HomePage() {
   const { theme, toggle } = useTheme()
   const navigate = useNavigate()
   const [reminders, setReminders] = useState<DerivedReminder[]>([])
-  const [servicesCount, setServicesCount] = useState<number | null>(null)
-  const [lastService, setLastService] = useState<string | undefined>(undefined)
+  const [overview, setOverview] = useState<{
+    services: ServiceRecord[]
+    insurances: InsuranceRecord[]
+    documents: CarDocument[]
+  } | null>(null)
   const [layout, setLayout] = useState<LayoutId>(initialLayout)
 
   const changeLayout = (l: LayoutId) => {
@@ -179,27 +190,48 @@ export default function HomePage() {
     }
   }, [cars])
 
+  // one parallel wave for the active car — powers the counters and every
+  // inline section below, so the cockpit costs a single round trip
   useEffect(() => {
     let cancelled = false
     if (!activeCarId) {
-      setServicesCount(null)
+      setOverview(null)
       return
     }
-    void repo.listServices(activeCarId).then((list) => {
-      if (cancelled) return
-      setServicesCount(list.length)
-      setLastService([...list].sort((a, b) => b.date.localeCompare(a.date))[0]?.date)
+    void Promise.all([
+      repo.listServices(activeCarId),
+      repo.listInsurances(activeCarId),
+      repo.listDocuments(activeCarId),
+    ]).then(([services, insurances, documents]) => {
+      if (!cancelled) setOverview({ services, insurances, documents })
     })
     return () => {
       cancelled = true
     }
   }, [activeCarId])
 
+  const recentServices = useMemo(
+    () => [...(overview?.services ?? [])].sort((a, b) => b.date.localeCompare(a.date)),
+    [overview],
+  )
+  const activeInsurances = useMemo(
+    () => [...(overview?.insurances ?? [])].sort((a, b) => b.endDate.localeCompare(a.endDate)),
+    [overview],
+  )
+  const recentDocs = useMemo(
+    () => [...(overview?.documents ?? [])].sort((a, b) => b.createdAt - a.createdAt),
+    [overview],
+  )
+  const servicesCount = overview?.services.length ?? null
+  const totalSpend = useMemo(
+    () => recentServices.reduce((sum, sv) => sum + (sv.cost ?? 0), 0),
+    [recentServices],
+  )
+
   const carReminders = useMemo(
     () => reminders.filter((r) => r.carId === activeCarId),
     [reminders, activeCarId],
   )
-  const urgent = useMemo(() => carReminders.filter((r) => r.daysLeft <= 30), [carReminders])
   const health = useMemo(
     () => (activeCar ? carHealth(activeCar, carReminders) : null),
     [activeCar, carReminders],
@@ -271,6 +303,11 @@ export default function HomePage() {
         />
       ) : (
         <>
+          {/* the first thing on the screen: what needs action */}
+          <div className="relative z-10 mb-3">
+            <AttentionStrip reminders={carReminders} />
+          </div>
+
           <motion.div style={{ y: carY, opacity: carFade }} className="relative z-0 -mx-4">
             <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ ...spring, delay: 0.05 }}>
               <CarCarousel
@@ -332,14 +369,18 @@ export default function HomePage() {
                 </Link>
               </GlassPanel>
 
+              {/* total spend — the services list itself lives inline below, so
+                  this tile carries information that isn't repeated anywhere */}
               <GlassPanel className={tilePad}>
                 <Link to={`/car/${activeCar.id}/services`} className="block">
                   <p className="flex items-center gap-1.5 text-sm font-bold text-ink-3">
-                    <IconWrench size={17} /> טיפולים
+                    <IconWrench size={17} /> הוצאות
                   </p>
-                  <p className={cn('mt-1.5 font-black tracking-tight', svcMetricClass)}>{servicesCount ?? 0}</p>
+                  <p className={cn('mt-1.5 font-black tracking-tight', svcMetricClass)}>
+                    {totalSpend > 0 ? formatMoney(totalSpend) : '—'}
+                  </p>
                   <p className="mt-1 text-sm font-semibold text-ink-3">
-                    {lastService ? `אחרון: ${formatDate(lastService)}` : 'אין טיפולים מתועדים'}
+                    {servicesCount ? `ב-${servicesCount} טיפולים` : 'אין טיפולים מתועדים'}
                   </p>
                 </Link>
               </GlassPanel>
@@ -372,38 +413,80 @@ export default function HomePage() {
                 </div>
               </GlassPanel>
 
-              {/* urgent reminders */}
-              {urgent.length > 0 && (
-                <Link to="/reminders" className="col-span-2 block">
-                  <GlassPanel
-                    className="!p-3.5"
-                    style={{ background: urgent[0].daysLeft <= 7 ? 'rgb(239 68 68 / 0.16)' : 'rgb(245 158 11 / 0.16)' }}
-                  >
-                    <div className="flex items-center gap-3">
-                      <motion.span
-                        animate={{ rotate: [0, -12, 12, -8, 8, 0] }}
-                        transition={{ duration: 0.8, delay: 0.8, repeat: 2, repeatDelay: 4 }}
-                        className={cn(
-                          'flex size-10 shrink-0 items-center justify-center rounded-full bg-white/70 dark:bg-white/10',
-                          urgent[0].daysLeft <= 7 ? 'text-danger' : 'text-warn',
-                        )}
+              {/* inline cockpit sections — the day-to-day answers without navigating */}
+              <div className="col-span-2 flex flex-col gap-3">
+                <HomeSection
+                  id="services"
+                  title="טיפולים אחרונים"
+                  icon={<IconWrench size={16} />}
+                  count={recentServices.length}
+                  seeAllTo={`/car/${activeCar.id}/services`}
+                  empty="עדיין לא תועדו טיפולים"
+                >
+                  {recentServices.slice(0, 3).map((sv) => (
+                    <SectionRow
+                      key={sv.id}
+                      to={`/car/${activeCar.id}/services`}
+                      title={sv.title}
+                      subtitle={`${formatDate(sv.date)}${sv.garage ? ` · ${sv.garage}` : ''}`}
+                      trailing={
+                        sv.cost != null ? (
+                          <span className="shrink-0 text-sm font-black">{formatMoney(sv.cost)}</span>
+                        ) : undefined
+                      }
+                    />
+                  ))}
+                </HomeSection>
+
+                <HomeSection
+                  id="insurance"
+                  title="ביטוח"
+                  icon={<IconShield size={16} />}
+                  count={activeInsurances.length}
+                  seeAllTo={`/car/${activeCar.id}/insurance`}
+                  empty="לא נוספו פוליסות"
+                >
+                  {activeInsurances.slice(0, 2).map((ins) => (
+                    <SectionRow
+                      key={ins.id}
+                      to={`/car/${activeCar.id}/insurance`}
+                      title={`${ins.kind} · ${ins.company}`}
+                      subtitle={`בתוקף עד ${formatDate(ins.endDate)}`}
+                      trailing={
+                        <Badge tone={statusTone[dueStatus(ins.endDate)]}>{dueLabel(ins.endDate)}</Badge>
+                      }
+                    />
+                  ))}
+                </HomeSection>
+
+                <HomeSection
+                  id="documents"
+                  title="מסמכים"
+                  icon={<IconFile size={16} />}
+                  count={recentDocs.length}
+                  seeAllTo={`/car/${activeCar.id}/documents`}
+                  defaultOpen={false}
+                  empty="לא הועלו מסמכים"
+                >
+                  <div className="no-scrollbar flex gap-2 overflow-x-auto p-3">
+                    {recentDocs.slice(0, 8).map((d) => (
+                      <Link
+                        key={d.id}
+                        to={`/car/${activeCar.id}/documents`}
+                        className="shrink-0 active:scale-95"
+                        aria-label={d.title}
                       >
-                        <IconBell size={20} />
-                      </motion.span>
-                      <span className="flex-1">
-                        <span className="block text-sm font-black">
-                          {urgent[0].title} — {dueLabel(urgent[0].dueDate)}
-                        </span>
-                        {urgent.length > 1 && (
-                          <span className="block text-xs font-medium text-ink-2">
-                            ועוד {urgent.length - 1} תזכורות קרובות
-                          </span>
-                        )}
-                      </span>
-                    </div>
-                  </GlassPanel>
-                </Link>
-              )}
+                        <img
+                          src={d.imageUrl}
+                          alt=""
+                          loading="lazy"
+                          className="size-16 rounded-xl object-cover ring-1 ring-line"
+                        />
+                      </Link>
+                    ))}
+                  </div>
+                </HomeSection>
+              </div>
 
               {/* section header */}
               <div className="col-span-2 flex items-center justify-between pt-1">
