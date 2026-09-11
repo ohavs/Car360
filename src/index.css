@@ -654,6 +654,15 @@ input.native-picker::-webkit-calendar-picker-indicator {
 
 
 
+
+/* The app is a full-screen PWA: a downward drag should never trigger the
+   browser's pull-to-refresh (it was reloading the app mid-gesture). Sheets
+   additionally contain their own scroll chaining. */
+html,
+body {
+  overscroll-behavior-y: none;
+}
+
 /* Bottom sheets own their surface on every skin.
    A sheet animates its transform, so a translucent surface would need a
    backdrop-filter that re-rasterises on every frame — and without one the page

@@ -39,6 +39,7 @@ export default function HomeSection({
   seeAllTo,
   defaultOpen = true,
   empty,
+  flat = false,
   children,
 }: {
   id: string
@@ -49,6 +50,8 @@ export default function HomeSection({
   defaultOpen?: boolean
   /** shown instead of children when there is nothing yet */
   empty?: ReactNode
+  /** render without its own panel, for grouping several sections into one */
+  flat?: boolean
   children: ReactNode
 }) {
   const [open, setOpen] = useState(() => readOpen(id, defaultOpen))
@@ -60,8 +63,10 @@ export default function HomeSection({
     writeOpen(id, next)
   }
 
+  const Shell = flat ? FlatShell : PanelShell
+
   return (
-    <GlassPanel className="!p-0 overflow-hidden">
+    <Shell>
       <div className="flex items-center gap-2 px-4 py-3">
         <button
           onClick={toggle}
@@ -115,8 +120,18 @@ export default function HomeSection({
           </motion.div>
         )}
       </AnimatePresence>
-    </GlassPanel>
+    </Shell>
   )
+}
+
+function PanelShell({ children }: { children: ReactNode }) {
+  return <GlassPanel className="!p-0 overflow-hidden">{children}</GlassPanel>
+}
+
+/** Inside a group the surrounding panel draws the edges, so a section only
+ *  contributes a divider. */
+function FlatShell({ children }: { children: ReactNode }) {
+  return <div className="overflow-hidden border-b border-white/15 last:border-b-0 dark:border-white/6">{children}</div>
 }
 
 /** A single tappable row inside a HomeSection. */

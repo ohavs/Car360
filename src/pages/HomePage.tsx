@@ -6,16 +6,12 @@ import GlassPanel from '../components/cockpit/GlassPanel'
 import AttentionStrip from '../components/cockpit/AttentionStrip'
 import HomeSection, { SectionRow } from '../components/cockpit/HomeSection'
 import QuickAdd from '../components/cockpit/QuickAdd'
-import StatusTile from '../components/cockpit/StatusTile'
 import {
   IconAlert,
   IconCalendar,
   IconCar,
   IconEdit,
   IconFile,
-  IconLayoutBento,
-  IconLayoutGrid,
-  IconLayoutStack,
   IconLifeBuoy,
   IconLink,
   IconMoon,
@@ -32,8 +28,8 @@ import { useAuth } from '../contexts/AuthContext'
 import { useCars } from '../contexts/CarsContext'
 import { useTheme } from '../contexts/ThemeContext'
 import { repo } from '../data'
-import { carHealth } from '../lib/health'
 import { carDisplayName, collectReminders, notifyUpcoming } from '../lib/reminders'
+import { readLayout, type LayoutId } from '../lib/homeLayout'
 import { cn, dueLabel, dueStatus, formatDate, formatMoney, formatPlate } from '../lib/utils'
 import type {
   CarDocument,
@@ -109,19 +105,6 @@ function SpecRow({ label, value, ltr }: { label: string; value: string; ltr?: bo
   )
 }
 
-type LayoutId = 'bento' | 'stack' | 'compact'
-
-const LAYOUT_OPTIONS: { id: LayoutId; label: string; icon: typeof IconLayoutBento }[] = [
-  { id: 'bento', label: 'לוח משבצות', icon: IconLayoutBento },
-  { id: 'stack', label: 'טור יחיד', icon: IconLayoutStack },
-  { id: 'compact', label: 'רשת קומפקטית', icon: IconLayoutGrid },
-]
-
-function initialLayout(): LayoutId {
-  const s = localStorage.getItem('car360:homeLayout')
-  return s === 'stack' || s === 'compact' ? s : 'bento'
-}
-
 /** Small labelled cockpit tile. */
 function InfoTile({
   label,
@@ -156,14 +139,10 @@ export default function HomePage() {
     insurances: InsuranceRecord[]
     documents: CarDocument[]
   } | null>(null)
-  const [layout, setLayout] = useState<LayoutId>(initialLayout)
+  const [layout] = useState<LayoutId>(readLayout)
   /** bumped after a quick add so the cockpit reloads its data */
   const [refreshTick, setRefreshTick] = useState(0)
 
-  const changeLayout = (l: LayoutId) => {
-    setLayout(l)
-    localStorage.setItem('car360:homeLayout', l)
-  }
 
   // parallax: as the page scrolls, the car drifts up slower and fades, so the
   // content panel rises up over it.
@@ -235,10 +214,6 @@ export default function HomePage() {
   const carReminders = useMemo(
     () => reminders.filter((r) => r.carId === activeCarId),
     [reminders, activeCarId],
-  )
-  const health = useMemo(
-    () => (activeCar ? carHealth(activeCar, carReminders) : null),
-    [activeCar, carReminders],
   )
 
   if (loading) return <HomeSkeleton />
@@ -345,30 +320,6 @@ export default function HomePage() {
           </motion.div>
 
           {activeCar && (
-            <div className="relative z-10 mt-3 flex items-center justify-between">
-              <span className="text-xs font-bold text-ink-3">תצוגת דף הבית</span>
-              <div className="glass-bar flex items-center gap-0.5 rounded-full p-1">
-                {LAYOUT_OPTIONS.map((o) => (
-                  <motion.button
-                    key={o.id}
-                    whileTap={{ scale: 0.88 }}
-                    transition={spring}
-                    onClick={() => changeLayout(o.id)}
-                    aria-label={o.label}
-                    aria-pressed={layout === o.id}
-                    className={cn(
-                      'flex size-9 items-center justify-center rounded-full transition-colors',
-                      layout === o.id ? 'bg-cta text-white shadow-card' : 'text-ink-3',
-                    )}
-                  >
-                    <o.icon size={18} />
-                  </motion.button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {activeCar && (
             <motion.div
               key={`${activeCar.id}-${layout}`}
               initial={{ opacity: 0 }}
@@ -376,9 +327,6 @@ export default function HomePage() {
               transition={{ duration: 0.22 }}
               className={cn('relative z-10 mt-3 pb-4', gridClass)}
             >
-              {/* hero status */}
-              {health && <StatusTile score={health.score} factors={health.factors} />}
-
               {/* test + services */}
               <GlassPanel className={tilePad}>
                 <Link to={`/car/${activeCar.id}/edit`} className="block">
@@ -443,14 +391,18 @@ export default function HomePage() {
                 <QuickAdd carId={activeCar.id} onAdded={() => setRefreshTick((t) => t + 1)} />
               </div>
 
-              {/* inline cockpit sections — the day-to-day answers without navigating */}
-              <div className="col-span-2 flex flex-col gap-3">
+              {/* one panel, not four floating cards: the detail sections read as a
+                  single object and stay out of the way until opened */}
+              <div className="col-span-2">
+                <GlassPanel className="!p-0 overflow-hidden">
                 <HomeSection
                   id="services"
+                  flat
                   title="טיפולים אחרונים"
                   icon={<IconWrench size={16} />}
                   count={recentServices.length}
                   seeAllTo={`/car/${activeCar.id}/services`}
+                  defaultOpen={false}
                   empty="עדיין לא תועדו טיפולים"
                 >
                   {recentServices.slice(0, 3).map((sv) => (
@@ -470,10 +422,12 @@ export default function HomePage() {
 
                 <HomeSection
                   id="insurance"
+                  flat
                   title="ביטוח"
                   icon={<IconShield size={16} />}
                   count={activeInsurances.length}
                   seeAllTo={`/car/${activeCar.id}/insurance`}
+                  defaultOpen={false}
                   empty="לא נוספו פוליסות"
                 >
                   {activeInsurances.slice(0, 2).map((ins) => (
@@ -491,6 +445,7 @@ export default function HomePage() {
 
                 <HomeSection
                   id="documents"
+                  flat
                   title="מסמכים"
                   icon={<IconFile size={16} />}
                   count={recentDocs.length}
@@ -516,38 +471,34 @@ export default function HomePage() {
                     ))}
                   </div>
                 </HomeSection>
-              </div>
 
-              {/* section header */}
-              <div className="col-span-2 flex items-center justify-between pt-1">
-                <h2 className={cn('font-black', dense ? 'text-xl' : 'text-2xl')}>פרטי הרכב</h2>
-                <Link
-                  to={`/car/${activeCar.id}/edit#blocks`}
-                  className="glass-bar flex items-center gap-1 rounded-full px-3.5 py-2 text-sm font-bold text-ink-2"
+                {/* vehicle details: reference data, not a daily answer */}
+                <HomeSection
+                  id="specs"
+                  flat
+                  title="פרטי הרכב"
+                  icon={<IconCar size={16} />}
+                  seeAllTo={`/car/${activeCar.id}/edit`}
+                  defaultOpen={false}
                 >
-                  <IconPlus size={16} />
-                  בלוק מידע
-                </Link>
+                  <div className="flex items-center justify-between gap-3 px-4 py-3.5">
+                    <dt className="shrink-0 text-base font-bold text-ink-3">לוחית רישוי</dt>
+                    <p
+                      className="whitespace-nowrap rounded-lg bg-amber-300/90 px-3.5 py-1.5 text-center text-xl font-black tracking-[0.18em] text-black ring-1 ring-black/10"
+                      dir="ltr"
+                    >
+                      {formatPlate(activeCar.plate)}
+                    </p>
+                  </div>
+                  <dl className="divide-y divide-white/10 border-t border-white/10 dark:divide-white/5 dark:border-white/5">
+                    {activeCar.year != null && <SpecRow label="שנת ייצור" value={String(activeCar.year)} />}
+                    {activeCar.color && <SpecRow label="צבע" value={activeCar.color} />}
+                    {activeCar.fuelType && <SpecRow label="סוג דלק" value={activeCar.fuelType} />}
+                    {activeCar.vin && <SpecRow label="מספר שלדה" value={activeCar.vin} ltr />}
+                  </dl>
+                </HomeSection>
+                </GlassPanel>
               </div>
-
-              {/* spec sheet (with the licence plate) */}
-              <GlassPanel className="col-span-2 !p-0">
-                <div className="flex items-center justify-between gap-3 px-4 py-3.5">
-                  <dt className="shrink-0 text-base font-bold text-ink-3">לוחית רישוי</dt>
-                  <p
-                    className="whitespace-nowrap rounded-lg bg-amber-300/90 px-3.5 py-1.5 text-center text-xl font-black tracking-[0.18em] text-black ring-1 ring-black/10"
-                    dir="ltr"
-                  >
-                    {formatPlate(activeCar.plate)}
-                  </p>
-                </div>
-                <dl className="divide-y divide-white/10 dark:divide-white/5 border-t border-white/10 dark:border-white/5">
-                  {activeCar.year != null && <SpecRow label="שנת ייצור" value={String(activeCar.year)} />}
-                  {activeCar.color && <SpecRow label="צבע" value={activeCar.color} />}
-                  {activeCar.fuelType && <SpecRow label="סוג דלק" value={activeCar.fuelType} />}
-                  {activeCar.vin && <SpecRow label="מספר שלדה" value={activeCar.vin} ltr />}
-                </dl>
-              </GlassPanel>
               {activeCar.blocks.map((block) => (
                 <InfoTile
                   key={block.id}

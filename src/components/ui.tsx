@@ -1,4 +1,4 @@
-import { motion, type HTMLMotionProps } from 'motion/react'
+import { motion, useDragControls, type HTMLMotionProps } from 'motion/react'
 import {
   useEffect,
   useState,
@@ -184,18 +184,36 @@ export function Switch({
 
 /* ---------- Modal / ConfirmDialog / BottomSheet ---------- */
 
+/** Overlays stack (a date picker opens on top of an editor sheet), so the
+ *  body lock is ref-counted. Without this the inner overlay's cleanup restored
+ *  the page while the outer sheet was still open — which re-enabled the
+ *  backdrop-filters underneath and shifted the sheet's scroll position. */
+let lockCount = 0
+let lockedScrollY = 0
+
+function lockBody() {
+  if (lockCount++ > 0) return
+  lockedScrollY = window.scrollY
+  document.body.style.overflow = 'hidden'
+  // Flag the app root so the page behind can drop its backdrop-filters while
+  // an overlay is up: they are hidden by the scrim anyway, but the compositor
+  // still re-rasterises them on every frame of the sheet animation.
+  document.body.classList.add('overlay-open')
+}
+
+function unlockBody() {
+  if (--lockCount > 0) return
+  lockCount = 0
+  document.body.style.overflow = ''
+  document.body.classList.remove('overlay-open')
+  // restore exactly where the user was, so closing a sheet never jumps the page
+  window.scrollTo(0, lockedScrollY)
+}
+
 function Overlay({ onClose, children }: { onClose?: () => void; children: ReactNode }) {
   useEffect(() => {
-    const orig = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    // Flag the app root so the page behind can drop its backdrop-filters while
-    // an overlay is up: they are hidden by the scrim anyway, but the compositor
-    // still re-rasterises them on every frame of the sheet animation.
-    document.body.classList.add('overlay-open')
-    return () => {
-      document.body.style.overflow = orig
-      document.body.classList.remove('overlay-open')
-    }
+    lockBody()
+    return unlockBody
   }, [])
   // Portal to <body> so the overlay escapes the page's transformed stacking
   // context (AppShell's animated wrapper). Otherwise its z-index is trapped
@@ -261,8 +279,12 @@ export function BottomSheet({
   discardMessage?: string
 }) {
   const [confirmingClose, setConfirmingClose] = useState(false)
-  // every close path (X button, backdrop tap) goes through here
+  // every close path (X button, backdrop tap, swipe down) goes through here
   const requestClose = () => (dirty ? setConfirmingClose(true) : onClose())
+
+  // Drag starts from the header only: the body scrolls, so a drag listener on
+  // the whole sheet would fight the scroll gesture.
+  const dragControls = useDragControls()
 
   return (
     <Overlay onClose={requestClose}>
@@ -270,9 +292,21 @@ export function BottomSheet({
         initial={{ y: '100%' }}
         animate={{ y: 0 }}
         transition={{ type: 'spring', stiffness: 380, damping: 40 }}
-        className="relative z-10 max-h-[92dvh] w-full max-w-md transform-gpu overflow-y-auto sheet-surface rounded-t-[2.25rem] border-t border-white/40 shadow-float [contain:paint] sm:rounded-card dark:border-white/12"
+        drag="y"
+        dragListener={false}
+        dragControls={dragControls}
+        dragConstraints={{ top: 0, bottom: 0 }}
+        dragElastic={{ top: 0, bottom: 0.5 }}
+        onDragEnd={(_, info) => {
+          // far enough, or a decisive flick
+          if (info.offset.y > 130 || info.velocity.y > 700) requestClose()
+        }}
+        className="relative z-10 max-h-[92dvh] w-full max-w-md transform-gpu overflow-y-auto overscroll-contain sheet-surface rounded-t-[2.25rem] border-t border-white/40 shadow-float [contain:paint] sm:rounded-card dark:border-white/12"
       >
-        <div className="sheet-surface sticky top-0 z-10 px-5 pb-2 pt-3">
+        <div
+          onPointerDown={(e) => dragControls.start(e)}
+          className="sheet-surface sticky top-0 z-10 cursor-grab touch-none px-5 pb-2 pt-3 active:cursor-grabbing"
+        >
           <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-line" />
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-black">{title}</h2>
