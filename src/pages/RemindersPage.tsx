@@ -18,6 +18,7 @@ import { DateInput, Select, TimeInput } from '../components/pickers'
 import { useCars } from '../contexts/CarsContext'
 import { useToast } from '../contexts/ToastContext'
 import { repo } from '../data'
+import { invalidate, list } from '../data/store'
 import {
   carDisplayName,
   collectReminders,
@@ -57,9 +58,10 @@ export default function RemindersPage() {
 
   const markDone = async (r: DerivedReminder) => {
     if (r.source !== 'custom' || !r.customId) return
-    const list = await repo.listReminders(r.carId)
-    const rec = list.find((x) => x.id === r.customId)
+    const rows = await list('reminders', r.carId)
+    const rec = rows.find((x) => x.id === r.customId)
     if (rec) await repo.saveReminder({ ...rec, done: true, updatedAt: Date.now() })
+    invalidate('reminders', r.carId)
     await reload()
     toast('התזכורת סומנה כבוצעה')
   }
@@ -203,6 +205,7 @@ function AddReminderSheet({ onClose, onSaved }: { onClose: () => void; onSaved: 
       createdAt: now,
       updatedAt: now,
     })
+    invalidate('reminders', carId)
     toast('התזכורת נוספה')
     onSaved()
   }

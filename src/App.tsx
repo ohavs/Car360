@@ -1,5 +1,5 @@
 import { MotionConfig } from 'motion/react'
-import { useEffect, useRef, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, useRef, type ReactNode } from 'react'
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
 import { useTheme } from './contexts/ThemeContext'
 import { listenForegroundPush } from './lib/push'
@@ -7,19 +7,37 @@ import { loadDesignPrefs, saveDesignPrefs } from './data/prefs'
 import AppShell from './components/layout/AppShell'
 import { Spinner } from './components/ui'
 import { useAuth } from './contexts/AuthContext'
-import CarFormPage from './pages/CarFormPage'
-import DocumentsPage, { DocumentsTab } from './pages/DocumentsPage'
-import GloveboxPage from './pages/GloveboxPage'
 import HomePage from './pages/HomePage'
-import InsurancePage from './pages/InsurancePage'
 import LoginPage from './pages/LoginPage'
-import PassportPage from './pages/PassportPage'
-import PublicPassportPage from './pages/PublicPassportPage'
-import RemindersPage from './pages/RemindersPage'
-import ServicesPage from './pages/ServicesPage'
-import SettingsPage from './pages/SettingsPage'
-import SharePage from './pages/SharePage'
-import VehicleReportPage from './pages/VehicleReportPage'
+
+/* Everything past the first screen is code-split: the home screen (and login)
+   are the only chunks the browser must parse on a cold start. Heavy, rarely
+   used screens — the vehicle report, the design studio, the printable
+   passport — arrive only when they're opened. */
+const CarFormPage = lazy(() => import('./pages/CarFormPage'))
+const DocumentsPage = lazy(() => import('./pages/DocumentsPage'))
+const DocumentsTab = lazy(() =>
+  import('./pages/DocumentsPage').then((m) => ({ default: m.DocumentsTab })),
+)
+const DesignPage = lazy(() => import('./pages/DesignPage'))
+const GloveboxPage = lazy(() => import('./pages/GloveboxPage'))
+const InsurancePage = lazy(() => import('./pages/InsurancePage'))
+const PassportPage = lazy(() => import('./pages/PassportPage'))
+const PublicPassportPage = lazy(() => import('./pages/PublicPassportPage'))
+const RemindersPage = lazy(() => import('./pages/RemindersPage'))
+const ServicesPage = lazy(() => import('./pages/ServicesPage'))
+const SettingsPage = lazy(() => import('./pages/SettingsPage'))
+const SharePage = lazy(() => import('./pages/SharePage'))
+const VehicleReportPage = lazy(() => import('./pages/VehicleReportPage'))
+
+/** Full-screen fallback for the routes that render outside the app shell. */
+function PageFallback() {
+  return (
+    <div className="flex min-h-dvh items-center justify-center">
+      <Spinner />
+    </div>
+  )
+}
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth()
@@ -36,12 +54,21 @@ function RequireAuth({ children }: { children: ReactNode }) {
 
 const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
-  { path: '/p/:token', element: <PublicPassportPage /> },
+  {
+    path: '/p/:token',
+    element: (
+      <Suspense fallback={<PageFallback />}>
+        <PublicPassportPage />
+      </Suspense>
+    ),
+  },
   {
     path: '/car/:id/passport',
     element: (
       <RequireAuth>
-        <PassportPage />
+        <Suspense fallback={<PageFallback />}>
+          <PassportPage />
+        </Suspense>
       </RequireAuth>
     ),
   },
@@ -65,6 +92,7 @@ const router = createBrowserRouter([
       { path: 'report', element: <VehicleReportPage /> },
       { path: 'reminders', element: <RemindersPage /> },
       { path: 'settings', element: <SettingsPage /> },
+      { path: 'settings/design', element: <DesignPage /> },
       { path: '*', element: <Navigate to="/" replace /> },
     ],
   },

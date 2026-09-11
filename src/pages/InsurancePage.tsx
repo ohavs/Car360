@@ -1,7 +1,9 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import PageHeader from '../components/layout/PageHeader'
 import PhotoPicker from '../components/PhotoPicker'
+import PhotoStrip from '../components/PhotoStrip'
+import { ImageViewerHost } from '../components/ImageViewer'
 import { IconPhone, IconPlus, IconShield, IconSparkles, IconTrash } from '../components/icons'
 import { motion } from 'motion/react'
 import {
@@ -55,13 +57,13 @@ export default function InsurancePage() {
   const { toast } = useToast()
   const car = cars.find((c) => c.id === carId)
 
-  const fetcher = useCallback((cid: string) => repo.listInsurances(cid), [])
-  const { items, loading, reload } = useCollection<InsuranceRecord>(carId, fetcher)
+  const { items, loading, reload } = useCollection<InsuranceRecord>(carId, 'insurances')
 
   const [editing, setEditing] = useState<InsuranceRecord | null>(() =>
     params.get('add') && carId ? emptyInsurance(carId) : null,
   )
   const [toDelete, setToDelete] = useState<InsuranceRecord | null>(null)
+  const [viewing, setViewing] = useState<{ photos: string[]; index: number; title: string } | null>(null)
 
   const sorted = useMemo(() => [...items].sort((a, b) => b.endDate.localeCompare(a.endDate)), [items])
 
@@ -96,6 +98,7 @@ export default function InsurancePage() {
       <PageHeader
         title="ביטוחים"
         subtitle={car ? carDisplayName(car) : undefined}
+        carId={carId}
         action={
           <button
             aria-label="הוספת ביטוח"
@@ -127,34 +130,44 @@ export default function InsurancePage() {
             const st = dueStatus(rec.endDate)
             return (
               <motion.div key={rec.id} variants={listItem}>
-                <Card onClick={() => setEditing(rec)} className="space-y-2">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="font-bold">
-                      {rec.kind} · {rec.company}
-                    </p>
-                    <p className="text-sm text-ink-3">
-                      {rec.policyNumber ? `פוליסה ${rec.policyNumber} · ` : ''}
-                      עד {formatDate(rec.endDate)}
-                    </p>
-                  </div>
-                  {rec.cost != null && <span className="shrink-0 font-bold">{formatMoney(rec.cost)}</span>}
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge tone={statusTone[st]}>{dueLabel(rec.endDate)}</Badge>
-                  {rec.agentName && <Badge>סוכן: {rec.agentName}</Badge>}
-                  {rec.photos.length > 0 && <Badge>{rec.photos.length} מסמכים</Badge>}
-                </div>
-                {rec.agentPhone && (
-                  <a
-                    href={`tel:${rec.agentPhone}`}
-                    onClick={(e) => e.stopPropagation()}
-                    className="inline-flex items-center gap-2 rounded-full bg-card-2 px-4 py-2 text-sm font-semibold"
+                <Card className="space-y-3">
+                  <button
+                    onClick={() => setEditing(rec)}
+                    className="block w-full space-y-2 text-start"
+                    aria-label={`עריכת פוליסת ${rec.kind}`}
                   >
-                    <IconPhone size={16} />
-                    חיוג לסוכן
-                  </a>
-                )}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="font-bold">
+                          {rec.kind} · {rec.company}
+                        </p>
+                        <p className="text-sm text-ink-3">
+                          {rec.policyNumber ? `פוליסה ${rec.policyNumber} · ` : ''}
+                          עד {formatDate(rec.endDate)}
+                        </p>
+                      </div>
+                      {rec.cost != null && <span className="shrink-0 font-bold">{formatMoney(rec.cost)}</span>}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge tone={statusTone[st]}>{dueLabel(rec.endDate)}</Badge>
+                      {rec.agentName && <Badge>סוכן: {rec.agentName}</Badge>}
+                    </div>
+                  </button>
+                  <PhotoStrip
+                    photos={rec.photos}
+                    onOpen={(index) =>
+                      setViewing({ photos: rec.photos, index, title: `${rec.kind} · ${rec.company}` })
+                    }
+                  />
+                  {rec.agentPhone && (
+                    <a
+                      href={`tel:${rec.agentPhone}`}
+                      className="inline-flex min-h-11 items-center gap-2 rounded-full bg-card-2 px-4 text-sm font-semibold"
+                    >
+                      <IconPhone size={16} />
+                      חיוג לסוכן
+                    </a>
+                  )}
                 </Card>
               </motion.div>
             )
@@ -170,6 +183,8 @@ export default function InsurancePage() {
           onClose={closeEditor}
         />
       )}
+
+      <ImageViewerHost state={viewing} onClose={() => setViewing(null)} />
 
       {toDelete && (
         <ConfirmDialog

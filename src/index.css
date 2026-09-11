@@ -198,8 +198,10 @@
 [data-skin='glass'] .bg-canvas,
 [data-skin='glass'] .bg-canvas\/85,
 [data-skin='glass'] .bg-accent {
-  backdrop-filter: blur(20px) saturate(1.6);
-  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  /* blur radius is the single most expensive thing the phone GPU does while
+     scrolling — keep it just high enough to read as frosted glass */
+  backdrop-filter: blur(12px) saturate(1.4);
+  -webkit-backdrop-filter: blur(12px) saturate(1.4);
 }
 [data-skin='glass'] .bg-card,
 [data-skin='glass'] .bg-accent {
@@ -352,8 +354,8 @@
 [data-skin='aurora'] .bg-canvas,
 [data-skin='aurora'] .bg-canvas\/85,
 [data-skin='aurora'] .bg-accent {
-  backdrop-filter: blur(22px) saturate(1.7);
-  -webkit-backdrop-filter: blur(22px) saturate(1.7);
+  backdrop-filter: blur(14px) saturate(1.5);
+  -webkit-backdrop-filter: blur(14px) saturate(1.5);
 }
 [data-skin='aurora'] .bg-card,
 [data-skin='aurora'] .bg-accent {
@@ -478,6 +480,8 @@ body {
 body {
   margin: 0;
   font-family: var(--font-sans);
+  /* removes the 300ms tap delay on every control (Material/HIG latency rule) */
+  touch-action: manipulation;
   background-color: var(--c-canvas);
   color: var(--c-ink);
   -webkit-font-smoothing: antialiased;
@@ -525,7 +529,7 @@ body {
     radial-gradient(62% 42% at 88% 96%, color-mix(in srgb, var(--color-cta) 26%, transparent), transparent 72%),
     radial-gradient(58% 38% at 50% 10%, color-mix(in srgb, var(--car-color, var(--color-cta)) 42%, transparent), transparent 70%),
     radial-gradient(50% 30% at 84% 56%, color-mix(in srgb, var(--car-color, var(--color-cta)) 22%, transparent), transparent 70%);
-  filter: blur(26px);
+  filter: blur(20px);
   transition: background 0.6s ease, opacity 0.3s ease;
 }
 
@@ -534,8 +538,8 @@ body {
   border-radius: 1.6rem;
   background: rgb(255 255 255 / 0.5);
   border: 1px solid rgb(255 255 255 / 0.6);
-  backdrop-filter: blur(22px) saturate(1.45);
-  -webkit-backdrop-filter: blur(22px) saturate(1.45);
+  backdrop-filter: blur(13px) saturate(1.3);
+  -webkit-backdrop-filter: blur(13px) saturate(1.3);
   box-shadow:
     0 12px 30px -16px rgb(15 23 42 / 0.45),
     inset 0 1px 0 rgb(255 255 255 / 0.7);
@@ -618,8 +622,8 @@ body {
 .glass-bar {
   background: rgb(255 255 255 / 0.55);
   border: 1px solid rgb(255 255 255 / 0.6);
-  backdrop-filter: blur(26px) saturate(1.5);
-  -webkit-backdrop-filter: blur(26px) saturate(1.5);
+  backdrop-filter: blur(16px) saturate(1.35);
+  -webkit-backdrop-filter: blur(16px) saturate(1.35);
   box-shadow: 0 18px 44px -14px rgb(15 23 42 / 0.4), inset 0 1px 0 rgb(255 255 255 / 0.7);
 }
 .dark .glass-bar {
@@ -683,4 +687,41 @@ input.native-picker::-webkit-calendar-picker-indicator {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
+  /* decorative only — skip the full-screen blurred scenes entirely */
+  [data-skin='glass'] body::before,
+  [data-skin='aurora'] body::before {
+    display: none;
+  }
+}
+
+/* ==========================================================
+   LITE MODE (Settings → עיצוב) — for older phones.
+   Same layout and colors, none of the expensive compositing:
+   no backdrop blur, no full-screen ambient scenes, no sheen.
+   ========================================================== */
+[data-perf='lite'] .glass-tile,
+[data-perf='lite'] .glass-bar,
+[data-perf='lite'] .bg-card,
+[data-perf='lite'] .bg-canvas,
+[data-perf='lite'] .bg-accent {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+[data-perf='lite'] .glass-tile {
+  background: var(--c-card);
+  border-color: var(--c-line);
+}
+[data-perf='lite'].dark .glass-tile {
+  background: var(--c-card);
+}
+[data-perf='lite'] .glass-bar {
+  background: var(--c-card);
+  border-color: var(--c-line);
+}
+[data-perf='lite'] .glass-tile::after {
+  display: none;
+}
+[data-perf='lite'] .cockpit::before,
+[data-perf='lite'] body::before {
+  display: none;
 }

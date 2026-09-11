@@ -18,10 +18,28 @@ import type { Repo } from './repo'
  *    cars/{carId}/reminders/{id}
  *  Images live in Storage under cars/{carId}/... and docs keep download URLs. */
 
+/** One Firestore instance per session, with an IndexedDB-backed local cache:
+ *  repeat reads are served from the device (instant, works offline) and only
+ *  changed documents come down the wire. */
+let storePromise: Promise<import('firebase/firestore').Firestore> | null = null
+
 async function db() {
   const app = await getFirebaseApp()
   const fs = await import('firebase/firestore')
-  return { fs, store: fs.getFirestore(app) }
+  if (!storePromise) {
+    storePromise = (async () => {
+      try {
+        return fs.initializeFirestore(app, {
+          localCache: fs.persistentLocalCache({ tabManager: fs.persistentMultipleTabManager() }),
+        })
+      } catch {
+        // already initialised, or persistence unavailable (private mode) —
+        // fall back to the plain in-memory instance
+        return fs.getFirestore(app)
+      }
+    })()
+  }
+  return { fs, store: await storePromise }
 }
 
 async function storage() {

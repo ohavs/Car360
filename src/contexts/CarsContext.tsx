@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from 'react'
 import { repo } from '../data'
+import { clearStore } from '../data/store'
 import type { Car } from '../types'
 import { useAuth } from './AuthContext'
 
@@ -43,6 +44,8 @@ export function CarsProvider({ children }: { children: ReactNode }) {
 
   const refresh = useCallback(async () => {
     if (!user) {
+      // signed out: nothing of the previous account may linger in the cache
+      clearStore()
       setCars([])
       setLoading(false)
       return

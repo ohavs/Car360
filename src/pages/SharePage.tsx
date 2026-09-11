@@ -146,7 +146,7 @@ export default function SharePage() {
 
   return (
     <div className="px-4">
-      <PageHeader title="שיתוף הרכב" subtitle={carDisplayName(car)} />
+      <PageHeader title="שיתוף הרכב" subtitle={carDisplayName(car)} carId={carId} />
 
       <div className="space-y-4 pb-8">
         {!isCloud && (

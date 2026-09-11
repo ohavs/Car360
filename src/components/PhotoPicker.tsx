@@ -1,13 +1,15 @@
 import { useRef, useState } from 'react'
 import { compressToDataUrl } from '../lib/images'
 import { useToast } from '../contexts/ToastContext'
+import { ImageViewerHost } from './ImageViewer'
 import { IconCamera, IconX } from './icons'
 
-/** Multi-photo attachment strip with automatic compression. */
+/** Multi-photo attachment strip with automatic compression.
+ *  Tapping a thumbnail opens the full-screen viewer (zoom / swipe / download). */
 export default function PhotoPicker({
   photos,
   onChange,
-  label = 'צירוף תמונות / קבלות',
+  label = 'הוספה',
 }: {
   photos: string[]
   onChange: (photos: string[]) => void
@@ -15,6 +17,7 @@ export default function PhotoPicker({
 }) {
   const fileRef = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
+  const [viewing, setViewing] = useState<number | null>(null)
   const { toast } = useToast()
 
   const add = async (files: FileList) => {
@@ -31,30 +34,44 @@ export default function PhotoPicker({
     }
   }
 
+  const removeAt = (i: number) => onChange(photos.filter((_, j) => j !== i))
+
   return (
     <div>
       <div className="no-scrollbar flex gap-2 overflow-x-auto">
         {photos.map((p, i) => (
           <div key={i} className="relative shrink-0">
-            <img src={p} alt="" className="h-20 w-20 rounded-2xl object-cover ring-1 ring-line" />
             <button
-              aria-label="הסרת תמונה"
-              onClick={() => onChange(photos.filter((_, j) => j !== i))}
-              className="absolute -end-1 -top-1 flex size-6 items-center justify-center rounded-full bg-danger text-white shadow-card active:scale-90"
+              type="button"
+              aria-label={`צפייה בתמונה ${i + 1}`}
+              onClick={() => setViewing(i)}
+              className="block size-20 overflow-hidden rounded-2xl ring-1 ring-line active:scale-95"
             >
-              <IconX size={12} />
+              <img src={p} alt="" loading="lazy" decoding="async" className="size-full object-cover" />
+            </button>
+            <button
+              type="button"
+              aria-label={`הסרת תמונה ${i + 1}`}
+              onClick={() => removeAt(i)}
+              className="absolute -end-1 -top-1 flex size-7 items-center justify-center rounded-full bg-danger text-white shadow-card active:scale-90"
+            >
+              <IconX size={13} />
             </button>
           </div>
         ))}
         <button
+          type="button"
           onClick={() => fileRef.current?.click()}
           disabled={busy}
-          className="flex h-20 w-20 shrink-0 flex-col items-center justify-center gap-1 rounded-2xl bg-card-2 text-xs font-medium text-ink-3 ring-1 ring-line active:scale-95 disabled:opacity-50"
+          className="flex size-20 shrink-0 flex-col items-center justify-center gap-1 rounded-2xl bg-card-2 text-[11px] font-bold text-ink-3 ring-1 ring-dashed ring-line active:scale-95 disabled:opacity-50"
         >
           <IconCamera size={20} />
-          {busy ? 'דוחס…' : label && photos.length === 0 ? 'הוספה' : ''}
+          {busy ? 'דוחס…' : label}
         </button>
       </div>
+      {photos.length > 0 && (
+        <p className="mt-1.5 text-xs text-ink-3">לחיצה על תמונה פותחת אותה במסך מלא</p>
+      )}
       <input
         ref={fileRef}
         type="file"
@@ -64,6 +81,15 @@ export default function PhotoPicker({
         onChange={(e) => {
           if (e.target.files?.length) void add(e.target.files)
           e.target.value = ''
+        }}
+      />
+
+      <ImageViewerHost
+        state={viewing === null ? null : { photos, index: viewing }}
+        onClose={() => setViewing(null)}
+        onDelete={(i) => {
+          removeAt(i)
+          setViewing(null)
         }}
       />
     </div>

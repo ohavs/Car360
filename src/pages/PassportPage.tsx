@@ -4,7 +4,7 @@ import PassportView from '../components/PassportView'
 import { IconChevronRight, IconDownload } from '../components/icons'
 import { Spinner } from '../components/ui'
 import { useCars } from '../contexts/CarsContext'
-import { repo } from '../data'
+import { list } from '../data/store'
 import type { InsuranceRecord, ServiceRecord } from '../types'
 
 /** Printable "car passport" — a clean summary of the whole record, ideal for
@@ -18,8 +18,8 @@ export default function PassportPage() {
 
   useEffect(() => {
     if (!id) return
-    void repo.listServices(id).then(setServices)
-    void repo.listInsurances(id).then(setInsurances)
+    void list('services', id).then(setServices)
+    void list('insurances', id).then(setInsurances)
   }, [id])
 
   const navigate = useNavigate()

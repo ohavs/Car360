@@ -1,4 +1,4 @@
-import { repo } from '../data'
+import { list } from '../data/store'
 import type { Car, DerivedReminder } from '../types'
 import { daysUntil } from './utils'
 import { leadDaysFor, loadNotifPrefs } from './notifyPrefs'
@@ -13,7 +13,19 @@ export function carDisplayName(car: Car): string {
 export async function collectReminders(cars: Car[]): Promise<DerivedReminder[]> {
   const out: DerivedReminder[] = []
 
-  for (const car of cars) {
+  // every car's three collections are fetched in parallel (and served from the
+  // shared cache when they were already loaded elsewhere in the app)
+  const perCar = await Promise.all(
+    cars.map((car) =>
+      Promise.all([
+        list('insurances', car.id),
+        list('services', car.id),
+        list('reminders', car.id),
+      ]),
+    ),
+  )
+
+  cars.forEach((car, carIndex) => {
     const name = carDisplayName(car)
     const push = (r: Omit<DerivedReminder, 'daysLeft' | 'carId' | 'carName' | 'carImage'>) =>
       out.push({ ...r, carId: car.id, carName: name, carImage: car.imageUrl, daysLeft: daysUntil(r.dueDate) })
@@ -26,11 +38,7 @@ export async function collectReminders(cars: Car[]): Promise<DerivedReminder[]> 
         push({ key: `block:${car.id}:${block.id}`, title: block.title, dueDate: block.value, source: 'block' })
     }
 
-    const [insurances, services, custom] = await Promise.all([
-      repo.listInsurances(car.id),
-      repo.listServices(car.id),
-      repo.listReminders(car.id),
-    ])
+    const [insurances, services, custom] = perCar[carIndex]
 
     // only the latest end-date per insurance kind matters
     const latestByKind = new Map<string, string>()
@@ -51,7 +59,7 @@ export async function collectReminders(cars: Car[]): Promise<DerivedReminder[]> 
       if (!r.done)
         push({ key: `custom:${car.id}:${r.id}`, title: r.title, dueDate: r.dueDate, time: r.time, source: 'custom', customId: r.id })
     }
-  }
+  })
 
   return out.sort((a, b) => a.daysLeft - b.daysLeft)
 }

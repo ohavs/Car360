@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import PageHeader from '../components/layout/PageHeader'
 import CarSilhouette from '../components/cars/CarSilhouette'
 import GlassPanel from '../components/cockpit/GlassPanel'
-import { IconChevronLeft, IconDownload, IconFile, IconPlus, IconTrash } from '../components/icons'
+import { ImageViewerHost } from '../components/ImageViewer'
+import { IconChevronLeft, IconFile, IconPlus } from '../components/icons'
 import { motion } from 'motion/react'
 import {
   BottomSheet,
@@ -21,6 +22,7 @@ import { Select } from '../components/pickers'
 import { useCars } from '../contexts/CarsContext'
 import { useToast } from '../contexts/ToastContext'
 import { repo } from '../data'
+import { list } from '../data/store'
 import { useCollection } from '../hooks/useCollection'
 import { compressToDataUrl } from '../lib/images'
 import { carDisplayName } from '../lib/reminders'
@@ -39,7 +41,7 @@ export function DocumentsTab() {
   useEffect(() => {
     if (loading) return
     let cancelled = false
-    void Promise.all(cars.map((c) => repo.listDocuments(c.id).then((d) => [c.id, d] as const))).then(
+    void Promise.all(cars.map((c) => list('documents', c.id).then((d) => [c.id, d] as const))).then(
       (pairs) => {
         if (cancelled) return
         setDocs(Object.fromEntries(pairs))
@@ -94,25 +96,31 @@ function CarDocsCard({ car, docs }: { car: Car; docs: CarDocument[] }) {
         <IconChevronLeft size={22} className="text-ink-3" />
       </Link>
 
-      {recent.length > 0 && (
-        <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto">
-          {recent.map((doc) => (
-            <Link
-              key={doc.id}
-              to={`/car/${car.id}/documents`}
-              className="size-16 shrink-0 overflow-hidden rounded-xl ring-1 ring-white/40 dark:ring-white/10"
-            >
-              <img src={doc.imageUrl} alt={doc.title} className="size-full object-cover" loading="lazy" />
-            </Link>
-          ))}
+      <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto">
+        {recent.map((doc) => (
           <Link
-            to={`/car/${car.id}/documents?add=1`}
-            className="flex size-16 shrink-0 flex-col items-center justify-center rounded-xl bg-white/40 text-ink-3 ring-1 ring-dashed ring-white/50 dark:bg-white/5 dark:ring-white/15"
+            key={doc.id}
+            to={`/car/${car.id}/documents`}
+            className="size-16 shrink-0 overflow-hidden rounded-xl ring-1 ring-white/40 dark:ring-white/10"
           >
-            <IconPlus size={20} />
+            <img
+              src={doc.imageUrl}
+              alt={doc.title}
+              className="size-full object-cover"
+              loading="lazy"
+              decoding="async"
+            />
           </Link>
-        </div>
-      )}
+        ))}
+        {/* always offer the "add" tile — a car with no documents needs it most */}
+        <Link
+          to={`/car/${car.id}/documents?add=1`}
+          aria-label={`הוספת מסמך ל${carDisplayName(car)}`}
+          className="flex size-16 shrink-0 flex-col items-center justify-center rounded-xl bg-white/40 text-ink-3 ring-1 ring-dashed ring-white/50 dark:bg-white/5 dark:ring-white/15"
+        >
+          <IconPlus size={20} />
+        </Link>
+      </div>
     </GlassPanel>
   )
 }
@@ -124,11 +132,10 @@ export default function DocumentsPage() {
   const { toast } = useToast()
   const car = cars.find((c) => c.id === carId)
 
-  const fetcher = useCallback((cid: string) => repo.listDocuments(cid), [])
-  const { items, loading, reload } = useCollection<CarDocument>(carId, fetcher)
+  const { items, loading, reload } = useCollection<CarDocument>(carId, 'documents')
 
   const [adding, setAdding] = useState(() => Boolean(params.get('add')))
-  const [viewing, setViewing] = useState<CarDocument | null>(null)
+  const [viewingIndex, setViewingIndex] = useState<number | null>(null)
   const [toDelete, setToDelete] = useState<CarDocument | null>(null)
   const [filter, setFilter] = useState<DocumentCategory | 'הכל'>('הכל')
 
@@ -163,7 +170,7 @@ export default function DocumentsPage() {
     await repo.deleteImage(toDelete.imageUrl)
     await reload()
     setToDelete(null)
-    setViewing(null)
+    setViewingIndex(null)
     toast('המסמך נמחק')
   }
 
@@ -172,6 +179,7 @@ export default function DocumentsPage() {
       <PageHeader
         title="מסמכים ותמונות"
         subtitle={car ? carDisplayName(car) : undefined}
+        carId={carId}
         action={
           <button
             aria-label="הוספת מסמך"
@@ -224,7 +232,7 @@ export default function DocumentsPage() {
               key={doc.id}
               variants={listItem}
               whileTap={{ scale: 0.96 }}
-              onClick={() => setViewing(doc)}
+              onClick={() => setViewingIndex(filtered.indexOf(doc))}
               className="overflow-hidden rounded-card bg-card text-start shadow-card"
             >
               <img src={doc.imageUrl} alt={doc.title} className="h-32 w-full object-cover" loading="lazy" />
@@ -241,25 +249,25 @@ export default function DocumentsPage() {
 
       {adding && carId && <AddDocumentSheet carId={carId} onSave={(d) => void save(d)} onClose={closeAdd} />}
 
-      {viewing && (
-        <BottomSheet title={viewing.title} onClose={() => setViewing(null)}>
-          <img src={viewing.imageUrl} alt={viewing.title} className="w-full rounded-card" />
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            <a
-              href={viewing.imageUrl}
-              download={`${viewing.title}.webp`}
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-card font-semibold ring-1 ring-line"
-            >
-              <IconDownload size={18} />
-              הורדה
-            </a>
-            <Button variant="danger" onClick={() => setToDelete(viewing)}>
-              <IconTrash size={18} />
-              מחיקה
-            </Button>
-          </div>
-        </BottomSheet>
-      )}
+      <ImageViewerHost
+        state={
+          viewingIndex === null || !filtered[viewingIndex]
+            ? null
+            : {
+                photos: filtered.map((d) => d.imageUrl),
+                index: viewingIndex,
+                captions: filtered.map((d) => `${d.title} · ${d.category}`),
+              }
+        }
+        onClose={() => setViewingIndex(null)}
+        onDelete={(i) => {
+          if (!filtered[i]) return
+          // the confirm dialog lives below the full-screen viewer — step back
+          // to the grid so the question is actually visible
+          setViewingIndex(null)
+          setToDelete(filtered[i])
+        }}
+      />
 
       {toDelete && (
         <ConfirmDialog

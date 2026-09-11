@@ -1,11 +1,9 @@
-import { useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import PageHeader from '../components/layout/PageHeader'
 import GlassPanel from '../components/cockpit/GlassPanel'
 import { IconPhone, IconShield } from '../components/icons'
 import { EmptyState, ListSkeleton } from '../components/ui'
 import { useCars } from '../contexts/CarsContext'
-import { repo } from '../data'
 import { useCollection } from '../hooks/useCollection'
 import { carDisplayName } from '../lib/reminders'
 import { formatDate, formatPlate } from '../lib/utils'
@@ -24,8 +22,7 @@ export default function GloveboxPage() {
   const { cars } = useCars()
   const car = cars.find((c) => c.id === carId)
 
-  const fetcher = useCallback((cid: string) => repo.listInsurances(cid), [])
-  const { items, loading } = useCollection<InsuranceRecord>(carId, fetcher)
+  const { items, loading } = useCollection<InsuranceRecord>(carId, 'insurances')
 
   // most-relevant insurance = the one furthest in the future (still valid)
   const insurance = [...items].sort((a, b) => b.endDate.localeCompare(a.endDate))[0]
@@ -40,7 +37,7 @@ export default function GloveboxPage() {
 
   return (
     <div className="px-4">
-      <PageHeader title="תא הכפפות" subtitle={carDisplayName(car)} />
+      <PageHeader title="תא הכפפות" subtitle={carDisplayName(car)} carId={carId} />
 
       <div className="space-y-3 pb-8">
         {/* plate hero */}

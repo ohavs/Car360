@@ -1,8 +1,10 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import PageHeader from '../components/layout/PageHeader'
 import ExpenseChart from '../components/ExpenseChart'
 import PhotoPicker from '../components/PhotoPicker'
+import PhotoStrip from '../components/PhotoStrip'
+import { ImageViewerHost } from '../components/ImageViewer'
 import { IconPlus, IconTrash, IconWrench } from '../components/icons'
 import { motion } from 'motion/react'
 import {
@@ -47,13 +49,13 @@ export default function ServicesPage() {
   const { toast } = useToast()
   const car = cars.find((c) => c.id === carId)
 
-  const fetcher = useCallback((cid: string) => repo.listServices(cid), [])
-  const { items, loading, reload } = useCollection<ServiceRecord>(carId, fetcher)
+  const { items, loading, reload } = useCollection<ServiceRecord>(carId, 'services')
 
   const [editing, setEditing] = useState<ServiceRecord | null>(() =>
     params.get('add') && carId ? emptyService(carId) : null,
   )
   const [toDelete, setToDelete] = useState<ServiceRecord | null>(null)
+  const [viewing, setViewing] = useState<{ photos: string[]; index: number; title: string } | null>(null)
 
   const sorted = useMemo(() => [...items].sort((a, b) => b.date.localeCompare(a.date)), [items])
   const totalCost = useMemo(() => sorted.reduce((s, r) => s + (r.cost ?? 0), 0), [sorted])
@@ -94,6 +96,7 @@ export default function ServicesPage() {
       <PageHeader
         title="טיפולים ותיקונים"
         subtitle={car ? carDisplayName(car) : undefined}
+        carId={carId}
         action={
           <button
             aria-label="הוספת טיפול"
@@ -128,27 +131,38 @@ export default function ServicesPage() {
           )}
           {sorted.map((rec) => (
             <motion.div key={rec.id} variants={listItem}>
-              <Card onClick={() => setEditing(rec)} className="space-y-2">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="font-bold">{rec.title}</p>
-                  <p className="text-sm text-ink-3">
-                    {formatDate(rec.date)}
-                    {rec.garage ? ` · ${rec.garage}` : ''}
-                  </p>
-                </div>
-                {rec.cost != null && <span className="shrink-0 font-bold">{formatMoney(rec.cost)}</span>}
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                {rec.odometer != null && <Badge>ק״מ {formatNumber(rec.odometer)}</Badge>}
-                {rec.nextDueDate && (
-                  <Badge tone={dueStatus(rec.nextDueDate) === 'ok' ? 'neutral' : dueStatus(rec.nextDueDate) === 'warn' ? 'warn' : 'danger'}>
-                    טיפול הבא: {formatDate(rec.nextDueDate)} · {dueLabel(rec.nextDueDate)}
-                  </Badge>
-                )}
-                {rec.photos.length > 0 && <Badge>{rec.photos.length} תמונות</Badge>}
-              </div>
-                {rec.notes && <p className="text-sm leading-relaxed text-ink-2">{rec.notes}</p>}
+              <Card className="space-y-3">
+                <button
+                  onClick={() => setEditing(rec)}
+                  className="block w-full space-y-2 text-start"
+                  aria-label={`עריכת ${rec.title}`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-bold">{rec.title}</p>
+                      <p className="text-sm text-ink-3">
+                        {formatDate(rec.date)}
+                        {rec.garage ? ` · ${rec.garage}` : ''}
+                      </p>
+                    </div>
+                    {rec.cost != null && <span className="shrink-0 font-bold">{formatMoney(rec.cost)}</span>}
+                  </div>
+                  {(rec.odometer != null || rec.nextDueDate) && (
+                    <div className="flex flex-wrap items-center gap-2">
+                      {rec.odometer != null && <Badge>ק״מ {formatNumber(rec.odometer)}</Badge>}
+                      {rec.nextDueDate && (
+                        <Badge tone={dueStatus(rec.nextDueDate) === 'ok' ? 'neutral' : dueStatus(rec.nextDueDate) === 'warn' ? 'warn' : 'danger'}>
+                          טיפול הבא: {formatDate(rec.nextDueDate)} · {dueLabel(rec.nextDueDate)}
+                        </Badge>
+                      )}
+                    </div>
+                  )}
+                  {rec.notes && <p className="text-sm leading-relaxed text-ink-2">{rec.notes}</p>}
+                </button>
+                <PhotoStrip
+                  photos={rec.photos}
+                  onOpen={(index) => setViewing({ photos: rec.photos, index, title: rec.title })}
+                />
               </Card>
             </motion.div>
           ))}
@@ -163,6 +177,8 @@ export default function ServicesPage() {
           onClose={closeEditor}
         />
       )}
+
+      <ImageViewerHost state={viewing} onClose={() => setViewing(null)} />
 
       {toDelete && (
         <ConfirmDialog

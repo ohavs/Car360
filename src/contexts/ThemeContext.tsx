@@ -25,6 +25,9 @@ interface ThemeCtx {
   /** cockpit ambient-glow intensity, 0..1.4 */
   glow: number
   setGlow: (v: number) => void
+  /** lite mode: drops blur/ambient effects on slower devices (per device) */
+  lite: boolean
+  setLite: (v: boolean) => void
   /** apply cloud-synced prefs silently (no restyle loader) */
   applyRemote: (p: PaletteId, s: SkinId, accent: string | null, glow?: number) => void
   /** true while the restyle loader is showing */
@@ -42,6 +45,8 @@ const Ctx = createContext<ThemeCtx>({
   setAccent: () => {},
   glow: 1,
   setGlow: () => {},
+  lite: false,
+  setLite: () => {},
   applyRemote: () => {},
   restyling: false,
 })
@@ -51,6 +56,7 @@ const PALETTE_KEY = 'car360:palette'
 const SKIN_KEY = 'car360:skin'
 const ACCENT_KEY = 'car360:accent'
 const GLOW_KEY = 'car360:glow'
+const LITE_KEY = 'car360:lite'
 
 function initialTheme(): Theme {
   const saved = localStorage.getItem(THEME_KEY)
@@ -77,6 +83,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const v = Number(localStorage.getItem(GLOW_KEY))
     return Number.isFinite(v) && localStorage.getItem(GLOW_KEY) !== null ? v : 1
   })
+  const [lite, setLiteState] = useState<boolean>(() => localStorage.getItem(LITE_KEY) === '1')
   const [restyling, setRestyling] = useState(false)
   const restyleTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -91,6 +98,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
     root.style.setProperty('--cockpit-glow', String(glow))
     localStorage.setItem(GLOW_KEY, String(glow))
+
+    // lite mode is a per-device choice (an old phone doesn't make the user's
+    // other devices slow), so it never syncs to the cloud
+    if (lite) root.dataset.perf = 'lite'
+    else delete root.dataset.perf
+    localStorage.setItem(LITE_KEY, lite ? '1' : '0')
 
     // personal accent overrides the palette CTA color (+ a derived soft tint)
     if (accent) {
@@ -108,7 +121,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       const bg = getComputedStyle(document.body).backgroundColor
       document.querySelector('meta[name="theme-color"]')?.setAttribute('content', bg)
     })
-  }, [theme, palette, skin, accent, glow])
+  }, [theme, palette, skin, accent, glow, lite])
 
   /** Show the "rebuilding your design" loader, apply the change mid-way,
    *  release after the new style has painted. */
@@ -129,6 +142,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   // accent changes are instant (no full-screen rebuild — it's a light recolor)
   const setAccent = useCallback((hex: string | null) => setAccentState(hex), [])
   const setGlow = useCallback((v: number) => setGlowState(v), [])
+  const setLite = useCallback((v: boolean) => setLiteState(v), [])
 
   const applyRemote = useCallback(
     (p: PaletteId, s: SkinId, a: string | null, g?: number) => {
@@ -153,6 +167,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         setAccent,
         glow,
         setGlow,
+        lite,
+        setLite,
         applyRemote,
         restyling,
       }}

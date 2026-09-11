@@ -9,26 +9,22 @@ import {
   IconCalendar,
   IconCar,
   IconEdit,
-  IconLayoutBento,
-  IconLayoutGrid,
-  IconLayoutStack,
   IconLifeBuoy,
   IconLink,
-  IconMoon,
   IconPhone,
   IconPlus,
   IconSearch,
   IconShare,
   IconShield,
-  IconSun,
   IconWrench,
 } from '../components/icons'
 import { Badge, EmptyState, HomeSkeleton, spring } from '../components/ui'
 import { useAuth } from '../contexts/AuthContext'
 import { useCars } from '../contexts/CarsContext'
-import { useTheme } from '../contexts/ThemeContext'
-import { repo } from '../data'
+import { useSearch } from '../contexts/SearchContext'
+import { list, peek } from '../data/store'
 import { carHealth } from '../lib/health'
+import { useHomeLayout } from '../lib/homeLayout'
 import { carDisplayName, collectReminders, notifyUpcoming } from '../lib/reminders'
 import { cn, dueLabel, dueStatus, formatDate, formatPlate } from '../lib/utils'
 import type { DerivedReminder, InfoBlock } from '../types'
@@ -99,19 +95,6 @@ function SpecRow({ label, value, ltr }: { label: string; value: string; ltr?: bo
   )
 }
 
-type LayoutId = 'bento' | 'stack' | 'compact'
-
-const LAYOUT_OPTIONS: { id: LayoutId; label: string; icon: typeof IconLayoutBento }[] = [
-  { id: 'bento', label: 'לוח משבצות', icon: IconLayoutBento },
-  { id: 'stack', label: 'טור יחיד', icon: IconLayoutStack },
-  { id: 'compact', label: 'רשת קומפקטית', icon: IconLayoutGrid },
-]
-
-function initialLayout(): LayoutId {
-  const s = localStorage.getItem('car360:homeLayout')
-  return s === 'stack' || s === 'compact' ? s : 'bento'
-}
-
 /** Small labelled cockpit tile. */
 function InfoTile({
   label,
@@ -138,17 +121,12 @@ function InfoTile({
 export default function HomePage() {
   const { user } = useAuth()
   const { cars, loading, activeCar, activeCarId, setActiveCarId } = useCars()
-  const { theme, toggle } = useTheme()
+  const { open: openSearch } = useSearch()
   const navigate = useNavigate()
   const [reminders, setReminders] = useState<DerivedReminder[]>([])
   const [servicesCount, setServicesCount] = useState<number | null>(null)
   const [lastService, setLastService] = useState<string | undefined>(undefined)
-  const [layout, setLayout] = useState<LayoutId>(initialLayout)
-
-  const changeLayout = (l: LayoutId) => {
-    setLayout(l)
-    localStorage.setItem('car360:homeLayout', l)
-  }
+  const layout = useHomeLayout()
 
   // parallax: as the page scrolls, the car drifts up slower and fades, so the
   // content panel rises up over it.
@@ -185,10 +163,16 @@ export default function HomePage() {
       setServicesCount(null)
       return
     }
-    void repo.listServices(activeCarId).then((list) => {
+    // paint from cache first, then refresh
+    const cached = peek('services', activeCarId)
+    if (cached) {
+      setServicesCount(cached.length)
+      setLastService([...cached].sort((a, b) => b.date.localeCompare(a.date))[0]?.date)
+    }
+    void list('services', activeCarId, { force: true }).then((rows) => {
       if (cancelled) return
-      setServicesCount(list.length)
-      setLastService([...list].sort((a, b) => b.date.localeCompare(a.date))[0]?.date)
+      setServicesCount(rows.length)
+      setLastService([...rows].sort((a, b) => b.date.localeCompare(a.date))[0]?.date)
     })
     return () => {
       cancelled = true
@@ -217,13 +201,13 @@ export default function HomePage() {
         className="flex items-center justify-between py-3"
       >
         <motion.button
-          onClick={toggle}
-          whileTap={{ scale: 0.85, rotate: 40 }}
+          onClick={openSearch ?? undefined}
+          whileTap={{ scale: 0.85 }}
           transition={spring}
-          aria-label={theme === 'dark' ? 'מעבר למצב בהיר' : 'מעבר למצב כהה'}
+          aria-label="חיפוש מהיר"
           className="glass-bar flex size-11 items-center justify-center rounded-full text-ink"
         >
-          {theme === 'dark' ? <IconSun size={20} /> : <IconMoon size={20} />}
+          <IconSearch size={20} />
         </motion.button>
 
         <div className="text-center">
@@ -281,30 +265,6 @@ export default function HomePage() {
               />
             </motion.div>
           </motion.div>
-
-          {activeCar && (
-            <div className="relative z-10 mt-3 flex items-center justify-between">
-              <span className="text-xs font-bold text-ink-3">תצוגת דף הבית</span>
-              <div className="glass-bar flex items-center gap-0.5 rounded-full p-1">
-                {LAYOUT_OPTIONS.map((o) => (
-                  <motion.button
-                    key={o.id}
-                    whileTap={{ scale: 0.88 }}
-                    transition={spring}
-                    onClick={() => changeLayout(o.id)}
-                    aria-label={o.label}
-                    aria-pressed={layout === o.id}
-                    className={cn(
-                      'flex size-9 items-center justify-center rounded-full transition-colors',
-                      layout === o.id ? 'bg-cta text-white shadow-card' : 'text-ink-3',
-                    )}
-                  >
-                    <o.icon size={18} />
-                  </motion.button>
-                ))}
-              </div>
-            </div>
-          )}
 
           {activeCar && (
             <motion.div

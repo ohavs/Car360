@@ -19,6 +19,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useCars } from '../contexts/CarsContext'
 import { useToast } from '../contexts/ToastContext'
 import { repo } from '../data'
+import { invalidateCar } from '../data/store'
 import { useUnsavedChanges } from '../hooks/useUnsavedChanges'
 import { removeImageBackground } from '../lib/bgRemoval'
 import { compressToDataUrl } from '../lib/images'
@@ -217,6 +218,7 @@ export default function CarFormPage() {
   const deleteCar = async () => {
     if (!existing) return
     await repo.deleteCar(existing)
+    invalidateCar(existing.id)
     await refresh()
     toast('הרכב נמחק')
     setConfirmDelete(false)
@@ -285,9 +287,8 @@ export default function CarFormPage() {
               הסרת רקע
             </button>
           </div>
-          <p className="mt-2 text-center text-xs leading-relaxed text-ink-3">
-            צלמו את הרכב ולחצו "הסרת רקע" לתמונה נקייה ומקצועית. בפעם הראשונה ההכנה עשויה
-            לקחת מספר שניות. התמונה נדחסת אוטומטית.
+          <p className="mt-2 text-center text-xs text-ink-3">
+            "הסרת רקע" נותנת תמונה נקייה — בפעם הראשונה זה לוקח כמה שניות.
           </p>
           <input
             ref={fileRef}
@@ -379,9 +380,7 @@ export default function CarFormPage() {
           <Field label="תוקף טסט">
             <DateInput value={draft.testExpiry ?? ''} onChange={(v) => set('testExpiry', v)} />
           </Field>
-          <p className="text-xs leading-relaxed text-ink-3">
-            תאריך זה מזין את מסך התזכורות ואת ההתראות באופן אוטומטי.
-          </p>
+          <p className="text-xs text-ink-3">התאריך נכנס אוטומטית לתזכורות ולהתראות.</p>
         </section>
 
         {/* custom blocks */}

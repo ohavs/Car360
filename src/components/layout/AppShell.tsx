@@ -1,7 +1,8 @@
 import { AnimatePresence, motion } from 'motion/react'
-import { useEffect, useState, type CSSProperties } from 'react'
-import { Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { Suspense, useEffect, useState, type CSSProperties } from 'react'
+import { Outlet, ScrollRestoration, useLocation, useNavigate } from 'react-router-dom'
 import { useCars } from '../../contexts/CarsContext'
+import { SearchProvider } from '../../contexts/SearchContext'
 import { extractCarColor, type CarColor } from '../../lib/colorExtract'
 import { cn } from '../../lib/utils'
 import {
@@ -16,7 +17,7 @@ import {
   IconShield,
   IconWrench,
 } from '../icons'
-import { BottomSheet, listItem, listStagger, spring } from '../ui'
+import { BottomSheet, ListSkeleton, listItem, listStagger, spring } from '../ui'
 
 const tabs = [
   { to: '/', label: 'בית', icon: IconHome },
@@ -26,7 +27,8 @@ const tabs = [
   { to: '/settings', label: 'הגדרות', icon: IconSettings },
 ]
 
-export default function AppShell() {
+/** The shell itself: cockpit glow, page transitions and the bottom nav. */
+function Cockpit() {
   const [quickAdd, setQuickAdd] = useState(false)
   const { activeCarId, activeCar } = useCars()
   const [carColor, setCarColor] = useState<CarColor | null>(null)
@@ -79,6 +81,8 @@ export default function AppShell() {
       className="cockpit mx-auto flex min-h-dvh w-full max-w-md flex-col"
       style={carColor ? ({ ['--car-color']: carColor.hex } as CSSProperties) : undefined}
     >
+      {/* every new screen starts at the top; going back restores where you were */}
+      <ScrollRestoration />
       <main className="flex-1 pb-36">
         <motion.div
           key={routeKey}
@@ -86,7 +90,18 @@ export default function AppShell() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.28, ease: [0.22, 0.9, 0.3, 1] }}
         >
-          <Outlet />
+          {/* screens are code-split — the skeleton keeps the layout stable
+              while a chunk arrives (usually a single frame) */}
+          <Suspense
+            fallback={
+              <div className="px-4 pt-safe">
+                <div className="h-14" />
+                <ListSkeleton />
+              </div>
+            }
+          >
+            <Outlet />
+          </Suspense>
         </motion.div>
       </main>
 
@@ -180,5 +195,14 @@ export default function AppShell() {
         )}
       </AnimatePresence>
     </div>
+  )
+}
+
+/** Quick search is available from every screen inside the shell. */
+export default function AppShell() {
+  return (
+    <SearchProvider>
+      <Cockpit />
+    </SearchProvider>
   )
 }
