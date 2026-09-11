@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'motion/react'
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import GlassPanel from './GlassPanel'
 import { IconChevronDown, IconChevronLeft } from '../icons'
@@ -40,6 +40,7 @@ export default function HomeSection({
   defaultOpen = true,
   empty,
   flat = false,
+  openSignal,
   children,
 }: {
   id: string
@@ -52,10 +53,17 @@ export default function HomeSection({
   empty?: ReactNode
   /** render without its own panel, for grouping several sections into one */
   flat?: boolean
+  /** bump to force the section open — used so the result of an action that
+   *  just added a row is actually visible */
+  openSignal?: number
   children: ReactNode
 }) {
   const [open, setOpen] = useState(() => readOpen(id, defaultOpen))
   const isEmpty = count === 0
+
+  useEffect(() => {
+    if (openSignal) setOpen(true)
+  }, [openSignal])
 
   const toggle = () => {
     const next = !open
@@ -162,4 +170,35 @@ export function SectionRow({
     'flex w-full items-center gap-3 px-4 py-2.5 text-start active:opacity-70 border-b border-white/20 last:border-b-0 dark:border-white/6'
   if (to) return <Link to={to} className={cls}>{inner}</Link>
   return <button onClick={onClick} className={cls}>{inner}</button>
+}
+
+/** A plain destination inside the sections panel — same anatomy as a section
+ *  header, but it navigates instead of expanding. Lets the panel be the single
+ *  index of everything about the car. */
+export function HomeLinkRow({
+  to,
+  title,
+  subtitle,
+  icon,
+}: {
+  to: string
+  title: string
+  subtitle?: string
+  icon: ReactNode
+}) {
+  return (
+    <Link
+      to={to}
+      className="flex items-center gap-2.5 border-b border-white/15 px-4 py-3 last:border-b-0 active:opacity-70 dark:border-white/6"
+    >
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white/50 text-ink dark:bg-white/10">
+        {icon}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[15px] font-black">{title}</span>
+        {subtitle && <span className="block truncate text-[11px] font-semibold text-ink-3">{subtitle}</span>}
+      </span>
+      <IconChevronLeft size={18} className="shrink-0 text-ink-3" />
+    </Link>
+  )
 }

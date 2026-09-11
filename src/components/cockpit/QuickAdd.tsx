@@ -13,7 +13,13 @@ type Mode = 'service' | 'reminder'
 /** Record the two most common things — a service and a reminder — without
  *  leaving the home screen. Deliberately two fields each: anything longer
  *  belongs in the full editor, which the "פרטים נוספים" link opens. */
-export default function QuickAdd({ carId, onAdded }: { carId: string; onAdded: () => void }) {
+export default function QuickAdd({
+  carId,
+  onAdded,
+}: {
+  carId: string
+  onAdded: (kind: Mode) => void
+}) {
   const [mode, setMode] = useState<Mode | null>(null)
   const [title, setTitle] = useState('')
   const [cost, setCost] = useState('')
@@ -29,11 +35,12 @@ export default function QuickAdd({ carId, onAdded }: { carId: string; onAdded: (
   }
 
   const save = async () => {
-    if (!title.trim()) return
+    const kind = mode
+    if (!kind || !title.trim()) return
     setSaving(true)
     const now = Date.now()
     try {
-      if (mode === 'service') {
+      if (kind === 'service') {
         await repo.saveService({
           id: newId(),
           carId,
@@ -58,7 +65,7 @@ export default function QuickAdd({ carId, onAdded }: { carId: string; onAdded: (
         toast('התזכורת נוספה')
       }
       reset()
-      onAdded()
+      onAdded(kind)
     } catch {
       toast('השמירה נכשלה, נסו שוב', 'error')
     } finally {

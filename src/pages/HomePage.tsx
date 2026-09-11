@@ -4,14 +4,13 @@ import { Link, useNavigate } from 'react-router-dom'
 import CarCarousel from '../components/cars/CarCarousel'
 import GlassPanel from '../components/cockpit/GlassPanel'
 import AttentionStrip from '../components/cockpit/AttentionStrip'
-import HomeSection, { SectionRow } from '../components/cockpit/HomeSection'
+import HomeSection, { HomeLinkRow, SectionRow } from '../components/cockpit/HomeSection'
 import QuickAdd from '../components/cockpit/QuickAdd'
 import SearchOverlay from '../components/SearchOverlay'
 import {
   IconAlert,
   IconCalendar,
   IconCar,
-  IconEdit,
   IconFile,
   IconLifeBuoy,
   IconLink,
@@ -144,6 +143,8 @@ export default function HomePage() {
   /** bumped after a quick add so the cockpit reloads its data */
   const [refreshTick, setRefreshTick] = useState(0)
   const [searching, setSearching] = useState(false)
+  /** bumped to reveal the section an action just added a row to */
+  const [revealServices, setRevealServices] = useState(0)
 
 
   // parallax: as the page scrolls, the car drifts up slower and fades, so the
@@ -376,37 +377,15 @@ export default function HomePage() {
                 </Link>
               </GlassPanel>
 
-              {/* quick actions */}
-              <GlassPanel className="col-span-2 !p-3">
-                <div className="no-scrollbar flex justify-between gap-1 overflow-x-auto">
-                  {[
-                    { label: 'טיפולים', icon: IconWrench, to: `/car/${activeCar.id}/services` },
-                    { label: 'ביטוחים', icon: IconShield, to: `/car/${activeCar.id}/insurance` },
-                    { label: 'דוח רכב', icon: IconSearch, to: `/report?plate=${activeCar.plate.replace(/\D/g, '')}` },
-                    { label: 'תא כפפות', icon: IconLifeBuoy, to: `/car/${activeCar.id}/glovebox` },
-                    { label: 'שיתוף', icon: IconShare, to: `/car/${activeCar.id}/share` },
-                    { label: 'עריכה', icon: IconEdit, to: `/car/${activeCar.id}/edit` },
-                  ].map((a) => (
-                    <motion.div key={a.label} whileTap={{ scale: 0.9 }} transition={spring} className="shrink-0">
-                      <Link to={a.to} className={cn('flex flex-col items-center gap-1', dense ? 'w-12' : 'w-14')}>
-                        <span
-                          className={cn(
-                            'flex items-center justify-center rounded-2xl bg-white/50 text-ink ring-1 ring-white/50 dark:bg-white/10 dark:ring-white/10',
-                            dense ? 'size-10' : 'size-11',
-                          )}
-                        >
-                          <a.icon size={dense ? 18 : 19} />
-                        </span>
-                        {!dense && <span className="text-[10px] font-bold text-ink-2">{a.label}</span>}
-                      </Link>
-                    </motion.div>
-                  ))}
-                </div>
-              </GlassPanel>
-
               {/* record the common things without leaving home */}
               <div className="col-span-2">
-                <QuickAdd carId={activeCar.id} onAdded={() => setRefreshTick((t) => t + 1)} />
+                <QuickAdd
+                  carId={activeCar.id}
+                  onAdded={(kind) => {
+                    setRefreshTick((t) => t + 1)
+                    if (kind === 'service') setRevealServices((n) => n + 1)
+                  }}
+                />
               </div>
 
               {/* one panel, not four floating cards: the detail sections read as a
@@ -416,6 +395,7 @@ export default function HomePage() {
                 <HomeSection
                   id="services"
                   flat
+                  openSignal={revealServices}
                   title="טיפולים אחרונים"
                   icon={<IconWrench size={16} />}
                   count={recentServices.length}
@@ -489,6 +469,26 @@ export default function HomePage() {
                     ))}
                   </div>
                 </HomeSection>
+
+                {/* destinations that have no other home on this screen */}
+                <HomeLinkRow
+                  to={`/car/${activeCar.id}/glovebox`}
+                  title="תא כפפות"
+                  subtitle="מה לעשות בתאונה, פנצ׳ר וגרירה"
+                  icon={<IconLifeBuoy size={16} />}
+                />
+                <HomeLinkRow
+                  to={`/report?plate=${activeCar.plate.replace(/\D/g, '')}`}
+                  title="דוח רכב"
+                  subtitle="בדיקה מלאה לפי מספר רישוי"
+                  icon={<IconSearch size={16} />}
+                />
+                <HomeLinkRow
+                  to={`/car/${activeCar.id}/share`}
+                  title="שיתוף"
+                  subtitle="שיתוף הרכב ודרכון לקריאה בלבד"
+                  icon={<IconShare size={16} />}
+                />
 
                 {/* vehicle details: reference data, not a daily answer */}
                 <HomeSection
