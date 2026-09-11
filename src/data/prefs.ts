@@ -1,4 +1,4 @@
-import { getFirebaseApp, isFirebaseConfigured } from '../lib/firebase'
+import { getFirestoreDb, isFirebaseConfigured } from '../lib/firebase'
 import type { PaletteId, SkinId } from '../lib/palettes'
 
 /** Cross-device design preferences, stored at users/{uid}.design.
@@ -14,9 +14,8 @@ export interface DesignPrefs {
 export async function loadDesignPrefs(uid: string): Promise<DesignPrefs | null> {
   if (!isFirebaseConfigured) return null
   try {
-    const app = await getFirebaseApp()
-    const { getFirestore, doc, getDoc } = await import('firebase/firestore')
-    const snap = await getDoc(doc(getFirestore(app), 'users', uid))
+    const { doc, getDoc } = await import('firebase/firestore')
+    const snap = await getDoc(doc(await getFirestoreDb(), 'users', uid))
     const design = snap.data()?.design as DesignPrefs | undefined
     return design ?? null
   } catch {
@@ -27,9 +26,8 @@ export async function loadDesignPrefs(uid: string): Promise<DesignPrefs | null> 
 export async function saveDesignPrefs(uid: string, prefs: DesignPrefs): Promise<void> {
   if (!isFirebaseConfigured) return
   try {
-    const app = await getFirebaseApp()
-    const { getFirestore, doc, setDoc } = await import('firebase/firestore')
-    await setDoc(doc(getFirestore(app), 'users', uid), { design: prefs }, { merge: true })
+    const { doc, setDoc } = await import('firebase/firestore')
+    await setDoc(doc(await getFirestoreDb(), 'users', uid), { design: prefs }, { merge: true })
   } catch {
     // offline / rules issue — local persistence still applies
   }

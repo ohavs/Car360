@@ -7,7 +7,7 @@ import type {
   ServiceRecord,
   UserProfile,
 } from '../types'
-import { getFirebaseApp } from '../lib/firebase'
+import { getFirestoreDb } from '../lib/firebase'
 import type { Repo } from './repo'
 
 /** Firestore layout:
@@ -19,12 +19,12 @@ import type { Repo } from './repo'
  *  Images live in Storage under cars/{carId}/... and docs keep download URLs. */
 
 async function db() {
-  const app = await getFirebaseApp()
-  const fs = await import('firebase/firestore')
-  return { fs, store: fs.getFirestore(app) }
+  const [fs, store] = await Promise.all([import('firebase/firestore'), getFirestoreDb()])
+  return { fs, store }
 }
 
 async function storage() {
+  const { getFirebaseApp } = await import('../lib/firebase')
   const app = await getFirebaseApp()
   const st = await import('firebase/storage')
   return { st, storage: st.getStorage(app) }

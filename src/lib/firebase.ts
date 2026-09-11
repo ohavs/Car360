@@ -37,3 +37,31 @@ async function initAnalytics(app: import('firebase/app').FirebaseApp) {
     // analytics blocked / unsupported — never break the app over it
   }
 }
+
+let dbPromise: Promise<import('firebase/firestore').Firestore> | null = null
+
+/** Firestore with a persistent (IndexedDB) local cache.
+ *
+ *  Reads are answered from the device first and revalidated against the server
+ *  in the background, so revisiting a screen is instant instead of waiting on a
+ *  round trip — and the app keeps working offline.
+ *
+ *  Every caller must go through this: calling getFirestore() directly before
+ *  initializeFirestore() runs would lock in the default memory-only cache. */
+export function getFirestoreDb() {
+  if (!dbPromise) {
+    dbPromise = (async () => {
+      const app = await getFirebaseApp()
+      const fs = await import('firebase/firestore')
+      try {
+        return fs.initializeFirestore(app, {
+          localCache: fs.persistentLocalCache({ tabManager: fs.persistentMultipleTabManager() }),
+        })
+      } catch {
+        // already initialised (hot reload, or a racing caller) — reuse it
+        return fs.getFirestore(app)
+      }
+    })()
+  }
+  return dbPromise
+}

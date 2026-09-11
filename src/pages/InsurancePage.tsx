@@ -57,7 +57,7 @@ export default function InsurancePage() {
   const car = cars.find((c) => c.id === carId)
 
   const fetcher = useCallback((cid: string) => repo.listInsurances(cid), [])
-  const { items, loading, reload } = useCollection<InsuranceRecord>(carId, fetcher)
+  const { items, loading, reload } = useCollection<InsuranceRecord>(carId, fetcher, 'insurances')
 
   const [editing, setEditing] = useState<InsuranceRecord | null>(() =>
     params.get('add') && carId ? emptyInsurance(carId) : null,

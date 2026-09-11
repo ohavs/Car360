@@ -126,7 +126,7 @@ export default function DocumentsPage() {
   const car = cars.find((c) => c.id === carId)
 
   const fetcher = useCallback((cid: string) => repo.listDocuments(cid), [])
-  const { items, loading, reload } = useCollection<CarDocument>(carId, fetcher)
+  const { items, loading, reload } = useCollection<CarDocument>(carId, fetcher, 'documents')
 
   const [adding, setAdding] = useState(() => Boolean(params.get('add')))
   const [viewing, setViewing] = useState<CarDocument | null>(null)

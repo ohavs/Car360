@@ -4,7 +4,7 @@
  *  certificates). Without it the app keeps using on-device reminder
  *  notifications. All Firebase imports are lazy so nothing loads unless used. */
 
-import { getFirebaseApp, isFirebaseConfigured } from './firebase'
+import { getFirebaseApp, getFirestoreDb, isFirebaseConfigured } from './firebase'
 
 const VAPID_KEY = import.meta.env.VITE_FCM_VAPID_KEY as string | undefined
 
@@ -28,9 +28,8 @@ async function messagingApi() {
 }
 
 async function tokenDocRef(uid: string, token: string) {
-  const app = await getFirebaseApp()
-  const fs = await import('firebase/firestore')
-  return { fs, ref: fs.doc(fs.getFirestore(app), 'users', uid, 'fcmTokens', token) }
+  const [fs, store] = await Promise.all([import('firebase/firestore'), getFirestoreDb()])
+  return { fs, ref: fs.doc(store, 'users', uid, 'fcmTokens', token) }
 }
 
 /** Obtain the FCM token for this device and store it under the user.

@@ -28,6 +28,10 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        // The background-removal model runtime (ONNX) is ~0.74MB of JS that only
+        // that one feature needs — it is lazily imported, so precaching it would
+        // make every first install pay for a feature most users never open.
+        globIgnores: ['**/ort.*.js', '**/ort.*.mjs', '**/ort-wasm*'],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         navigateFallbackDenylist: [/^\/__/],
         runtimeCaching: [

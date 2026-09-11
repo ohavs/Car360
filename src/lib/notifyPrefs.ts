@@ -3,7 +3,7 @@
  *  Firestore (users/{uid}.notifications) so the scheduled Cloud Function can
  *  respect the same choices. */
 
-import { getFirebaseApp, isFirebaseConfigured } from './firebase'
+import { getFirestoreDb, isFirebaseConfigured } from './firebase'
 import type { DerivedReminder } from '../types'
 
 export type NotifSource = DerivedReminder['source'] // 'test'|'license'|'insurance'|'service'|'block'|'custom'
@@ -60,9 +60,8 @@ export function leadDaysFor(source: NotifSource, prefs: NotificationPrefs): numb
 export async function loadNotifPrefsCloud(uid: string): Promise<NotificationPrefs | null> {
   if (!isFirebaseConfigured) return null
   try {
-    const app = await getFirebaseApp()
-    const { getFirestore, doc, getDoc } = await import('firebase/firestore')
-    const snap = await getDoc(doc(getFirestore(app), 'users', uid))
+    const { doc, getDoc } = await import('firebase/firestore')
+    const snap = await getDoc(doc(await getFirestoreDb(), 'users', uid))
     const n = snap.data()?.notifications as Partial<NotificationPrefs> | undefined
     return n ? { ...DEFAULT_NOTIF_PREFS, ...n } : null
   } catch {
@@ -73,9 +72,8 @@ export async function loadNotifPrefsCloud(uid: string): Promise<NotificationPref
 export async function saveNotifPrefsCloud(uid: string, prefs: NotificationPrefs): Promise<void> {
   if (!isFirebaseConfigured) return
   try {
-    const app = await getFirebaseApp()
-    const { getFirestore, doc, setDoc } = await import('firebase/firestore')
-    await setDoc(doc(getFirestore(app), 'users', uid), { notifications: prefs }, { merge: true })
+    const { doc, setDoc } = await import('firebase/firestore')
+    await setDoc(doc(await getFirestoreDb(), 'users', uid), { notifications: prefs }, { merge: true })
   } catch {
     // offline / rules — local persistence still applies
   }

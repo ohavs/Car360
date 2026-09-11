@@ -25,7 +25,7 @@ export default function GloveboxPage() {
   const car = cars.find((c) => c.id === carId)
 
   const fetcher = useCallback((cid: string) => repo.listInsurances(cid), [])
-  const { items, loading } = useCollection<InsuranceRecord>(carId, fetcher)
+  const { items, loading } = useCollection<InsuranceRecord>(carId, fetcher, 'insurances')
 
   // most-relevant insurance = the one furthest in the future (still valid)
   const insurance = [...items].sort((a, b) => b.endDate.localeCompare(a.endDate))[0]

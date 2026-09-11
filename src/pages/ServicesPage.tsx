@@ -49,7 +49,7 @@ export default function ServicesPage() {
   const car = cars.find((c) => c.id === carId)
 
   const fetcher = useCallback((cid: string) => repo.listServices(cid), [])
-  const { items, loading, reload } = useCollection<ServiceRecord>(carId, fetcher)
+  const { items, loading, reload } = useCollection<ServiceRecord>(carId, fetcher, 'services')
 
   const [editing, setEditing] = useState<ServiceRecord | null>(() =>
     params.get('add') && carId ? emptyService(carId) : null,
