@@ -652,6 +652,33 @@ input.native-picker::-webkit-calendar-picker-indicator {
   cursor: pointer;
 }
 
+
+
+/* Bottom sheets own their surface on every skin.
+   A sheet animates its transform, so a translucent surface would need a
+   backdrop-filter that re-rasterises on every frame — and without one the page
+   behind bleeds through and the form becomes unreadable (the glass skin makes
+   .bg-canvas 62% opaque). Opaque is both the fast and the legible answer. */
+.sheet-surface {
+  background-color: var(--c-canvas) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* While a sheet or dialog is open, everything behind it is covered by the
+   scrim — so its frosted surfaces and ambient glow cost frames for nothing.
+   Scoped to #root so the overlay's own surfaces keep their look. */
+body.overlay-open #root .glass-tile,
+body.overlay-open #root .glass-bar,
+body.overlay-open #root .field-well,
+body.overlay-open #root [class*='backdrop-blur'] {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+body.overlay-open #root .cockpit::before {
+  display: none !important;
+}
+
 /* Printed reports (vehicle report / passport) flatten to clean white paper —
    no ambient glow, no frosted glass, no heavy shadows. */
 @media print {

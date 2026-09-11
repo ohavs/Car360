@@ -188,8 +188,13 @@ function Overlay({ onClose, children }: { onClose?: () => void; children: ReactN
   useEffect(() => {
     const orig = document.body.style.overflow
     document.body.style.overflow = 'hidden'
+    // Flag the app root so the page behind can drop its backdrop-filters while
+    // an overlay is up: they are hidden by the scrim anyway, but the compositor
+    // still re-rasterises them on every frame of the sheet animation.
+    document.body.classList.add('overlay-open')
     return () => {
       document.body.style.overflow = orig
+      document.body.classList.remove('overlay-open')
     }
   }, [])
   // Portal to <body> so the overlay escapes the page's transformed stacking
@@ -201,7 +206,7 @@ function Overlay({ onClose, children }: { onClose?: () => void; children: ReactN
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.18 }}
-        className="absolute inset-0 bg-black/55 backdrop-blur-[2px]"
+        className="absolute inset-0 bg-black/60"
         onClick={onClose}
       />
       {children}
@@ -265,9 +270,9 @@ export function BottomSheet({
         initial={{ y: '100%' }}
         animate={{ y: 0 }}
         transition={{ type: 'spring', stiffness: 380, damping: 40 }}
-        className="relative z-10 max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-t-[2.25rem] border-t border-white/40 bg-canvas/85 shadow-float backdrop-blur-2xl sm:rounded-card dark:border-white/12"
+        className="relative z-10 max-h-[92dvh] w-full max-w-md transform-gpu overflow-y-auto sheet-surface rounded-t-[2.25rem] border-t border-white/40 shadow-float [contain:paint] sm:rounded-card dark:border-white/12"
       >
-        <div className="sticky top-0 z-10 bg-canvas/70 px-5 pb-2 pt-3 backdrop-blur-xl">
+        <div className="sheet-surface sticky top-0 z-10 px-5 pb-2 pt-3">
           <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-line" />
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-black">{title}</h2>

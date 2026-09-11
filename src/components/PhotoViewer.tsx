@@ -50,7 +50,7 @@ export default function PhotoViewer({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.16 }}
-      className="fixed inset-0 z-[70] flex flex-col bg-black/95 backdrop-blur-sm"
+      className="fixed inset-0 z-[70] flex flex-col bg-black/95"
       dir="rtl"
     >
       {/* top bar */}
