@@ -37,7 +37,8 @@ export default function PageHeader({
           className="min-w-0 flex-1"
         >
           <h1 className="truncate text-xl font-black leading-tight">{title}</h1>
-          {subtitle && <p className="truncate text-xs font-medium text-ink-3">{subtitle}</p>}
+          {/* wraps to a second line rather than clipping mid-sentence */}
+          {subtitle && <p className="line-clamp-2 text-xs font-medium leading-snug text-ink-3">{subtitle}</p>}
         </motion.div>
         {action}
       </div>
