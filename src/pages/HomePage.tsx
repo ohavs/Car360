@@ -7,6 +7,7 @@ import AttentionStrip from '../components/cockpit/AttentionStrip'
 import HomeSection, { SectionRow } from '../components/cockpit/HomeSection'
 import StatusTile from '../components/cockpit/StatusTile'
 import {
+  IconAlert,
   IconCalendar,
   IconCar,
   IconEdit,
@@ -145,7 +146,7 @@ function InfoTile({
 
 export default function HomePage() {
   const { user } = useAuth()
-  const { cars, loading, activeCar, activeCarId, setActiveCarId } = useCars()
+  const { cars, loading, activeCar, activeCarId, setActiveCarId, error, refresh } = useCars()
   const { theme, toggle } = useTheme()
   const navigate = useNavigate()
   const [reminders, setReminders] = useState<DerivedReminder[]>([])
@@ -238,6 +239,27 @@ export default function HomePage() {
   )
 
   if (loading) return <HomeSkeleton />
+
+  // a failed load must never look like an empty or frozen app
+  if (error && cars.length === 0) {
+    return (
+      <div className="px-4 pt-safe">
+        <EmptyState
+          icon={<IconAlert size={26} />}
+          title="לא הצלחנו לטעון את הרכבים"
+          subtitle="בדקו את החיבור לאינטרנט ונסו שוב."
+          action={
+            <button
+              onClick={() => void refresh()}
+              className="min-h-12 rounded-full bg-cta px-6 font-bold text-white active:scale-95"
+            >
+              נסו שוב
+            </button>
+          }
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="px-4 pt-safe">

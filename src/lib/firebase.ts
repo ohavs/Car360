@@ -40,28 +40,25 @@ async function initAnalytics(app: import('firebase/app').FirebaseApp) {
 
 let dbPromise: Promise<import('firebase/firestore').Firestore> | null = null
 
-/** Firestore with a persistent (IndexedDB) local cache.
+/** The app's single Firestore instance.
  *
- *  Reads are answered from the device first and revalidated against the server
- *  in the background, so revisiting a screen is instant instead of waiting on a
- *  round trip — and the app keeps working offline.
+ *  NOTE: this briefly used persistentLocalCache() for offline reads. That was
+ *  rolled back — with a persistent cache, failures to acquire IndexedDB surface
+ *  on the first *query* rather than at initialisation, so a try/catch around
+ *  initializeFirestore did not contain them, and the app was left hanging. Any
+ *  retry is worth it only with a real signed-in cloud test behind it.
  *
- *  Every caller must go through this: calling getFirestore() directly before
- *  initializeFirestore() runs would lock in the default memory-only cache. */
+ *  A rejected attempt is never cached, so a later call can still succeed. */
 export function getFirestoreDb() {
   if (!dbPromise) {
     dbPromise = (async () => {
       const app = await getFirebaseApp()
-      const fs = await import('firebase/firestore')
-      try {
-        return fs.initializeFirestore(app, {
-          localCache: fs.persistentLocalCache({ tabManager: fs.persistentMultipleTabManager() }),
-        })
-      } catch {
-        // already initialised (hot reload, or a racing caller) — reuse it
-        return fs.getFirestore(app)
-      }
-    })()
+      const { getFirestore } = await import('firebase/firestore')
+      return getFirestore(app)
+    })().catch((err) => {
+      dbPromise = null
+      throw err
+    })
   }
   return dbPromise
 }

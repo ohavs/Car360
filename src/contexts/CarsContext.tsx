@@ -20,6 +20,9 @@ interface CarsCtx {
   activeCar: Car | null
   setActiveCarId: (id: string) => void
   refresh: () => Promise<void>
+  /** set when the last load failed, so the UI can offer a retry instead of
+   *  sitting on a skeleton forever */
+  error: string | null
 }
 
 const Ctx = createContext<CarsCtx>({
@@ -29,6 +32,7 @@ const Ctx = createContext<CarsCtx>({
   activeCar: null,
   setActiveCarId: () => {},
   refresh: async () => {},
+  error: null,
 })
 
 const ACTIVE_KEY = 'car360:activeCar'
@@ -37,6 +41,7 @@ export function CarsProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth()
   const [cars, setCars] = useState<Car[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [activeCarId, setActiveIdState] = useState<string | null>(
     () => localStorage.getItem(ACTIVE_KEY),
   )
@@ -44,12 +49,21 @@ export function CarsProvider({ children }: { children: ReactNode }) {
   const refresh = useCallback(async () => {
     if (!user) {
       setCars([])
+      setError(null)
       setLoading(false)
       return
     }
-    const list = await repo.listCars(user)
-    setCars(list)
-    setLoading(false)
+    try {
+      const list = await repo.listCars(user)
+      setCars(list)
+      setError(null)
+    } catch (e) {
+      // never leave the app stuck on a loading skeleton: surface the failure
+      // so the user gets a retry instead of a blank screen
+      setError(e instanceof Error ? e.message : 'load failed')
+    } finally {
+      setLoading(false)
+    }
   }, [user])
 
   useEffect(() => {
@@ -80,7 +94,7 @@ export function CarsProvider({ children }: { children: ReactNode }) {
   )
 
   return (
-    <Ctx.Provider value={{ cars, loading, activeCarId, activeCar, setActiveCarId, refresh }}>
+    <Ctx.Provider value={{ cars, loading, activeCarId, activeCar, setActiveCarId, refresh, error }}>
       {children}
     </Ctx.Provider>
   )
