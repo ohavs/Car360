@@ -25,6 +25,7 @@ import { useCars } from '../contexts/CarsContext'
 import { useToast } from '../contexts/ToastContext'
 import { repo } from '../data'
 import { useCollection } from '../hooks/useCollection'
+import { makeThumb } from '../lib/images'
 import { carDisplayName } from '../lib/reminders'
 import { dueLabel, dueStatus, formatDate, formatMoney, formatNumber, newId, todayISO } from '../lib/utils'
 import type { ServiceRecord } from '../types'
@@ -72,9 +73,20 @@ export default function ServicesPage() {
         p.startsWith('data:') ? repo.uploadImage(`cars/${rec.carId}/services/${rec.id}-${i}-${now}.webp`, p) : p,
       ),
     )
+    // small renditions so lists don't pull full-size images; never fatal
+    const thumbs = await Promise.all(
+      rec.photos.map(async (p, i) => {
+        if (!p.startsWith('data:')) return rec.thumbs?.[i] ?? photos[i]
+        const t = await makeThumb(p)
+        return t
+          ? repo.uploadImage(`cars/${rec.carId}/services/${rec.id}-${i}-${now}-thumb.webp`, t)
+          : photos[i]
+      }),
+    )
     await repo.saveService({
       ...rec,
       photos,
+      thumbs,
       createdAt: rec.createdAt || now,
       updatedAt: now,
     })
@@ -161,7 +173,7 @@ export default function ServicesPage() {
                         }}
                         className="shrink-0 overflow-hidden rounded-xl ring-1 ring-line active:scale-95"
                       >
-                        <img src={p} alt="" loading="lazy" className="size-16 object-cover" />
+                        <img src={rec.thumbs?.[i] ?? p} alt="" loading="lazy" className="size-16 object-cover" />
                       </button>
                     ))}
                   </div>

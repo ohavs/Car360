@@ -5,6 +5,7 @@ import CarCarousel from '../components/cars/CarCarousel'
 import GlassPanel from '../components/cockpit/GlassPanel'
 import AttentionStrip from '../components/cockpit/AttentionStrip'
 import HomeSection, { SectionRow } from '../components/cockpit/HomeSection'
+import QuickAdd from '../components/cockpit/QuickAdd'
 import StatusTile from '../components/cockpit/StatusTile'
 import {
   IconAlert,
@@ -156,6 +157,8 @@ export default function HomePage() {
     documents: CarDocument[]
   } | null>(null)
   const [layout, setLayout] = useState<LayoutId>(initialLayout)
+  /** bumped after a quick add so the cockpit reloads its data */
+  const [refreshTick, setRefreshTick] = useState(0)
 
   const changeLayout = (l: LayoutId) => {
     setLayout(l)
@@ -189,7 +192,7 @@ export default function HomePage() {
     return () => {
       cancelled = true
     }
-  }, [cars])
+  }, [cars, refreshTick])
 
   // one parallel wave for the active car — powers the counters and every
   // inline section below, so the cockpit costs a single round trip
@@ -209,7 +212,7 @@ export default function HomePage() {
     return () => {
       cancelled = true
     }
-  }, [activeCarId])
+  }, [activeCarId, refreshTick])
 
   const recentServices = useMemo(
     () => [...(overview?.services ?? [])].sort((a, b) => b.date.localeCompare(a.date)),
@@ -434,6 +437,11 @@ export default function HomePage() {
                   ))}
                 </div>
               </GlassPanel>
+
+              {/* record the common things without leaving home */}
+              <div className="col-span-2">
+                <QuickAdd carId={activeCar.id} onAdded={() => setRefreshTick((t) => t + 1)} />
+              </div>
 
               {/* inline cockpit sections — the day-to-day answers without navigating */}
               <div className="col-span-2 flex flex-col gap-3">

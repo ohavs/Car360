@@ -35,6 +35,22 @@ export async function compressToBlob(file: File, profile: ImageProfile = 'docume
   })
 }
 
+/** Build a small rendition of an already-compressed image so lists can show a
+ *  64px square without downloading the full ~250KB original.
+ *
+ *  Returns null on any failure — callers must fall back to the full image, so
+ *  a thumbnail problem can never block saving the record itself. */
+export async function makeThumb(dataUrl: string): Promise<string | null> {
+  try {
+    if (!dataUrl.startsWith('data:')) return null
+    const blob = await (await fetch(dataUrl)).blob()
+    const file = new File([blob], 'photo.webp', { type: blob.type || 'image/webp' })
+    return await compressToDataUrl(file, 'thumb')
+  } catch {
+    return null
+  }
+}
+
 export function blobToDataUrl(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()

@@ -74,6 +74,8 @@ export interface ServiceRecord {
   notes?: string
   /** compressed receipt/photos */
   photos: string[]
+  /** small renditions of `photos`, index-aligned; optional for older records */
+  thumbs?: string[]
   nextDueDate?: string
   createdAt: number
   updatedAt: number
@@ -94,6 +96,8 @@ export interface InsuranceRecord {
   agentPhone?: string
   notes?: string
   photos: string[]
+  /** small renditions of `photos`, index-aligned; optional for older records */
+  thumbs?: string[]
   createdAt: number
   updatedAt: number
 }

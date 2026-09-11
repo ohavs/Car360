@@ -25,7 +25,7 @@ import { useCars } from '../contexts/CarsContext'
 import { useToast } from '../contexts/ToastContext'
 import { repo } from '../data'
 import { useCollection } from '../hooks/useCollection'
-import { compressToDataUrl } from '../lib/images'
+import { compressToDataUrl, makeThumb } from '../lib/images'
 import { extractInsurance, isGeminiConfigured } from '../lib/gemini'
 import { scanDocument } from '../lib/ocr'
 import { carDisplayName } from '../lib/reminders'
@@ -79,7 +79,16 @@ export default function InsurancePage() {
         p.startsWith('data:') ? repo.uploadImage(`cars/${rec.carId}/insurance/${rec.id}-${i}-${now}.webp`, p) : p,
       ),
     )
-    await repo.saveInsurance({ ...rec, photos, createdAt: rec.createdAt || now, updatedAt: now })
+    const thumbs = await Promise.all(
+      rec.photos.map(async (p, i) => {
+        if (!p.startsWith('data:')) return rec.thumbs?.[i] ?? photos[i]
+        const t = await makeThumb(p)
+        return t
+          ? repo.uploadImage(`cars/${rec.carId}/insurance/${rec.id}-${i}-${now}-thumb.webp`, t)
+          : photos[i]
+      }),
+    )
+    await repo.saveInsurance({ ...rec, photos, thumbs, createdAt: rec.createdAt || now, updatedAt: now })
     await reload()
     toast('הביטוח נשמר')
     closeEditor()
@@ -158,7 +167,7 @@ export default function InsurancePage() {
                         }}
                         className="shrink-0 overflow-hidden rounded-xl ring-1 ring-line active:scale-95"
                       >
-                        <img src={p} alt="" loading="lazy" className="size-16 object-cover" />
+                        <img src={rec.thumbs?.[i] ?? p} alt="" loading="lazy" className="size-16 object-cover" />
                       </button>
                     ))}
                   </div>
