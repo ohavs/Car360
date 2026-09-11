@@ -16,6 +16,7 @@ import {
   Field,
   Input,
   ListSkeleton,
+  LoadError,
   TextArea,
   listItem,
   listStagger,
@@ -50,7 +51,7 @@ export default function ServicesPage() {
   const car = cars.find((c) => c.id === carId)
 
   const fetcher = useCallback((cid: string) => repo.listServices(cid), [])
-  const { items, loading, reload } = useCollection<ServiceRecord>(carId, fetcher, 'services')
+  const { items, loading, reload, error } = useCollection<ServiceRecord>(carId, fetcher, 'services')
 
   const [editing, setEditing] = useState<ServiceRecord | null>(() =>
     params.get('add') && carId ? emptyService(carId) : null,
@@ -121,6 +122,8 @@ export default function ServicesPage() {
 
       {loading ? (
         <ListSkeleton />
+      ) : error && items.length === 0 ? (
+        <LoadError what="הטיפולים" onRetry={() => void reload()} />
       ) : sorted.length === 0 ? (
         <EmptyState
           icon={<IconWrench size={26} />}

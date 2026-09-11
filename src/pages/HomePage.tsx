@@ -1,4 +1,4 @@
-import { motion, useScroll, useTransform } from 'motion/react'
+import { AnimatePresence, motion, useScroll, useTransform } from 'motion/react'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import CarCarousel from '../components/cars/CarCarousel'
@@ -6,6 +6,7 @@ import GlassPanel from '../components/cockpit/GlassPanel'
 import AttentionStrip from '../components/cockpit/AttentionStrip'
 import HomeSection, { SectionRow } from '../components/cockpit/HomeSection'
 import QuickAdd from '../components/cockpit/QuickAdd'
+import SearchOverlay from '../components/SearchOverlay'
 import {
   IconAlert,
   IconCalendar,
@@ -142,6 +143,7 @@ export default function HomePage() {
   const [layout] = useState<LayoutId>(readLayout)
   /** bumped after a quick add so the cockpit reloads its data */
   const [refreshTick, setRefreshTick] = useState(0)
+  const [searching, setSearching] = useState(false)
 
 
   // parallax: as the page scrolls, the car drifts up slower and fades, so the
@@ -248,6 +250,7 @@ export default function HomePage() {
         transition={{ duration: 0.2 }}
         className="flex items-center justify-between py-3"
       >
+        <div className="flex items-center gap-1">
         <motion.button
           onClick={toggle}
           whileTap={{ scale: 0.85, rotate: 40 }}
@@ -257,6 +260,17 @@ export default function HomePage() {
         >
           {theme === 'dark' ? <IconSun size={20} /> : <IconMoon size={20} />}
         </motion.button>
+
+        <motion.button
+          onClick={() => setSearching(true)}
+          whileTap={{ scale: 0.85 }}
+          transition={spring}
+          aria-label="חיפוש"
+          className="glass-bar -ms-1 flex size-11 items-center justify-center rounded-full text-ink"
+        >
+          <IconSearch size={20} />
+        </motion.button>
+        </div>
 
         <div className="text-center">
           <h1 className="text-lg font-black leading-tight">
@@ -283,6 +297,10 @@ export default function HomePage() {
           )}
         </Link>
       </motion.header>
+
+      <AnimatePresence>
+        {searching && <SearchOverlay onClose={() => setSearching(false)} />}
+      </AnimatePresence>
 
       {cars.length === 0 ? (
         <EmptyState

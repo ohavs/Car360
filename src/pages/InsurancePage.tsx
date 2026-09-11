@@ -15,6 +15,7 @@ import {
   Field,
   Input,
   ListSkeleton,
+  LoadError,
   Spinner,
   TextArea,
   listItem,
@@ -57,7 +58,7 @@ export default function InsurancePage() {
   const car = cars.find((c) => c.id === carId)
 
   const fetcher = useCallback((cid: string) => repo.listInsurances(cid), [])
-  const { items, loading, reload } = useCollection<InsuranceRecord>(carId, fetcher, 'insurances')
+  const { items, loading, reload, error } = useCollection<InsuranceRecord>(carId, fetcher, 'insurances')
 
   const [editing, setEditing] = useState<InsuranceRecord | null>(() =>
     params.get('add') && carId ? emptyInsurance(carId) : null,
@@ -120,6 +121,8 @@ export default function InsurancePage() {
 
       {loading ? (
         <ListSkeleton />
+      ) : error && items.length === 0 ? (
+        <LoadError what="הביטוחים" onRetry={() => void reload()} />
       ) : sorted.length === 0 ? (
         <EmptyState
           icon={<IconShield size={26} />}

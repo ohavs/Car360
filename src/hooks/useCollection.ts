@@ -28,17 +28,26 @@ export function useCollection<T>(
 
   const [items, setItems] = useState<T[]>(cached ?? [])
   const [loading, setLoading] = useState(!cached)
+  const [error, setError] = useState(false)
 
   const reload = useCallback(async () => {
     if (!carId) {
       setItems([])
+      setError(false)
       setLoading(false)
       return
     }
-    const list = await fetcher(carId)
-    if (key) cache.set(key, list)
-    setItems(list)
-    setLoading(false)
+    try {
+      const list = await fetcher(carId)
+      if (key) cache.set(key, list)
+      setItems(list)
+      setError(false)
+    } catch {
+      // a failed load must not look like "there is nothing here"
+      setError(true)
+    } finally {
+      setLoading(false)
+    }
   }, [carId, fetcher, key])
 
   useEffect(() => {
@@ -46,8 +55,9 @@ export function useCollection<T>(
     const hit = key ? (cache.get(key) as T[] | undefined) : undefined
     setItems(hit ?? [])
     setLoading(!hit)
+    setError(false)
     void reload()
   }, [reload, key])
 
-  return { items, loading, reload }
+  return { items, loading, reload, error }
 }

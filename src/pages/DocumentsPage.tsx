@@ -15,6 +15,7 @@ import {
   Input,
   ListSkeleton,
   Skeleton,
+  LoadError,
   listItem,
   listStagger,
 } from '../components/ui'
@@ -126,7 +127,7 @@ export default function DocumentsPage() {
   const car = cars.find((c) => c.id === carId)
 
   const fetcher = useCallback((cid: string) => repo.listDocuments(cid), [])
-  const { items, loading, reload } = useCollection<CarDocument>(carId, fetcher, 'documents')
+  const { items, loading, reload, error } = useCollection<CarDocument>(carId, fetcher, 'documents')
 
   const [adding, setAdding] = useState(() => Boolean(params.get('add')))
   const [viewing, setViewing] = useState<CarDocument | null>(null)
@@ -207,6 +208,8 @@ export default function DocumentsPage() {
             <Skeleton key={i} className="h-44 rounded-card" />
           ))}
         </div>
+      ) : error && items.length === 0 ? (
+        <LoadError what="המסמכים" onRetry={() => void reload()} />
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={<IconFile size={26} />}

@@ -485,3 +485,22 @@ export const listItem = {
   hidden: { opacity: 0, y: 14 },
   show: { opacity: 1, y: 0, transition: springSoft },
 }
+
+/** Shown when a list failed to load, so "nothing here" is never confused with
+ *  "we could not fetch it". Always offers a way out. */
+export function LoadError({ onRetry, what = 'הנתונים' }: { onRetry: () => void; what?: string }) {
+  return (
+    <div className="flex flex-col items-center gap-3 px-6 py-14 text-center">
+      <span className="flex size-14 items-center justify-center rounded-full bg-danger-soft text-danger">
+        <IconAlert size={26} />
+      </span>
+      <div>
+        <p className="text-lg font-black">לא הצלחנו לטעון את {what}</p>
+        <p className="mt-1 text-sm text-ink-2">בדקו את החיבור לאינטרנט ונסו שוב.</p>
+      </div>
+      <Button variant="secondary" onClick={onRetry}>
+        נסו שוב
+      </Button>
+    </div>
+  )
+}
