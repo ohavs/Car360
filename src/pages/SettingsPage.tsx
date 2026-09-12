@@ -14,7 +14,6 @@ import {
 import { Card, ConfirmDialog, Switch, spring } from '../components/ui'
 import { Select } from '../components/pickers'
 import { PALETTES, SKINS } from '../lib/palettes'
-import { LAYOUT_OPTIONS, readLayout, writeLayout, type LayoutId } from '../lib/homeLayout'
 import {
   LEAD_OPTIONS,
   loadNotifPrefs,
@@ -54,7 +53,6 @@ export default function SettingsPage() {
   )
   const [standalone, setStandalone] = useState(false)
   const [notifPrefs, setNotifPrefs] = useState<NotificationPrefs>(() => loadNotifPrefs())
-  const [homeLayout, setHomeLayout] = useState<LayoutId>(() => readLayout())
 
   useEffect(() => {
     setStandalone(window.matchMedia('(display-mode: standalone)').matches)
@@ -326,29 +324,6 @@ export default function SettingsPage() {
           {/* personal accent color */}
           <AccentPicker accent={accent} setAccent={setAccent} />
 
-          <div>
-            <p className="mb-2.5 text-[13px] font-semibold text-ink-2">צפיפות דף הבית</p>
-            <div className="flex gap-2">
-              {LAYOUT_OPTIONS.map((o) => (
-                <button
-                  key={o.id}
-                  onClick={() => {
-                    setHomeLayout(o.id)
-                    writeLayout(o.id)
-                  }}
-                  aria-pressed={homeLayout === o.id}
-                  className={cn(
-                    'flex flex-1 flex-col items-center gap-1.5 rounded-2xl py-3 text-[11px] font-bold ring-1 transition-colors',
-                    homeLayout === o.id ? 'bg-cta-soft text-cta ring-cta/30' : 'bg-card-2 text-ink-2 ring-line',
-                  )}
-                >
-                  <o.icon size={20} />
-                  {o.label}
-                </button>
-              ))}
-            </div>
-            <p className="mt-1.5 text-[11px] text-ink-3">משפיע על סידור המשבצות בדף הבית</p>
-          </div>
         </Card>
 
         {/* appearance & notifications */}

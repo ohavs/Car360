@@ -276,29 +276,5 @@ export const IconSearch = (p: P) => (
 )
 
 /* layout: bento — one wide tile + two small ones */
-export const IconLayoutBento = (p: P) => (
-  <Svg {...p}>
-    <rect x="3" y="3" width="8" height="8" rx="1.6" />
-    <rect x="13" y="3" width="8" height="8" rx="1.6" />
-    <rect x="3" y="13" width="18" height="8" rx="1.6" />
-  </Svg>
-)
-
 /* layout: stack — full-width rows */
-export const IconLayoutStack = (p: P) => (
-  <Svg {...p}>
-    <rect x="3" y="4" width="18" height="5" rx="1.6" />
-    <rect x="3" y="12" width="18" height="5" rx="1.6" />
-    <path d="M3 20h18" />
-  </Svg>
-)
-
 /* layout: compact grid — four small tiles */
-export const IconLayoutGrid = (p: P) => (
-  <Svg {...p}>
-    <rect x="3" y="3" width="8" height="8" rx="1.4" />
-    <rect x="13" y="3" width="8" height="8" rx="1.4" />
-    <rect x="3" y="13" width="8" height="8" rx="1.4" />
-    <rect x="13" y="13" width="8" height="8" rx="1.4" />
-  </Svg>
-)
