@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import GlassPanel from './GlassPanel'
-import { IconChevronDown, IconChevronLeft } from '../icons'
+import { IconChevronDown, IconChevronLeft, IconPlus } from '../icons'
 import { cn } from '../../lib/utils'
 
 const KEY = 'car360:homeSections'
@@ -41,6 +41,8 @@ export default function HomeSection({
   empty,
   flat = false,
   openSignal,
+  addTo,
+  addLabel,
   children,
 }: {
   id: string
@@ -56,6 +58,10 @@ export default function HomeSection({
   /** bump to force the section open — used so the result of an action that
    *  just added a row is actually visible */
   openSignal?: number
+  /** deep link that opens the "add" form for this section, so an empty
+   *  section is never a dead end */
+  addTo?: string
+  addLabel?: string
   children: ReactNode
 }) {
   const [open, setOpen] = useState(() => readOpen(id, defaultOpen))
@@ -111,6 +117,16 @@ export default function HomeSection({
             הכל
           </Link>
         )}
+
+        {addTo && (
+          <Link
+            to={addTo}
+            aria-label={addLabel ?? 'הוספה'}
+            className="flex size-7 shrink-0 items-center justify-center rounded-full bg-white/50 text-ink-2 active:scale-90 dark:bg-white/10"
+          >
+            <IconPlus size={15} />
+          </Link>
+        )}
       </div>
 
       <AnimatePresence initial={false}>
@@ -123,7 +139,22 @@ export default function HomeSection({
             className="overflow-hidden"
           >
             <div className={cn('border-t border-white/25 dark:border-white/8', isEmpty && 'px-4 py-3')}>
-              {isEmpty ? <p className="text-sm text-ink-3">{empty}</p> : children}
+              {isEmpty ? (
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-sm text-ink-3">{empty}</p>
+                  {addTo && (
+                    <Link
+                      to={addTo}
+                      className="flex items-center gap-1.5 rounded-full bg-accent px-3.5 py-1.5 text-xs font-bold text-accent-ink active:scale-95"
+                    >
+                      <IconPlus size={14} />
+                      {addLabel ?? 'הוספה'}
+                    </Link>
+                  )}
+                </div>
+              ) : (
+                children
+              )}
             </div>
           </motion.div>
         )}

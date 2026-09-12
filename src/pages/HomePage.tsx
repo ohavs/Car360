@@ -400,6 +400,8 @@ export default function HomePage() {
                   icon={<IconWrench size={16} />}
                   count={recentServices.length}
                   seeAllTo={`/car/${activeCar.id}/services`}
+                  addTo={`/car/${activeCar.id}/services?add=1`}
+                  addLabel="טיפול חדש"
                   defaultOpen={false}
                   empty="עדיין לא תועדו טיפולים"
                 >
@@ -425,6 +427,8 @@ export default function HomePage() {
                   icon={<IconShield size={16} />}
                   count={activeInsurances.length}
                   seeAllTo={`/car/${activeCar.id}/insurance`}
+                  addTo={`/car/${activeCar.id}/insurance?add=1`}
+                  addLabel="פוליסה חדשה"
                   defaultOpen={false}
                   empty="לא נוספו פוליסות"
                 >
@@ -448,6 +452,8 @@ export default function HomePage() {
                   icon={<IconFile size={16} />}
                   count={recentDocs.length}
                   seeAllTo={`/car/${activeCar.id}/documents`}
+                  addTo={`/car/${activeCar.id}/documents?add=1`}
+                  addLabel="העלאת מסמך"
                   defaultOpen={false}
                   empty="לא הועלו מסמכים"
                 >
@@ -497,6 +503,8 @@ export default function HomePage() {
                   title="פרטי הרכב"
                   icon={<IconCar size={16} />}
                   seeAllTo={`/car/${activeCar.id}/edit`}
+                  addTo={`/car/${activeCar.id}/edit#blocks`}
+                  addLabel="בלוק מידע"
                   defaultOpen={false}
                 >
                   <div className="flex items-center justify-between gap-3 px-4 py-3.5">
