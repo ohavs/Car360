@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'motion/react'
-import { useEffect, useState, type CSSProperties } from 'react'
+import { useEffect, useLayoutEffect, useState, type CSSProperties } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useCars } from '../../contexts/CarsContext'
 import { extractCarColor, type CarColor } from '../../lib/colorExtract'
@@ -48,6 +48,14 @@ export default function AppShell() {
   // group routes into "sections" so navigating between top-level tabs animates,
   // but query-only changes (e.g. ?add=1) don't remount the page
   const routeKey = location.pathname
+
+  // Land at the top of every screen. The browser keeps the window's scroll
+  // offset across a client-side navigation, so arriving on a short page after
+  // scrolling down a long one used to drop the user halfway in. Query-only
+  // changes are excluded: those open a sheet on the page you are already on.
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0)
+  }, [routeKey])
 
   // active-tab detection that survives redirects (e.g. /documents → /car/:id/documents)
   const isTabActive = (to: string) => {

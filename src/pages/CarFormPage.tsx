@@ -3,19 +3,10 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import PageHeader from '../components/layout/PageHeader'
 import CarSilhouette from '../components/cars/CarSilhouette'
-import { IconCamera, IconCalendar, IconDownload, IconPlus, IconSparkles, IconTrash, IconX } from '../components/icons'
-import {
-  BottomSheet,
-  Button,
-  ConfirmDialog,
-  Field,
-  Input,
-  Spinner,
-  Switch,
-  TextArea,
-  SaveButton,
-} from '../components/ui'
+import { IconCamera, IconDownload, IconSparkles, IconTrash, IconX } from '../components/icons'
+import { Button, ConfirmDialog, Disclosure, Field, Input, Spinner, TextArea } from '../components/ui'
 import { DateInput, Select } from '../components/pickers'
+import { BlockList, CAR_BLOCK_SUGGESTIONS } from '../components/InfoBlocks'
 import { useAuth } from '../contexts/AuthContext'
 import { useCars } from '../contexts/CarsContext'
 import { useToast } from '../contexts/ToastContext'
@@ -25,26 +16,9 @@ import { removeImageBackground } from '../lib/bgRemoval'
 import { compressToDataUrl } from '../lib/images'
 import { newId } from '../lib/utils'
 import { lookupVehicle } from '../lib/vehicleApi'
-import type { BlockType, Car, InfoBlock } from '../types'
+import type { Car } from '../types'
 
 const FUEL_TYPES = ['בנזין', 'דיזל', 'היברידי', 'חשמלי', 'גפ״מ (גז)']
-
-const BLOCK_TYPES: { value: BlockType; label: string }[] = [
-  { value: 'text', label: 'טקסט חופשי' },
-  { value: 'number', label: 'מספר' },
-  { value: 'date', label: 'תאריך' },
-  { value: 'phone', label: 'טלפון' },
-  { value: 'link', label: 'קישור' },
-]
-
-const BLOCK_SUGGESTIONS = [
-  { title: 'קוד לרכב', type: 'text' as BlockType },
-  { title: 'לחץ אוויר בצמיגים', type: 'text' as BlockType },
-  { title: 'מספר פוליסה', type: 'text' as BlockType },
-  { title: 'טלפון מוסך', type: 'phone' as BlockType },
-  { title: 'טלפון סוכן ביטוח', type: 'phone' as BlockType },
-  { title: 'תוקף חנייה שמורה', type: 'date' as BlockType },
-]
 
 type Draft = Omit<Car, 'createdAt' | 'updatedAt'>
 
@@ -89,8 +63,7 @@ export default function CarFormPage() {
   const [removingBg, setRemovingBg] = useState(false)
   const [bgProgress, setBgProgress] = useState(0)
   const [confirmDelete, setConfirmDelete] = useState(false)
-  const [blockEditor, setBlockEditor] = useState<InfoBlock | null>(null)
-  const [blockToDelete, setBlockToDelete] = useState<InfoBlock | null>(null)
+  const [confirmPhotoRemove, setConfirmPhotoRemove] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   const blocker = useUnsavedChanges(dirty && !saving)
@@ -226,14 +199,6 @@ export default function CarFormPage() {
     setTimeout(() => navigate('/', { replace: true }), 0)
   }
 
-  const saveBlock = (block: InfoBlock) => {
-    const blocks = draft.blocks.some((b) => b.id === block.id)
-      ? draft.blocks.map((b) => (b.id === block.id ? block : b))
-      : [...draft.blocks, block]
-    set('blocks', blocks)
-    setBlockEditor(null)
-  }
-
   return (
     <div className="px-4">
       <PageHeader
@@ -249,9 +214,10 @@ export default function CarFormPage() {
               <>
                 <img src={draft.imageUrl} alt="" className="max-h-40 max-w-full object-contain" />
                 <button
+                  type="button"
                   aria-label="הסרת תמונה"
-                  onClick={() => set('imageUrl', '')}
-                  className="absolute end-0 top-0 flex size-9 items-center justify-center rounded-full bg-card-2 text-ink-2 shadow-card active:scale-90"
+                  onClick={() => setConfirmPhotoRemove(true)}
+                  className="absolute end-0 top-0 flex size-9 items-center justify-center rounded-full bg-card-2 text-ink-2 active:scale-90"
                 >
                   <IconX size={16} />
                 </button>
@@ -348,31 +314,35 @@ export default function CarFormPage() {
               </motion.button>
             </div>
           </Field>
-          <Field label="שנת ייצור">
-            <Input
-              type="number"
-              inputMode="numeric"
-              value={draft.year ?? ''}
-              onChange={(e) => set('year', e.target.value ? Number(e.target.value) : undefined)}
-              placeholder="2022"
-            />
-          </Field>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="צבע">
-              <Input value={draft.color ?? ''} onChange={(e) => set('color', e.target.value)} placeholder="שחור" />
-            </Field>
-            <Field label="סוג דלק">
-              <Select
-                title="סוג דלק"
-                value={draft.fuelType ?? ''}
-                onChange={(v) => set('fuelType', v)}
-                options={FUEL_TYPES.map((f) => ({ value: f, label: f }))}
+          {/* what the registry fills in — right when you want it, folded
+              away the rest of the time */}
+          <Disclosure title="מפרט הרכב" subtitle="שנה, צבע, דלק, מספר שלדה">
+            <Field label="שנת ייצור">
+              <Input
+                type="number"
+                inputMode="numeric"
+                value={draft.year ?? ''}
+                onChange={(e) => set('year', e.target.value ? Number(e.target.value) : undefined)}
+                placeholder="2022"
               />
             </Field>
-          </div>
-          <Field label="מספר שלדה (VIN)" hint="אופציונלי — שימושי מול מוסכים וביטוח">
-            <Input value={draft.vin ?? ''} onChange={(e) => set('vin', e.target.value)} dir="ltr" />
-          </Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="צבע">
+                <Input value={draft.color ?? ''} onChange={(e) => set('color', e.target.value)} placeholder="שחור" />
+              </Field>
+              <Field label="סוג דלק">
+                <Select
+                  title="סוג דלק"
+                  value={draft.fuelType ?? ''}
+                  onChange={(v) => set('fuelType', v)}
+                  options={FUEL_TYPES.map((f) => ({ value: f, label: f }))}
+                />
+              </Field>
+            </div>
+            <Field label="מספר שלדה (VIN)" hint="אופציונלי — שימושי מול מוסכים וביטוח">
+              <Input value={draft.vin ?? ''} onChange={(e) => set('vin', e.target.value)} dir="ltr" />
+            </Field>
+          </Disclosure>
         </section>
 
         {/* key dates */}
@@ -387,43 +357,14 @@ export default function CarFormPage() {
         </section>
 
         {/* custom blocks */}
-        <section id="blocks" className="space-y-3 rounded-card bg-card p-4 shadow-card">
-          <div className="flex items-center justify-between">
-            <h2 className="font-bold">בלוקים של מידע</h2>
-            <button
-              onClick={() => setBlockEditor({ id: newId(), title: '', type: 'text', value: '' })}
-              className="flex items-center gap-1 rounded-full bg-card-2 px-3 py-1.5 text-sm font-semibold text-ink-2 active:scale-95"
-            >
-              <IconPlus size={16} />
-              הוספה
-            </button>
-          </div>
-          {draft.blocks.length === 0 ? (
-            <p className="text-sm leading-relaxed text-ink-3">
-              יד חופשית: הוסיפו כל פרט שחשוב לכם — קוד לרכב, לחץ אוויר, טלפון של הסוכן… הבלוקים
-              יופיעו ככרטיסים בדף הבית.
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {draft.blocks.map((b) => (
-                <div key={b.id} className="flex items-center gap-3 rounded-2xl bg-card-2 p-3">
-                  <button onClick={() => setBlockEditor(b)} className="min-w-0 flex-1 text-start">
-                    <p className="truncate text-sm font-semibold">{b.title}</p>
-                    <p className="truncate text-xs text-ink-3">
-                      {BLOCK_TYPES.find((t) => t.value === b.type)?.label} · {b.value || 'ללא ערך'}
-                    </p>
-                  </button>
-                  <button
-                    aria-label={`מחיקת ${b.title}`}
-                    onClick={() => setBlockToDelete(b)}
-                    className="flex size-9 shrink-0 items-center justify-center rounded-full text-danger active:scale-90"
-                  >
-                    <IconTrash size={18} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+        <section id="blocks" className="rounded-card bg-card p-4 shadow-card">
+          <BlockList
+            blocks={draft.blocks}
+            onChange={(blocks) => set('blocks', blocks)}
+            suggestions={CAR_BLOCK_SUGGESTIONS}
+            empty="יד חופשית: הוסיפו כל פרט שחשוב לכם — קוד לרכב, לחץ אוויר, טלפון של הסוכן… הבלוקים יופיעו ככרטיסים בדף הבית."
+            removeNote="יוסר מכרטיס הרכב."
+          />
         </section>
 
         {/* notes */}
@@ -449,13 +390,6 @@ export default function CarFormPage() {
       </div>
 
       {/* block editor sheet */}
-      {blockEditor && (
-        <BlockEditorSheet
-          block={blockEditor}
-          onSave={saveBlock}
-          onClose={() => setBlockEditor(null)}
-        />
-      )}
 
       {/* delete confirmation */}
       {confirmDelete && existing && (
@@ -467,16 +401,17 @@ export default function CarFormPage() {
         />
       )}
 
-      {blockToDelete && (
+
+      {confirmPhotoRemove && (
         <ConfirmDialog
-          title="למחוק את הבלוק?"
-          message={`"${blockToDelete.title}" יוסר מכרטיס הרכב.`}
-          confirmLabel="מחיקה"
+          title="להסיר את התמונה?"
+          message="תמונת הרכב תוסר. אפשר לצלם או לבחור אחרת בכל עת."
+          confirmLabel="הסרה"
           onConfirm={() => {
-            set('blocks', draft.blocks.filter((x) => x.id !== blockToDelete.id))
-            setBlockToDelete(null)
+            set('imageUrl', '')
+            setConfirmPhotoRemove(false)
           }}
-          onCancel={() => setBlockToDelete(null)}
+          onCancel={() => setConfirmPhotoRemove(false)}
         />
       )}
 
@@ -491,86 +426,5 @@ export default function CarFormPage() {
         />
       )}
     </div>
-  )
-}
-
-function BlockEditorSheet({
-  block,
-  onSave,
-  onClose,
-}: {
-  block: InfoBlock
-  onSave: (b: InfoBlock) => void
-  onClose: () => void
-}) {
-  const [b, setB] = useState<InfoBlock>(block)
-  const isNew = !block.title
-
-  return (
-    <BottomSheet
-      title={isNew ? 'בלוק מידע חדש' : 'עריכת בלוק'}
-      onClose={onClose}
-      dirty={JSON.stringify(b) !== JSON.stringify(block)}
-    >
-      <div className="space-y-4">
-        {isNew && (
-          <div className="flex flex-wrap gap-2">
-            {BLOCK_SUGGESTIONS.map((s) => (
-              <button
-                key={s.title}
-                onClick={() => setB({ ...b, title: s.title, type: s.type })}
-                className="rounded-full bg-card px-3 py-1.5 text-xs font-semibold text-ink-2 ring-1 ring-line active:scale-95"
-              >
-                {s.title}
-              </button>
-            ))}
-          </div>
-        )}
-        <Field label="כותרת">
-          <Input value={b.title} onChange={(e) => setB({ ...b, title: e.target.value })} placeholder="למשל: קוד לרכב" />
-        </Field>
-        <Field label="סוג">
-          <Select
-            title="סוג הבלוק"
-            value={b.type}
-            onChange={(v) => setB({ ...b, type: v as BlockType, value: '' })}
-            options={BLOCK_TYPES.map((t) => ({ value: t.value, label: t.label }))}
-          />
-        </Field>
-        <Field label="ערך">
-          {b.type === 'date' ? (
-            <DateInput value={b.value} onChange={(v) => setB({ ...b, value: v })} />
-          ) : (
-            <Input
-              value={b.value}
-              onChange={(e) => setB({ ...b, value: e.target.value })}
-              type={b.type === 'number' ? 'number' : b.type === 'phone' ? 'tel' : b.type === 'link' ? 'url' : 'text'}
-              inputMode={b.type === 'number' ? 'decimal' : b.type === 'phone' ? 'tel' : undefined}
-              dir={b.type === 'phone' || b.type === 'link' ? 'ltr' : undefined}
-              placeholder={b.type === 'link' ? 'https://…' : ''}
-            />
-          )}
-        </Field>
-        {b.type === 'date' && (
-          <div className="flex items-center justify-between rounded-2xl bg-card p-4 ring-1 ring-line">
-            <div className="flex items-center gap-2">
-              <IconCalendar size={20} />
-              <div>
-                <p className="text-sm font-semibold">תזכורת לתאריך הזה</p>
-                <p className="text-xs text-ink-3">יופיע במסך התזכורות ובהתראות</p>
-              </div>
-            </div>
-            <Switch checked={Boolean(b.remind)} onChange={(v) => setB({ ...b, remind: v })} label="תזכורת" />
-          </div>
-        )}
-        <SaveButton
-          className="w-full"
-          requirements={[{ ok: Boolean(b.title.trim()), message: 'צריך לתת שם לבלוק' }]}
-          onSave={() => onSave({ ...b, title: b.title.trim() })}
-        >
-          שמירת הבלוק
-        </SaveButton>
-      </div>
-    </BottomSheet>
   )
 }

@@ -8,7 +8,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import type { PaletteId, SkinId } from '../lib/palettes'
+import { SKINS, type PaletteId, type SkinId } from '../lib/palettes'
 
 type Theme = 'light' | 'dark'
 
@@ -22,11 +22,8 @@ interface ThemeCtx {
   /** personal accent (hex) that overrides the palette's CTA color; null = palette default */
   accent: string | null
   setAccent: (hex: string | null) => void
-  /** cockpit ambient-glow intensity, 0..1.4 */
-  glow: number
-  setGlow: (v: number) => void
   /** apply cloud-synced prefs silently (no restyle loader) */
-  applyRemote: (p: PaletteId, s: SkinId, accent: string | null, glow?: number) => void
+  applyRemote: (p: PaletteId, s: SkinId, accent: string | null) => void
   /** true while the restyle loader is showing */
   restyling: boolean
 }
@@ -40,8 +37,6 @@ const Ctx = createContext<ThemeCtx>({
   setSkin: () => {},
   accent: null,
   setAccent: () => {},
-  glow: 1,
-  setGlow: () => {},
   applyRemote: () => {},
   restyling: false,
 })
@@ -50,7 +45,6 @@ const THEME_KEY = 'car360:theme'
 const PALETTE_KEY = 'car360:palette'
 const SKIN_KEY = 'car360:skin'
 const ACCENT_KEY = 'car360:accent'
-const GLOW_KEY = 'car360:glow'
 
 function initialTheme(): Theme {
   const saved = localStorage.getItem(THEME_KEY)
@@ -65,7 +59,9 @@ function initialPalette(): PaletteId {
 
 function initialSkin(): SkinId {
   const saved = localStorage.getItem(SKIN_KEY)
-  return (saved as SkinId) || 'minimal'
+  // 'neu' and 'aurora' were retired; a device still holding one would otherwise
+  // land on a data-skin with no stylesheet behind it
+  return SKINS.some((s) => s.id === saved) ? (saved as SkinId) : 'minimal'
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
@@ -73,10 +69,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [palette, setPaletteState] = useState<PaletteId>(initialPalette)
   const [skin, setSkinState] = useState<SkinId>(initialSkin)
   const [accent, setAccentState] = useState<string | null>(() => localStorage.getItem(ACCENT_KEY))
-  const [glow, setGlowState] = useState<number>(() => {
-    const v = Number(localStorage.getItem(GLOW_KEY))
-    return Number.isFinite(v) && localStorage.getItem(GLOW_KEY) !== null ? v : 1
-  })
   const [restyling, setRestyling] = useState(false)
   const restyleTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -88,9 +80,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(THEME_KEY, theme)
     localStorage.setItem(PALETTE_KEY, palette)
     localStorage.setItem(SKIN_KEY, skin)
-
-    root.style.setProperty('--cockpit-glow', String(glow))
-    localStorage.setItem(GLOW_KEY, String(glow))
 
     // personal accent overrides the palette CTA color (+ a derived soft tint)
     if (accent) {
@@ -108,7 +97,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       const bg = getComputedStyle(document.body).backgroundColor
       document.querySelector('meta[name="theme-color"]')?.setAttribute('content', bg)
     })
-  }, [theme, palette, skin, accent, glow])
+  }, [theme, palette, skin, accent])
 
   /** Show the "rebuilding your design" loader, apply the change mid-way,
    *  release after the new style has painted. */
@@ -128,14 +117,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const setSkin = useCallback((s: SkinId) => restyle(() => setSkinState(s)), [restyle])
   // accent changes are instant (no full-screen rebuild — it's a light recolor)
   const setAccent = useCallback((hex: string | null) => setAccentState(hex), [])
-  const setGlow = useCallback((v: number) => setGlowState(v), [])
 
   const applyRemote = useCallback(
-    (p: PaletteId, s: SkinId, a: string | null, g?: number) => {
+    (p: PaletteId, s: SkinId, a: string | null) => {
       setPaletteState(p)
       setSkinState(s)
       setAccentState(a)
-      if (typeof g === 'number') setGlowState(g)
     },
     [],
   )
@@ -151,8 +138,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         setSkin,
         accent,
         setAccent,
-        glow,
-        setGlow,
         applyRemote,
         restyling,
       }}

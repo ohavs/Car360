@@ -264,165 +264,11 @@
 }
 
 /* ==========================================================
-   Design language: NEUMORPHISM — soft extruded surfaces.
-   Cards share the canvas color and get depth purely from a
-   dual light/dark shadow pair; inputs are pressed-in wells.
-   ========================================================== */
-
-[data-skin='neu'] {
-  --radius-card: 1.75rem;
-  --radius-field: 1.125rem;
-  --c-card: var(--c-canvas);
-  --c-card-2: color-mix(in srgb, var(--c-canvas) 90%, var(--c-ink));
-  --c-line: color-mix(in srgb, var(--c-ink) 7%, transparent);
-  --shadow-card: 9px 9px 20px color-mix(in srgb, var(--c-ink) 14%, transparent), -9px -9px 20px rgb(255 255 255 / 0.95);
-  --shadow-float: 14px 14px 34px color-mix(in srgb, var(--c-ink) 20%, transparent), -12px -12px 30px rgb(255 255 255 / 0.9);
-}
-.dark[data-skin='neu'] {
-  --c-card: var(--c-canvas);
-  --c-card-2: color-mix(in srgb, var(--c-canvas) 88%, #ffffff);
-  --c-line: rgb(255 255 255 / 0.07);
-  --shadow-card: 9px 9px 22px rgb(0 0 0 / 0.55), -8px -8px 20px rgb(255 255 255 / 0.045);
-  --shadow-float: 16px 16px 40px rgb(0 0 0 / 0.65), -12px -12px 30px rgb(255 255 255 / 0.05);
-}
-
-/* the soft-UI illusion needs the shadow pair on flat (non-shadowed) chips too */
-[data-skin='neu'] .bg-card-2 {
-  box-shadow: 4px 4px 10px color-mix(in srgb, var(--c-ink) 10%, transparent), -4px -4px 10px rgb(255 255 255 / 0.8);
-}
-.dark[data-skin='neu'] .bg-card-2 {
-  box-shadow: 4px 4px 10px rgb(0 0 0 / 0.45), -4px -4px 10px rgb(255 255 255 / 0.04);
-}
-
-/* inputs (incl. the DateInput trigger, marked .field-well) become
-   pressed-in wells */
-[data-skin='neu'] .field-well {
-  background-color: var(--c-canvas);
-  --tw-ring-color: transparent;
-  box-shadow: inset 5px 5px 10px color-mix(in srgb, var(--c-ink) 12%, transparent), inset -5px -5px 10px rgb(255 255 255 / 0.85);
-}
-.dark[data-skin='neu'] .field-well {
-  box-shadow: inset 5px 5px 12px rgb(0 0 0 / 0.5), inset -4px -4px 10px rgb(255 255 255 / 0.04);
-}
-[data-skin='neu'] .field-well:focus-visible {
-  --tw-ring-color: var(--c-cta);
-}
-
-/* buttons & primary surfaces get the extruded treatment */
-[data-skin='neu'] .bg-accent,
-[data-skin='neu'] .bg-cta {
-  box-shadow: 7px 7px 16px color-mix(in srgb, var(--c-ink) 22%, transparent), -6px -6px 14px rgb(255 255 255 / 0.7);
-}
-.dark[data-skin='neu'] .bg-accent,
-.dark[data-skin='neu'] .bg-cta {
-  box-shadow: 7px 7px 18px rgb(0 0 0 / 0.6), -5px -5px 14px rgb(255 255 255 / 0.05);
-}
-
-/* ==========================================================
-   Design language: AURORA — a living, flowing color field with
-   translucent cards and neon CTA. The most maximal skin.
-   ========================================================== */
-
-[data-skin='aurora'] {
-  --radius-card: 1.75rem;
-  --c-canvas: #eef1fb;
-  --c-card: rgb(255 255 255 / 0.62);
-  --c-card-2: rgb(255 255 255 / 0.5);
-  --c-line: rgb(255 255 255 / 0.7);
-  --c-accent: rgb(255 255 255 / 0.7);
-  --c-accent-ink: var(--c-ink);
-  --shadow-card: 0 10px 34px -12px rgb(79 70 229 / 0.32), inset 0 1px 0 rgb(255 255 255 / 0.75);
-  --shadow-float: 0 24px 60px -14px rgb(79 70 229 / 0.45), inset 0 1px 0 rgb(255 255 255 / 0.65);
-}
-.dark[data-skin='aurora'] {
-  --c-canvas: #05030f;
-  --c-card: rgb(40 33 96 / 0.36);
-  --c-card-2: rgb(40 33 96 / 0.28);
-  --c-line: rgb(180 170 255 / 0.22);
-  --c-ink: #f4f2ff;
-  --c-ink-2: #bcb6e6;
-  --c-ink-3: #7d76ad;
-  --c-accent: rgb(255 255 255 / 0.14);
-  --c-accent-ink: #f4f2ff;
-  --shadow-card: 0 12px 40px -12px rgb(0 0 0 / 0.6), inset 0 1px 0 rgb(255 255 255 / 0.12);
-  --shadow-float: 0 26px 64px -14px rgb(0 0 0 / 0.72), inset 0 1px 0 rgb(255 255 255 / 0.14);
-}
-
-[data-skin='aurora'] .bg-card,
-[data-skin='aurora'] .bg-canvas,
-[data-skin='aurora'] .bg-canvas\/85,
-[data-skin='aurora'] .bg-accent {
-  backdrop-filter: blur(22px) saturate(1.7);
-  -webkit-backdrop-filter: blur(22px) saturate(1.7);
-}
-[data-skin='aurora'] .bg-card,
-[data-skin='aurora'] .bg-accent {
-  border: 1px solid rgb(255 255 255 / 0.5);
-}
-.dark[data-skin='aurora'] .bg-card,
-.dark[data-skin='aurora'] .bg-accent {
-  border-color: rgb(180 170 255 / 0.2);
-}
-[data-skin='aurora'] .bg-canvas {
-  background-color: color-mix(in srgb, var(--c-canvas) 55%, transparent);
-}
-
-/* neon CTA */
-[data-skin='aurora'] .bg-cta {
-  background-image: linear-gradient(135deg, #6366f1 0%, #d946ef 50%, #f43f5e 100%);
-  border: 1px solid rgb(255 255 255 / 0.4);
-  box-shadow: 0 10px 30px -6px rgb(217 70 239 / 0.55), inset 0 1px 0 rgb(255 255 255 / 0.5);
-}
-
-/* the living aurora field */
-@keyframes aurora-flow {
-  0% {
-    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
-  }
-  33% {
-    transform: translate3d(-6%, 4%, 0) rotate(4deg) scale(1.12);
-  }
-  66% {
-    transform: translate3d(5%, -5%, 0) rotate(-3deg) scale(1.06);
-  }
-  100% {
-    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
-  }
-}
-[data-skin='aurora'] body::before {
-  content: '';
-  position: fixed;
-  inset: -30%;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    radial-gradient(28% 24% at 20% 18%, rgb(99 102 241 / 0.55), transparent 60%),
-    radial-gradient(26% 22% at 82% 22%, rgb(217 70 239 / 0.45), transparent 60%),
-    radial-gradient(30% 26% at 65% 72%, rgb(34 211 238 / 0.4), transparent 60%),
-    radial-gradient(26% 24% at 28% 82%, rgb(244 63 94 / 0.38), transparent 62%),
-    radial-gradient(30% 28% at 50% 50%, rgb(16 185 129 / 0.28), transparent 65%);
-  filter: blur(52px);
-  animation: aurora-flow 24s ease-in-out infinite;
-}
-[data-skin='aurora']:not(.dark) body::before {
-  opacity: 0.7;
-}
-.dark[data-skin='aurora'] body::before {
-  filter: blur(58px) brightness(1.15);
-}
-
-/* ==========================================================
    Component-level skin deepening — so switching a language is
    felt on the nav, the active pill, chips and layout, not just cards.
    ========================================================== */
 
 [data-skin='glass'] .nav-bar,
-[data-skin='aurora'] .nav-bar {
-  border-radius: 2.25rem;
-}
-[data-skin='neu'] .nav-bar {
-  border-radius: 1.5rem;
-}
 
 [data-skin='glass'] .nav-pill {
   background: rgb(255 255 255 / 0.4);
@@ -434,27 +280,8 @@
   background: rgb(255 255 255 / 0.12);
   border-color: rgb(255 255 255 / 0.18);
 }
-[data-skin='neu'] .nav-pill {
-  background: var(--c-canvas);
-  box-shadow:
-    inset 3px 3px 6px color-mix(in srgb, var(--c-ink) 14%, transparent),
-    inset -3px -3px 6px rgb(255 255 255 / 0.85);
-}
-.dark[data-skin='neu'] .nav-pill {
-  box-shadow: inset 3px 3px 7px rgb(0 0 0 / 0.5), inset -3px -3px 6px rgb(255 255 255 / 0.05);
-}
-[data-skin='aurora'] .nav-pill {
-  background: color-mix(in srgb, var(--c-cta) 24%, transparent);
-  box-shadow: 0 0 16px -2px color-mix(in srgb, var(--c-cta) 65%, transparent);
-}
 
-[data-skin='neu'] .quick-chip {
-  border: none;
-}
 [data-skin='glass'] .quick-chip,
-[data-skin='aurora'] .quick-chip {
-  border-radius: 1.25rem;
-}
 
 html,
 body,
@@ -504,29 +331,13 @@ body {
 }
 
 /* ==========================================================
-   LIQUID GLASS COCKPIT — the redesign's core surface language.
-   Bento tiles are frosted glass floating over a per-car color glow.
+   COCKPIT SURFACES. The ambient per-car colour glow that used to
+   sit behind everything here was removed — it tinted every screen
+   and cost a blurred full-viewport repaint for decoration.
    ========================================================== */
 
 .cockpit {
   position: relative;
-}
-.cockpit::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  opacity: var(--cockpit-glow, 1);
-  /* Two layers: a palette wash (always present, so switching palette is felt)
-     + the per-car accent from the photo. */
-  background:
-    radial-gradient(72% 48% at 50% 3%, color-mix(in srgb, var(--color-cta) 36%, transparent), transparent 72%),
-    radial-gradient(62% 42% at 88% 96%, color-mix(in srgb, var(--color-cta) 26%, transparent), transparent 72%),
-    radial-gradient(58% 38% at 50% 10%, color-mix(in srgb, var(--car-color, var(--color-cta)) 42%, transparent), transparent 70%),
-    radial-gradient(50% 30% at 84% 56%, color-mix(in srgb, var(--car-color, var(--color-cta)) 22%, transparent), transparent 70%);
-  filter: blur(26px);
-  transition: background 0.6s ease, opacity 0.3s ease;
 }
 
 .glass-tile {
@@ -583,36 +394,8 @@ body {
 }
 
 /* NEUMORPHISM — soft extruded blocks sharing the canvas, no borders */
-[data-skin='neu'] .glass-tile {
-  background: var(--c-canvas);
-  border: none;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  border-radius: 1.75rem;
-  box-shadow:
-    8px 8px 20px color-mix(in srgb, var(--c-ink) 14%, transparent),
-    -8px -8px 20px rgb(255 255 255 / 0.9);
-}
-.dark[data-skin='neu'] .glass-tile {
-  box-shadow: 9px 9px 22px rgb(0 0 0 / 0.55), -7px -7px 18px rgb(255 255 255 / 0.04);
-}
-[data-skin='neu'] .glass-tile::after {
-  display: none;
-}
 
 /* AURORA — vivid, luminous glass with a gradient neon edge */
-[data-skin='aurora'] .glass-tile {
-  border-radius: 1.75rem;
-  background:
-    linear-gradient(var(--c-card), var(--c-card)) padding-box,
-    linear-gradient(135deg, color-mix(in srgb, var(--color-cta) 70%, #6366f1), #d946ef 60%, #22d3ee) border-box;
-  border: 1.5px solid transparent;
-  box-shadow: 0 14px 40px -16px color-mix(in srgb, var(--color-cta) 45%, rgb(15 23 42 / 0.5));
-}
-[data-skin='aurora'] .glass-tile::after {
-  height: 55%;
-  background: linear-gradient(180deg, rgb(255 255 255 / 0.16), transparent);
-}
 
 /* a floating glass action pill (nav / controls in the cockpit) */
 .glass-bar {
@@ -652,9 +435,6 @@ input.native-picker::-webkit-calendar-picker-indicator {
   cursor: pointer;
 }
 
-
-
-
 /* The app is a full-screen PWA: a downward drag should never trigger the
    browser's pull-to-refresh (it was reloading the app mid-gesture). Sheets
    additionally contain their own scroll chaining. */
@@ -684,10 +464,6 @@ body.overlay-open #root [class*='backdrop-blur'] {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }
-body.overlay-open #root .cockpit::before {
-  display: none !important;
-}
-
 /* Printed reports (vehicle report / passport) flatten to clean white paper —
    no ambient glow, no frosted glass, no heavy shadows. */
 @media print {
@@ -695,7 +471,6 @@ body.overlay-open #root .cockpit::before {
     background: #fff !important;
     color: #000 !important;
   }
-  .cockpit::before,
   [data-skin] body::before {
     display: none !important;
   }

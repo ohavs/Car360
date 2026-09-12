@@ -1,4 +1,4 @@
-import { motion, useDragControls, type HTMLMotionProps } from 'motion/react'
+import { AnimatePresence, motion, useDragControls, type HTMLMotionProps } from 'motion/react'
 import {
   useEffect,
   useState,
@@ -9,7 +9,7 @@ import {
 import { createPortal } from 'react-dom'
 import { cn } from '../lib/utils'
 import { useToast } from '../contexts/ToastContext'
-import { IconAlert, IconX } from './icons'
+import { IconAlert, IconChevronDown, IconX } from './icons'
 
 /* Shared spring presets — 150-300ms feel, no layout-shifting overshoot */
 export const spring = { type: 'spring', stiffness: 480, damping: 34, mass: 0.7 } as const
@@ -39,6 +39,54 @@ export function Button({
       )}
       {...props}
     />
+  )
+}
+
+/** A titled section that starts closed. For detail that matters when you want
+ *  it and is noise when you don't — registry specs, rarely-touched fields. */
+export function Disclosure({
+  title,
+  subtitle,
+  defaultOpen = false,
+  children,
+}: {
+  title: string
+  subtitle?: string
+  defaultOpen?: boolean
+  children: ReactNode
+}) {
+  const [open, setOpen] = useState(defaultOpen)
+  return (
+    <div className="rounded-2xl bg-card-2 p-3">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="flex w-full items-center justify-between gap-3 text-start text-[15px] font-bold active:opacity-70"
+      >
+        <span className="min-w-0">
+          <span className="block truncate">{title}</span>
+          {subtitle && <span className="block truncate text-xs font-semibold text-ink-3">{subtitle}</span>}
+        </span>
+        <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.18 }} className="shrink-0 text-ink-3">
+          <IconChevronDown size={18} />
+        </motion.span>
+      </button>
+
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.22, ease: [0.22, 0.9, 0.3, 1] }}
+            className="overflow-hidden"
+          >
+            <div className="mt-4 space-y-4 pb-1">{children}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   )
 }
 

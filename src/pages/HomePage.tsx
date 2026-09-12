@@ -27,10 +27,11 @@ import {
 import { Badge, EmptyState, HomeSkeleton, spring } from '../components/ui'
 import { useAuth } from '../contexts/AuthContext'
 import { useCars } from '../contexts/CarsContext'
+import { useToast } from '../contexts/ToastContext'
 import { useTheme } from '../contexts/ThemeContext'
 import { repo } from '../data'
 import { carDisplayName, collectReminders, notifyUpcoming } from '../lib/reminders'
-import { readLayout, type LayoutId } from '../lib/homeLayout'
+import { LAYOUT_OPTIONS, readLayout, writeLayout, type LayoutId } from '../lib/homeLayout'
 import { cn, dueLabel, dueStatus, formatDate, formatMoney, formatPlate } from '../lib/utils'
 import type {
   CarDocument,
@@ -133,6 +134,7 @@ export default function HomePage() {
   const { user } = useAuth()
   const { cars, loading, activeCar, activeCarId, setActiveCarId, error, refresh } = useCars()
   const { theme, toggle } = useTheme()
+  const { toast } = useToast()
   const navigate = useNavigate()
   const [reminders, setReminders] = useState<DerivedReminder[]>([])
   const [overview, setOverview] = useState<{
@@ -140,7 +142,7 @@ export default function HomePage() {
     insurances: InsuranceRecord[]
     documents: CarDocument[]
   } | null>(null)
-  const [layout] = useState<LayoutId>(readLayout)
+  const [layout, setLayout] = useState<LayoutId>(readLayout)
   /** bumped after a quick add so the cockpit reloads its data */
   const [refreshTick, setRefreshTick] = useState(0)
   const [searching, setSearching] = useState(false)
@@ -153,6 +155,15 @@ export default function HomePage() {
   const { scrollY } = useScroll()
   const carY = useTransform(scrollY, [0, 360], [0, 150])
   const carFade = useTransform(scrollY, [0, 230, 360], [1, 1, 0])
+
+  const layoutMeta = LAYOUT_OPTIONS.find((o) => o.id === layout) ?? LAYOUT_OPTIONS[0]
+  const cycleLayout = () => {
+    const i = LAYOUT_OPTIONS.findIndex((o) => o.id === layout)
+    const next = LAYOUT_OPTIONS[(i + 1) % LAYOUT_OPTIONS.length]
+    setLayout(next.id)
+    writeLayout(next.id)
+    toast(`תצוגה: ${next.label}`)
+  }
 
   const stack = layout === 'stack'
   const dense = layout === 'compact'
@@ -268,6 +279,18 @@ export default function HomePage() {
             className="glass-bar flex size-11 items-center justify-center rounded-full text-ink"
           >
             <IconSearch size={20} />
+          </motion.button>
+
+          {/* Density belongs where you can see its effect. One button that
+              cycles the layouts, showing the one you are on. */}
+          <motion.button
+            onClick={cycleLayout}
+            whileTap={{ scale: 0.85 }}
+            transition={spring}
+            aria-label={`תצוגה: ${layoutMeta.label} — החלפה`}
+            className="glass-bar flex size-11 items-center justify-center rounded-full text-ink"
+          >
+            <layoutMeta.icon size={20} />
           </motion.button>
         </div>
 

@@ -98,6 +98,8 @@ export interface InsuranceRecord {
   photos: string[]
   /** small renditions of `photos`, index-aligned; optional for older records */
   thumbs?: string[]
+  /** anything the fixed fields above don't cover, named by the user */
+  blocks?: InfoBlock[]
   createdAt: number
   updatedAt: number
 }

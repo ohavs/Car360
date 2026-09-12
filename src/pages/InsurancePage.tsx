@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import PageHeader from '../components/layout/PageHeader'
 import PhotoPicker from '../components/PhotoPicker'
+import { BlockList, INSURANCE_BLOCK_SUGGESTIONS } from '../components/InfoBlocks'
 import PhotoViewer from '../components/PhotoViewer'
 import { IconPhone, IconPlus, IconShield, IconSparkles, IconTrash } from '../components/icons'
 import { motion } from 'motion/react'
@@ -21,6 +22,7 @@ import {
   listItem,
   listStagger,
   SaveButton,
+  Disclosure,
 } from '../components/ui'
 import { DateInput, Select } from '../components/pickers'
 import { useCars } from '../contexts/CarsContext'
@@ -160,6 +162,11 @@ export default function InsurancePage() {
                 <div className="flex flex-wrap items-center gap-2">
                   {rec.endDate && <Badge tone={statusTone[st]}>{dueLabel(rec.endDate)}</Badge>}
                   {rec.agentName && <Badge>סוכן: {rec.agentName}</Badge>}
+                  {rec.blocks?.map((b) => (
+                    <Badge key={b.id}>
+                      {b.title}: {b.type === 'date' ? formatDate(b.value) : b.value || '—'}
+                    </Badge>
+                  ))}
                 </div>
                 {rec.photos.length > 0 && (
                   <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 pt-0.5">
@@ -327,58 +334,73 @@ function InsuranceEditor({
             e.target.value = ''
           }}
         />
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="סוג ביטוח">
-            <Select
-              title="סוג ביטוח"
-              value={r.kind}
-              onChange={(v) => setR({ ...r, kind: v as InsuranceKind })}
-              options={KINDS.map((k) => ({ value: k, label: k }))}
-            />
-          </Field>
-          <Field label="חברת ביטוח">
-            <Input value={r.company} onChange={(e) => setR({ ...r, company: e.target.value })} />
-          </Field>
-        </div>
-        <Field label="מספר פוליסה">
-          <Input value={r.policyNumber ?? ''} onChange={(e) => setR({ ...r, policyNumber: e.target.value })} dir="ltr" />
-        </Field>
-        <div className="grid gap-3">
-          <Field label="תחילת תוקף">
-            <DateInput value={r.startDate ?? ''} onChange={(v) => setR({ ...r, startDate: v })} />
-          </Field>
-          <Field label="סיום תוקף">
-            <DateInput value={r.endDate} onChange={(v) => setR({ ...r, endDate: v })} />
-          </Field>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="עלות שנתית (₪)">
-            <Input
-              type="number"
-              inputMode="decimal"
-              value={r.cost ?? ''}
-              onChange={(e) => setR({ ...r, cost: e.target.value ? Number(e.target.value) : undefined })}
-            />
-          </Field>
-          <Field label="שם הסוכן">
-            <Input value={r.agentName ?? ''} onChange={(e) => setR({ ...r, agentName: e.target.value })} />
-          </Field>
-        </div>
-        <Field label="טלפון הסוכן">
-          <Input
-            type="tel"
-            inputMode="tel"
-            dir="ltr"
-            value={r.agentPhone ?? ''}
-            onChange={(e) => setR({ ...r, agentPhone: e.target.value })}
-          />
-        </Field>
-        <Field label="הערות">
-          <TextArea value={r.notes ?? ''} onChange={(e) => setR({ ...r, notes: e.target.value })} />
-        </Field>
+        {/* The record IS the photo. Everything below is opt-in. */}
         <Field label="צילום הפוליסה" plain>
-          <PhotoPicker photos={r.photos} onChange={(photos) => setR({ ...r, photos })} />
+          <PhotoPicker photos={r.photos} onChange={(photos) => setR({ ...r, photos })} label="צילום הפוליסה" />
         </Field>
+
+        <BlockList
+          blocks={r.blocks ?? []}
+          onChange={(blocks) => setR({ ...r, blocks })}
+          suggestions={INSURANCE_BLOCK_SUGGESTIONS}
+          title="פרטים נוספים"
+          empty="רוצים לשמור גם מספר פוליסה, טלפון של הסוכן או השתתפות עצמית? הוסיפו בלוק ובחרו את סוגו."
+          removeNote="יוסר מהפוליסה."
+        />
+
+        {/* The built-in fields still drive the expiry reminder and the call
+            button, so they stay — folded away, not gone. */}
+        <Disclosure title="שדות מובנים" subtitle="תזכורת תוקף, חיוג לסוכן">
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="סוג ביטוח">
+                <Select
+                  title="סוג ביטוח"
+                  value={r.kind}
+                  onChange={(v) => setR({ ...r, kind: v as InsuranceKind })}
+                  options={KINDS.map((k) => ({ value: k, label: k }))}
+                />
+              </Field>
+              <Field label="חברת ביטוח">
+                <Input value={r.company} onChange={(e) => setR({ ...r, company: e.target.value })} />
+              </Field>
+            </div>
+            <Field label="מספר פוליסה">
+              <Input value={r.policyNumber ?? ''} onChange={(e) => setR({ ...r, policyNumber: e.target.value })} dir="ltr" />
+            </Field>
+            <div className="grid gap-3">
+              <Field label="תחילת תוקף">
+                <DateInput value={r.startDate ?? ''} onChange={(v) => setR({ ...r, startDate: v })} />
+              </Field>
+              <Field label="סיום תוקף" hint="זה מה שמפעיל את התזכורת לפני שהפוליסה נגמרת">
+                <DateInput value={r.endDate} onChange={(v) => setR({ ...r, endDate: v })} />
+              </Field>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="עלות שנתית (₪)">
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  value={r.cost ?? ''}
+                  onChange={(e) => setR({ ...r, cost: e.target.value ? Number(e.target.value) : undefined })}
+                />
+              </Field>
+              <Field label="שם הסוכן">
+                <Input value={r.agentName ?? ''} onChange={(e) => setR({ ...r, agentName: e.target.value })} />
+              </Field>
+            </div>
+            <Field label="טלפון הסוכן">
+              <Input
+                type="tel"
+                inputMode="tel"
+                dir="ltr"
+                value={r.agentPhone ?? ''}
+                onChange={(e) => setR({ ...r, agentPhone: e.target.value })}
+              />
+            </Field>
+            <Field label="הערות">
+              <TextArea value={r.notes ?? ''} onChange={(e) => setR({ ...r, notes: e.target.value })} />
+            </Field>
+        </Disclosure>
 
         <SaveButton
           className="w-full"
@@ -387,8 +409,8 @@ function InsuranceEditor({
           // are there for people who want them, not a toll to pay first.
           requirements={[
             {
-              ok: Boolean(r.company.trim() || r.photos.length),
-              message: 'צריך למלא חברת ביטוח או לצרף צילום של הפוליסה',
+              ok: Boolean(r.photos.length || r.company.trim() || r.blocks?.length),
+              message: 'צריך לצרף צילום של הפוליסה, או למלא פרט כלשהו',
             },
           ]}
           onSave={() => {

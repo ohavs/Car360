@@ -44,7 +44,7 @@ window.addEventListener('beforeinstallprompt', (e) => {
 
 export default function SettingsPage() {
   const { user, signOut, isCloud } = useAuth()
-  const { theme, toggle, palette, setPalette, skin, setSkin, accent, setAccent, glow, setGlow, restyling } =
+  const { theme, toggle, palette, setPalette, skin, setSkin, accent, setAccent, restyling } =
     useTheme()
   const { toast } = useToast()
   const { cars } = useCars()
@@ -290,9 +290,6 @@ export default function SettingsPage() {
                         s.id === 'glass' &&
                           'bg-gradient-to-br from-sky-300/70 via-fuchsia-300/50 to-amber-200/70 dark:from-sky-500/40 dark:via-fuchsia-500/30 dark:to-amber-400/30',
                         s.id === 'minimal' && 'bg-card-2',
-                        s.id === 'neu' && 'bg-slate-200 dark:bg-slate-800',
-                        s.id === 'aurora' &&
-                          'bg-[radial-gradient(circle_at_20%_20%,#6366f1,transparent_45%),radial-gradient(circle_at_80%_30%,#d946ef,transparent_45%),radial-gradient(circle_at_50%_80%,#22d3ee,transparent_45%)] bg-[#0b0820]',
                       )}
                     >
                       {[0, 1].map((i) => (
@@ -304,9 +301,6 @@ export default function SettingsPage() {
                             s.id === 'glass' &&
                               'border border-white/60 bg-white/40 shadow-card backdrop-blur-sm dark:border-white/20 dark:bg-white/10',
                             s.id === 'minimal' && 'bg-card shadow-card',
-                            s.id === 'neu' &&
-                              'bg-slate-200 shadow-[4px_4px_8px_rgb(148_163_184/0.7),-4px_-4px_8px_white] dark:bg-slate-800 dark:shadow-[4px_4px_8px_rgb(0_0_0/0.6),-4px_-4px_8px_rgb(255_255_255/0.05)]',
-                            s.id === 'aurora' && 'border border-white/40 bg-white/20 backdrop-blur-sm',
                           )}
                         />
                       ))}
@@ -331,24 +325,6 @@ export default function SettingsPage() {
 
           {/* personal accent color */}
           <AccentPicker accent={accent} setAccent={setAccent} />
-
-          {/* cockpit glow intensity */}
-          <div>
-            <div className="mb-2.5 flex items-center justify-between">
-              <p className="text-[13px] font-semibold text-ink-2">עוצמת זוהר הרכב</p>
-              <span className="text-[11px] font-bold text-ink-3">{Math.round(glow * 100)}%</span>
-            </div>
-            <input
-              type="range"
-              min={0}
-              max={140}
-              value={Math.round(glow * 100)}
-              onChange={(e) => setGlow(Number(e.target.value) / 100)}
-              aria-label="עוצמת זוהר הרכב"
-              className="h-3 w-full cursor-pointer appearance-none rounded-full bg-gradient-to-l from-cta/80 to-cta/10 [&::-webkit-slider-thumb]:size-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-[0_1px_4px_rgb(0_0_0/0.4)] [&::-webkit-slider-thumb]:ring-1 [&::-webkit-slider-thumb]:ring-black/10"
-            />
-            <p className="mt-1.5 text-[11px] text-ink-3">הזוהר הצבעוני שמאחורי האפליקציה נלקח מתמונת הרכב הפעיל</p>
-          </div>
 
           <div>
             <p className="mb-2.5 text-[13px] font-semibold text-ink-2">צפיפות דף הבית</p>

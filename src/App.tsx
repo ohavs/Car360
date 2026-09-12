@@ -74,14 +74,14 @@ const router = createBrowserRouter([
  *  pulls once per sign-in, pushes on every local change afterwards. */
 function PrefsSync() {
   const { user, isCloud } = useAuth()
-  const { palette, skin, accent, glow, applyRemote } = useTheme()
+  const { palette, skin, accent, applyRemote } = useTheme()
   const loadedFor = useRef<string | null>(null)
 
   useEffect(() => {
     if (!user || !isCloud || loadedFor.current === user.uid) return
     void loadDesignPrefs(user.uid).then((prefs) => {
       loadedFor.current = user.uid
-      if (prefs) applyRemote(prefs.palette, prefs.skin, prefs.accent ?? null, prefs.glow)
+      if (prefs) applyRemote(prefs.palette, prefs.skin, prefs.accent ?? null)
     })
   }, [user, isCloud, applyRemote])
 
@@ -89,8 +89,8 @@ function PrefsSync() {
     // never push before the initial cloud read — a fresh device must not
     // overwrite the user's saved design with defaults
     if (!user || !isCloud || loadedFor.current !== user.uid) return
-    void saveDesignPrefs(user.uid, { palette, skin, accent, glow })
-  }, [user, isCloud, palette, skin, accent, glow])
+    void saveDesignPrefs(user.uid, { palette, skin, accent })
+  }, [user, isCloud, palette, skin, accent])
 
   return null
 }

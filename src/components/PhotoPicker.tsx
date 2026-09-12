@@ -65,6 +65,7 @@ export default function PhotoPicker({
         ))}
         <button
           type="button"
+          aria-label="הוספת תמונה"
           onClick={() => fileRef.current?.click()}
           disabled={busy}
           className="flex h-20 w-20 shrink-0 flex-col items-center justify-center gap-1 rounded-2xl bg-card-2 text-xs font-medium text-ink-3 ring-1 ring-line active:scale-95 disabled:opacity-50"
