@@ -249,38 +249,31 @@ export default function HomePage() {
         transition={{ duration: 0.2 }}
         className="flex items-center justify-between py-3"
       >
-        <div className="flex items-center gap-1">
-        <motion.button
-          onClick={toggle}
-          whileTap={{ scale: 0.85, rotate: 40 }}
-          transition={spring}
-          aria-label={theme === 'dark' ? 'מעבר למצב בהיר' : 'מעבר למצב כהה'}
-          className="glass-bar flex size-11 items-center justify-center rounded-full text-ink"
-        >
-          {theme === 'dark' ? <IconSun size={20} /> : <IconMoon size={20} />}
-        </motion.button>
+        <div className="flex items-center gap-2.5">
+          <motion.button
+            onClick={toggle}
+            whileTap={{ scale: 0.85, rotate: 40 }}
+            transition={spring}
+            aria-label={theme === 'dark' ? 'מעבר למצב בהיר' : 'מעבר למצב כהה'}
+            className="glass-bar flex size-11 items-center justify-center rounded-full text-ink"
+          >
+            {theme === 'dark' ? <IconSun size={20} /> : <IconMoon size={20} />}
+          </motion.button>
 
-        <motion.button
-          onClick={() => setSearching(true)}
-          whileTap={{ scale: 0.85 }}
-          transition={spring}
-          aria-label="חיפוש"
-          className="glass-bar -ms-1 flex size-11 items-center justify-center rounded-full text-ink"
-        >
-          <IconSearch size={20} />
-        </motion.button>
+          <motion.button
+            onClick={() => setSearching(true)}
+            whileTap={{ scale: 0.85 }}
+            transition={spring}
+            aria-label="חיפוש"
+            className="glass-bar flex size-11 items-center justify-center rounded-full text-ink"
+          >
+            <IconSearch size={20} />
+          </motion.button>
         </div>
 
-        <div className="text-center">
-          <h1 className="text-lg font-black leading-tight">
-            {activeCar ? carDisplayName(activeCar) : 'Car360'}
-          </h1>
-          {activeCar && (
-            <p className="text-xs font-medium text-ink-3" dir="ltr">
-              {formatPlate(activeCar.plate)}
-            </p>
-          )}
-        </div>
+        {/* with a car on screen its name lives below, next to its own details;
+            the bar only needs a title when there is nothing to name */}
+        {!activeCar && <h1 className="text-lg font-black leading-tight">Car360</h1>}
 
         <Link
           to="/settings"
@@ -344,6 +337,20 @@ export default function HomePage() {
               transition={{ duration: 0.22 }}
               className={cn('relative z-10 mt-3 pb-4', gridClass)}
             >
+              {/* the car's name, now that it rides with the details it labels
+                  instead of squeezing between the bar's controls */}
+              <div className="col-span-2 flex items-center gap-2 px-1">
+                <h1 className="min-w-0 flex-1 truncate text-2xl font-black leading-tight">
+                  {carDisplayName(activeCar)}
+                </h1>
+                <span
+                  dir="ltr"
+                  className="shrink-0 rounded-md bg-white/50 px-2 py-0.5 text-xs font-bold tabular-nums text-ink-2 dark:bg-white/10"
+                >
+                  {formatPlate(activeCar.plate)}
+                </span>
+              </div>
+
               {/* key figures as one compact strip */}
               <div className="col-span-2">
                 <StatStrip
