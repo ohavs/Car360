@@ -6,6 +6,7 @@ import GlassPanel from '../components/cockpit/GlassPanel'
 import AttentionStrip from '../components/cockpit/AttentionStrip'
 import HomeSection, { HomeLinkRow, SectionRow } from '../components/cockpit/HomeSection'
 import QuickAdd from '../components/cockpit/QuickAdd'
+import StatStrip from '../components/cockpit/StatStrip'
 import SearchOverlay from '../components/SearchOverlay'
 import {
   IconAlert,
@@ -162,9 +163,6 @@ export default function HomePage() {
     : dense
       ? 'grid grid-cols-2 gap-2'
       : 'grid grid-cols-2 gap-3'
-  const tilePad = stack ? '!p-5' : dense ? '!p-3' : '!p-4'
-  const metricClass = stack ? 'text-3xl' : dense ? 'text-lg' : 'text-2xl'
-  const svcMetricClass = stack ? 'text-4xl' : dense ? 'text-xl' : 'text-3xl'
 
   useEffect(() => {
     if (cars.length === 0) return
@@ -346,36 +344,28 @@ export default function HomePage() {
               transition={{ duration: 0.22 }}
               className={cn('relative z-10 mt-3 pb-4', gridClass)}
             >
-              {/* test + services */}
-              <GlassPanel className={tilePad}>
-                <Link to={`/car/${activeCar.id}/edit`} className="block">
-                  <p className="flex items-center gap-1.5 text-sm font-bold text-ink-3">
-                    <IconCalendar size={17} /> טסט
-                  </p>
-                  <p className={cn('mt-1.5 font-black tracking-tight', metricClass)}>{formatDate(activeCar.testExpiry)}</p>
-                  {activeCar.testExpiry && (
-                    <Badge className="mt-1.5" tone={statusTone[dueStatus(activeCar.testExpiry)]}>
-                      {dueLabel(activeCar.testExpiry)}
-                    </Badge>
-                  )}
-                </Link>
-              </GlassPanel>
-
-              {/* total spend — the services list itself lives inline below, so
-                  this tile carries information that isn't repeated anywhere */}
-              <GlassPanel className={tilePad}>
-                <Link to={`/car/${activeCar.id}/services`} className="block">
-                  <p className="flex items-center gap-1.5 text-sm font-bold text-ink-3">
-                    <IconWrench size={17} /> הוצאות
-                  </p>
-                  <p className={cn('mt-1.5 font-black tracking-tight', svcMetricClass)}>
-                    {totalSpend > 0 ? formatMoney(totalSpend) : '—'}
-                  </p>
-                  <p className="mt-1 text-sm font-semibold text-ink-3">
-                    {servicesCount ? `ב-${servicesCount} טיפולים` : 'אין טיפולים מתועדים'}
-                  </p>
-                </Link>
-              </GlassPanel>
+              {/* key figures as one compact strip */}
+              <div className="col-span-2">
+                <StatStrip
+                  stats={[
+                    {
+                      label: 'טסט',
+                      icon: <IconCalendar size={13} />,
+                      value: activeCar.testExpiry ? formatDate(activeCar.testExpiry) : '—',
+                      meta: activeCar.testExpiry ? dueLabel(activeCar.testExpiry) : 'לא הוזן תאריך',
+                      tone: activeCar.testExpiry ? statusTone[dueStatus(activeCar.testExpiry)] : 'neutral',
+                      to: `/car/${activeCar.id}/edit`,
+                    },
+                    {
+                      label: 'הוצאות',
+                      icon: <IconWrench size={13} />,
+                      value: totalSpend > 0 ? formatMoney(totalSpend) : '—',
+                      meta: servicesCount ? `ב-${servicesCount} טיפולים` : 'אין טיפולים מתועדים',
+                      to: `/car/${activeCar.id}/services`,
+                    },
+                  ]}
+                />
+              </div>
 
               {/* record the common things without leaving home */}
               <div className="col-span-2">
