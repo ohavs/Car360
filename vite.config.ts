@@ -9,6 +9,10 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
+      // src/lib/swUpdate.ts registers the worker itself: the injected script
+      // only ever calls register() once, which is what let a deploy sit
+      // unnoticed on an installed PWA.
+      injectRegister: null,
       includeAssets: ['favicon.svg', 'icons/*.png'],
       manifest: {
         name: 'Car360 — ניהול הרכבים שלי',

@@ -5,7 +5,10 @@ import { AuthProvider } from './contexts/AuthContext'
 import { CarsProvider } from './contexts/CarsContext'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { ToastProvider } from './contexts/ToastContext'
+import { initServiceWorkerUpdates } from './lib/swUpdate'
 import './index.css'
+
+initServiceWorkerUpdates()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
