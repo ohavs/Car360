@@ -18,6 +18,7 @@ import {
   LoadError,
   listItem,
   listStagger,
+  SaveButton,
 } from '../components/ui'
 import { Select } from '../components/pickers'
 import { useCars } from '../contexts/CarsContext'
@@ -351,10 +352,14 @@ function AddDocumentSheet({
             options={CATEGORIES.map((c) => ({ value: c, label: c }))}
           />
         </Field>
-        <Button
+        <SaveButton
           className="w-full"
-          disabled={!title.trim() || !imageUrl || busy || saving}
-          onClick={() => {
+          busy={busy || saving}
+          requirements={[
+            { ok: Boolean(imageUrl), message: 'צריך לצלם או לבחור קובץ' },
+            { ok: Boolean(title.trim()), message: 'צריך לתת שם למסמך' },
+          ]}
+          onSave={() => {
             setSaving(true)
             onSave({
               id: newId(),
@@ -368,7 +373,7 @@ function AddDocumentSheet({
           }}
         >
           {saving ? 'שומר…' : 'שמירת המסמך'}
-        </Button>
+        </SaveButton>
       </div>
     </BottomSheet>
   )

@@ -20,6 +20,7 @@ import {
   TextArea,
   listItem,
   listStagger,
+  SaveButton,
 } from '../components/ui'
 import { DateInput, Select } from '../components/pickers'
 import { useCars } from '../contexts/CarsContext'
@@ -373,20 +374,24 @@ function InsuranceEditor({
         <Field label="הערות">
           <TextArea value={r.notes ?? ''} onChange={(e) => setR({ ...r, notes: e.target.value })} />
         </Field>
-        <Field label="צילום הפוליסה">
+        <Field label="צילום הפוליסה" plain>
           <PhotoPicker photos={r.photos} onChange={(photos) => setR({ ...r, photos })} />
         </Field>
 
-        <Button
+        <SaveButton
           className="w-full"
-          disabled={!r.company.trim() || !r.endDate || saving}
-          onClick={() => {
+          busy={saving}
+          requirements={[
+            { ok: Boolean(r.company.trim()), message: 'צריך למלא את חברת הביטוח' },
+            { ok: Boolean(r.endDate), message: 'צריך לבחור תאריך סיום תוקף' },
+          ]}
+          onSave={() => {
             setSaving(true)
             onSave(r)
           }}
         >
           {saving ? 'שומר…' : 'שמירה'}
-        </Button>
+        </SaveButton>
         {onDelete && (
           <Button variant="ghost" className="w-full !text-danger" onClick={onDelete}>
             <IconTrash size={18} />

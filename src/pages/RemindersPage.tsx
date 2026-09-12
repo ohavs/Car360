@@ -13,6 +13,7 @@ import {
   ListSkeleton,
   listItem,
   listStagger,
+  SaveButton,
 } from '../components/ui'
 import { DateInput, Select, TimeInput } from '../components/pickers'
 import { useCars } from '../contexts/CarsContext'
@@ -229,9 +230,18 @@ function AddReminderSheet({ onClose, onSaved }: { onClose: () => void; onSaved: 
             <TimeInput value={time} onChange={setTime} />
           </Field>
         </div>
-        <Button className="w-full" disabled={!title.trim() || !dueDate || !carId || saving} onClick={() => void save()}>
+        <SaveButton
+          className="w-full"
+          busy={saving}
+          requirements={[
+            { ok: Boolean(title.trim()), message: 'צריך למלא על מה להזכיר' },
+            { ok: Boolean(dueDate), message: 'צריך לבחור תאריך לתזכורת' },
+            { ok: Boolean(carId), message: 'צריך לבחור רכב' },
+          ]}
+          onSave={() => void save()}
+        >
           {saving ? 'שומר…' : 'הוספת תזכורת'}
-        </Button>
+        </SaveButton>
       </div>
     </BottomSheet>
   )

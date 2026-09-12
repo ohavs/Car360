@@ -20,6 +20,7 @@ import {
   TextArea,
   listItem,
   listStagger,
+  SaveButton,
 } from '../components/ui'
 import { DateInput } from '../components/pickers'
 import { useCars } from '../contexts/CarsContext'
@@ -277,20 +278,24 @@ function ServiceEditor({
         <Field label="הערות">
           <TextArea value={r.notes ?? ''} onChange={(e) => setR({ ...r, notes: e.target.value })} />
         </Field>
-        <Field label="תמונות וקבלות">
+        <Field label="תמונות וקבלות" plain>
           <PhotoPicker photos={r.photos} onChange={(photos) => setR({ ...r, photos })} />
         </Field>
 
-        <Button
+        <SaveButton
           className="w-full"
-          disabled={!r.title.trim() || !r.date || saving}
-          onClick={() => {
+          busy={saving}
+          requirements={[
+            { ok: Boolean(r.title.trim()), message: 'צריך למלא מה נעשה בטיפול' },
+            { ok: Boolean(r.date), message: 'צריך לבחור תאריך טיפול' },
+          ]}
+          onSave={() => {
             setSaving(true)
             onSave(r)
           }}
         >
           {saving ? 'שומר…' : 'שמירה'}
-        </Button>
+        </SaveButton>
         {onDelete && (
           <Button variant="ghost" className="w-full !text-danger" onClick={onDelete}>
             <IconTrash size={18} />

@@ -8,6 +8,7 @@ import {
 } from 'react'
 import { createPortal } from 'react-dom'
 import { cn } from '../lib/utils'
+import { useToast } from '../contexts/ToastContext'
 import { IconAlert, IconX } from './icons'
 
 /* Shared spring presets — 150-300ms feel, no layout-shifting overshoot */
@@ -41,6 +42,57 @@ export function Button({
   )
 }
 
+export interface Requirement {
+  /** whether this condition is currently satisfied */
+  ok: boolean
+  /** what to tell the user when it is not */
+  message: string
+}
+
+/** A primary action that explains itself instead of going dead.
+ *
+ *  A disabled save button at the bottom of a long sheet is a dead end: the
+ *  user has no way to tell which field is missing without scrolling back
+ *  through the whole form guessing. This one stays pressable and names the
+ *  first unmet requirement. */
+export function SaveButton({
+  requirements = [],
+  busy = false,
+  onSave,
+  children,
+  className,
+  variant = 'cta',
+}: {
+  requirements?: Requirement[]
+  busy?: boolean
+  onSave: () => void
+  children: ReactNode
+  className?: string
+  variant?: BtnVariant
+}) {
+  const { toast } = useToast()
+  const missing = requirements.find((r) => !r.ok)
+  return (
+    <Button
+      variant={variant}
+      disabled={busy}
+      // deliberately NOT aria-disabled: the button really is pressable, and
+      // pressing it is how the user finds out what is missing. Marking it
+      // disabled would tell a screen-reader user not to bother.
+      className={cn(missing && 'opacity-50', className)}
+      onClick={() => {
+        if (missing) {
+          toast(missing.message, 'error')
+          return
+        }
+        onSave()
+      }}
+    >
+      {children}
+    </Button>
+  )
+}
+
 export function IconButton({
   label,
   className,
@@ -67,17 +119,24 @@ export function Field({
   label,
   children,
   hint,
+  plain = false,
 }: {
   label: string
   children: ReactNode
   hint?: string
+  /** Render as a plain block instead of a <label>. Use for fields whose body
+   *  is a widget rather than one input: a <label> forwards stray taps to the
+   *  first control inside it, so wrapping the photo strip made taps between
+   *  thumbnails pop the file picker open. */
+  plain?: boolean
 }) {
+  const Tag = plain ? 'div' : 'label'
   return (
-    <label className="block">
+    <Tag className="block">
       <span className="mb-1.5 block text-[13px] font-semibold text-ink-2">{label}</span>
       {children}
       {hint && <span className="mt-1 block text-xs text-ink-3">{hint}</span>}
-    </label>
+    </Tag>
   )
 }
 

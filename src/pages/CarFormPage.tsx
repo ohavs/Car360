@@ -13,6 +13,7 @@ import {
   Spinner,
   Switch,
   TextArea,
+  SaveButton,
 } from '../components/ui'
 import { DateInput, Select } from '../components/pickers'
 import { useAuth } from '../contexts/AuthContext'
@@ -562,13 +563,13 @@ function BlockEditorSheet({
             <Switch checked={Boolean(b.remind)} onChange={(v) => setB({ ...b, remind: v })} label="תזכורת" />
           </div>
         )}
-        <Button
+        <SaveButton
           className="w-full"
-          disabled={!b.title.trim()}
-          onClick={() => onSave({ ...b, title: b.title.trim() })}
+          requirements={[{ ok: Boolean(b.title.trim()), message: 'צריך לתת שם לבלוק' }]}
+          onSave={() => onSave({ ...b, title: b.title.trim() })}
         >
           שמירת הבלוק
-        </Button>
+        </SaveButton>
       </div>
     </BottomSheet>
   )

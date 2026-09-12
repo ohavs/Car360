@@ -48,6 +48,8 @@ export default function PhotoPicker({
             >
               <img src={p} alt="" className="h-20 w-20 rounded-2xl object-cover ring-1 ring-line" />
             </button>
+            {/* quiet enough to ignore, big enough to hit: a neutral scrim
+                rather than a red badge shouting over every thumbnail */}
             <button
               type="button"
               aria-label={`הסרת תמונה ${i + 1}`}
@@ -55,13 +57,14 @@ export default function PhotoPicker({
                 e.stopPropagation()
                 setRemoving(i)
               }}
-              className="absolute -end-1 -top-1 flex size-6 items-center justify-center rounded-full bg-danger text-white shadow-card active:scale-90"
+              className="absolute end-1 top-1 flex size-5 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur-sm active:scale-90"
             >
-              <IconX size={12} />
+              <IconX size={11} />
             </button>
           </div>
         ))}
         <button
+          type="button"
           onClick={() => fileRef.current?.click()}
           disabled={busy}
           className="flex h-20 w-20 shrink-0 flex-col items-center justify-center gap-1 rounded-2xl bg-card-2 text-xs font-medium text-ink-3 ring-1 ring-line active:scale-95 disabled:opacity-50"
