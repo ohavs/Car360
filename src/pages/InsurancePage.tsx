@@ -145,18 +145,20 @@ export default function InsurancePage() {
                 <Card onClick={() => setEditing(rec)} className="space-y-2">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="font-bold">
-                      {rec.kind} · {rec.company}
-                    </p>
+                    <p className="font-bold">{[rec.kind, rec.company].filter(Boolean).join(' · ')}</p>
                     <p className="text-sm text-ink-3">
-                      {rec.policyNumber ? `פוליסה ${rec.policyNumber} · ` : ''}
-                      עד {formatDate(rec.endDate)}
+                      {[
+                        rec.policyNumber ? `פוליסה ${rec.policyNumber}` : '',
+                        rec.endDate ? `עד ${formatDate(rec.endDate)}` : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' · ') || `${rec.photos.length} צילומים`}
                     </p>
                   </div>
                   {rec.cost != null && <span className="shrink-0 font-bold">{formatMoney(rec.cost)}</span>}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <Badge tone={statusTone[st]}>{dueLabel(rec.endDate)}</Badge>
+                  {rec.endDate && <Badge tone={statusTone[st]}>{dueLabel(rec.endDate)}</Badge>}
                   {rec.agentName && <Badge>סוכן: {rec.agentName}</Badge>}
                 </div>
                 {rec.photos.length > 0 && (
@@ -381,9 +383,13 @@ function InsuranceEditor({
         <SaveButton
           className="w-full"
           busy={saving}
+          // A photo of the policy is a complete record on its own — the fields
+          // are there for people who want them, not a toll to pay first.
           requirements={[
-            { ok: Boolean(r.company.trim()), message: 'צריך למלא את חברת הביטוח' },
-            { ok: Boolean(r.endDate), message: 'צריך לבחור תאריך סיום תוקף' },
+            {
+              ok: Boolean(r.company.trim() || r.photos.length),
+              message: 'צריך למלא חברת ביטוח או לצרף צילום של הפוליסה',
+            },
           ]}
           onSave={() => {
             setSaving(true)

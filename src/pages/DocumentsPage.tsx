@@ -355,16 +355,15 @@ function AddDocumentSheet({
         <SaveButton
           className="w-full"
           busy={busy || saving}
-          requirements={[
-            { ok: Boolean(imageUrl), message: 'צריך לצלם או לבחור קובץ' },
-            { ok: Boolean(title.trim()), message: 'צריך לתת שם למסמך' },
-          ]}
+          // the file is the document; a name is a convenience, so fall back to
+          // the category rather than blocking the save on it
+          requirements={[{ ok: Boolean(imageUrl), message: 'צריך לצלם או לבחור קובץ' }]}
           onSave={() => {
             setSaving(true)
             onSave({
               id: newId(),
               carId,
-              title: title.trim(),
+              title: title.trim() || category,
               category,
               imageUrl,
               createdAt: 0,

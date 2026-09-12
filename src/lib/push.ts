@@ -35,7 +35,12 @@ async function tokenDocRef(uid: string, token: string) {
 /** Obtain the FCM token for this device and store it under the user.
  *  Shared by the explicit opt-in and the silent self-heal below. */
 async function registerToken(uid: string): Promise<string | null> {
-  const reg = await navigator.serviceWorker.register('/firebase-messaging-sw.js')
+  // Must be given its own scope. Registered bare, it lands on the script's
+  // directory — "/" — where it competes with the PWA worker for control of
+  // every page, and the two take turns claiming clients.
+  const reg = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+    scope: '/firebase-cloud-messaging-push-scope',
+  })
   const { m, messaging } = await messagingApi()
   const token = await m.getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: reg })
   if (!token) return null

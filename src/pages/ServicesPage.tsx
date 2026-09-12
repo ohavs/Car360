@@ -149,7 +149,7 @@ export default function ServicesPage() {
               <Card onClick={() => setEditing(rec)} className="space-y-2">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="font-bold">{rec.title}</p>
+                  <p className="font-bold">{rec.title || `טיפול · ${rec.photos.length} תמונות`}</p>
                   <p className="text-sm text-ink-3">
                     {formatDate(rec.date)}
                     {rec.garage ? ` · ${rec.garage}` : ''}
@@ -285,9 +285,12 @@ function ServiceEditor({
         <SaveButton
           className="w-full"
           busy={saving}
+          // a photographed receipt is a record on its own
           requirements={[
-            { ok: Boolean(r.title.trim()), message: 'צריך למלא מה נעשה בטיפול' },
-            { ok: Boolean(r.date), message: 'צריך לבחור תאריך טיפול' },
+            {
+              ok: Boolean(r.title.trim() || r.photos.length),
+              message: 'צריך למלא מה נעשה בטיפול או לצרף תמונה',
+            },
           ]}
           onSave={() => {
             setSaving(true)
