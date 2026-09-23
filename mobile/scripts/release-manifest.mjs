@@ -27,13 +27,21 @@ const bytes = fs.readFileSync(apkPath)
 
 /** Commit subjects since the previous Android release that touched the app. */
 function releaseNotes() {
+  const log = (range) =>
+    execFileSync(
+      'git',
+      // :(top) — CI runs this from mobile/, but the paths are repo-relative
+      ['log', '--no-merges', '--pretty=%s', ...range, '--', ':(top)mobile', ':(top)shared'],
+      { encoding: 'utf8' },
+    )
   const previous = process.env.PREVIOUS_TAG
-  const range = previous ? [`${previous}..HEAD`] : ['-n', '10', 'HEAD']
-  const out = execFileSync(
-    'git',
-    ['log', '--no-merges', '--pretty=%s', ...range, '--', 'mobile', 'shared'],
-    { encoding: 'utf8' },
-  )
+  let out
+  try {
+    out = log(previous ? [`${previous}..HEAD`] : ['-n', '10', 'HEAD'])
+  } catch {
+    // an unknown tag must not block a release — fall back to recent history
+    out = log(['-n', '10', 'HEAD'])
+  }
   return out
     .split('\n')
     .map((line) => line.trim())
