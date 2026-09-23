@@ -1,6 +1,7 @@
 import { deleteObject, getDownloadURL, getStorage, putFile, ref } from '@react-native-firebase/storage'
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator'
 import * as ImagePicker from 'expo-image-picker'
+import DocumentScanner from 'react-native-document-scanner-plugin'
 
 /** Same budgets as the web app: a phone photo becomes ~100–350KB of WebP. */
 const PROFILES = {
@@ -54,10 +55,15 @@ export async function deleteImage(url: string): Promise<void> {
   }
 }
 
-export type PickSource = 'camera' | 'library'
+export type PickSource = 'camera' | 'library' | 'scan'
 
-/** Camera or gallery; returns local URIs (empty when cancelled or refused). */
+/** Camera, gallery, or the document scanner (Google's: finds the edges,
+ *  straightens and crops); returns local URIs, empty when cancelled. */
 export async function pickImages(source: PickSource, multiple: boolean): Promise<string[]> {
+  if (source === 'scan') {
+    const res = await DocumentScanner.scanDocument({ maxNumDocuments: multiple ? 10 : 1, croppedImageQuality: 95 })
+    return res.status === 'success' ? (res.scannedImages ?? []) : []
+  }
   if (source === 'camera') {
     const perm = await ImagePicker.requestCameraPermissionsAsync()
     if (!perm.granted) throw new PermissionDenied()

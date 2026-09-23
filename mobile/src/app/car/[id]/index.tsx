@@ -1,11 +1,12 @@
 import { useRouter } from 'expo-router'
 import { useState } from 'react'
-import { CalendarDays, Car as CarIcon, FileBadge, Pencil, Fuel, Hash, Link2, Palette, Phone, StickyNote, type LucideIcon } from 'lucide-react-native'
+import { CalendarDays, Car as CarIcon, FileBadge, Pencil, Share2, Fuel, Hash, Link2, Palette, Phone, StickyNote, type LucideIcon } from 'lucide-react-native'
 import { Linking, StyleSheet, View } from 'react-native'
 import { carDisplayName } from '@shared/reminders'
 import type { InfoBlock } from '@shared/types'
 import { dueLabel, dueStatus, formatDate } from '@shared/utils'
 import { TestSheet } from '../../../features/cars/TestSheet'
+import { ShareSheet } from '../../../features/share/ShareSheet'
 import { useCarParam } from '../../../features/cars/useCarParam'
 import { space } from '../../../theme/tokens'
 import { AppBar, Card, EmptyState, IconButton, ListItem, Plate, Screen, SectionHeader, StatusChip, Text } from '../../../ui'
@@ -22,6 +23,7 @@ export default function CarDetailsScreen() {
   const { car, loading } = useCarParam()
   const router = useRouter()
   const [dateSheet, setDateSheet] = useState<'test' | 'license' | null>(null)
+  const [sharing, setSharing] = useState(false)
   if (!car) {
     return (
       <Screen header={<AppBar title="פרטי הרכב" back />}>
@@ -44,7 +46,12 @@ export default function CarDetailsScreen() {
         <AppBar
           title={carDisplayName(car)}
           back
-          actions={<IconButton icon={Pencil} label="עריכת פרטי הרכב" onPress={() => router.push(`/car/${car.id}/edit`)} />}
+          actions={
+            <>
+              <IconButton icon={Share2} label="שיתוף ודרכון" onPress={() => setSharing(true)} />
+              <IconButton icon={Pencil} label="עריכת פרטי הרכב" onPress={() => router.push(`/car/${car.id}/edit`)} />
+            </>
+          }
         />
       }
     >
@@ -114,6 +121,7 @@ export default function CarDetailsScreen() {
           </Card>
         </>
       ) : null}
+      {sharing && <ShareSheet car={car} onClose={() => setSharing(false)} />}
       {dateSheet && <TestSheet car={car} kind={dateSheet} onClose={() => setDateSheet(null)} />}
     </Screen>
   )

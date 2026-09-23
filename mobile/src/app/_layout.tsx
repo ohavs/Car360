@@ -56,6 +56,7 @@ function RootNavigator() {
           <Stack.Screen name="car/[id]/glovebox" />
           <Stack.Screen name="gallery" />
           <Stack.Screen name="notifications" />
+          <Stack.Screen name="report" />
           {/* full-screen editors rise and fade in — quick, like a sheet that grew */}
           <Stack.Screen name="car/new" options={{ animation: 'fade_from_bottom' }} />
           <Stack.Screen name="car/[id]/edit" options={{ animation: 'fade_from_bottom' }} />

@@ -6,6 +6,7 @@ import {
   CalendarClock,
   CarFront as CarAdd,
   FilePlus2,
+  FileSearch,
   CarFront,
   CheckCircle2,
   ChevronLeft,
@@ -18,6 +19,7 @@ import {
   Wrench,
   X,
   Plus,
+  Search,
   type LucideIcon,
 } from 'lucide-react-native'
 import { useMemo, useState } from 'react'
@@ -33,6 +35,7 @@ import { CarPager } from '../../features/cars/CarPager'
 import { DocumentSheet } from '../../features/documents/DocumentSheet'
 import { NotifyPrompt } from '../../features/notifications/NotifyPrompt'
 import { ReminderSheet } from '../../features/reminders/ReminderSheet'
+import { SearchSheet } from '../../features/search/SearchSheet'
 import { useReminderOpener } from '../../features/reminders/useReminderOpener'
 import { AttentionCard } from '../../features/home/AttentionCard'
 import { useUpdates } from '../../features/updates/UpdateProvider'
@@ -45,6 +48,7 @@ import {
   Card,
   EmptyState,
   FAB,
+  IconButton,
   ListItem,
   Plate,
   Screen,
@@ -66,6 +70,7 @@ export default function HomeScreen() {
   const { colors } = useTheme()
   const [sheet, setSheet] = useState<'quick' | 'document' | 'reminder' | null>(null)
   const opener = useReminderOpener(cars, customs, activeCar?.id)
+  const [searching, setSearching] = useState(false)
 
   const carReminders = useMemo(() => reminders.filter((r) => r.carId === activeCar?.id), [reminders, activeCar?.id])
   const recent = useMemo(() => [...services.items].sort((a, b) => b.date.localeCompare(a.date)), [services.items])
@@ -79,18 +84,21 @@ export default function HomeScreen() {
           title={activeCar ? carDisplayName(activeCar) : `שלום, ${firstName}`}
           subtitle={activeCar ? `שלום, ${firstName}` : undefined}
           actions={
-            <Touchable
-              feedback="scale"
-              onPress={() => router.push('/settings')}
-              accessibilityLabel="פרופיל והגדרות"
-              style={[styles.avatar, { backgroundColor: colors.surfaceContainer }]}
-            >
-              {user?.photoUrl ? (
-                <Image source={user.photoUrl} style={styles.avatarImage} />
-              ) : (
-                <Text variant="label">{firstName.slice(0, 1)}</Text>
-              )}
-            </Touchable>
+            <>
+              <IconButton icon={Search} label="חיפוש" onPress={() => setSearching(true)} />
+              <Touchable
+                feedback="scale"
+                onPress={() => router.push('/settings')}
+                accessibilityLabel="פרופיל והגדרות"
+                style={[styles.avatar, { backgroundColor: colors.surfaceContainer }]}
+              >
+                {user?.photoUrl ? (
+                  <Image source={user.photoUrl} style={styles.avatarImage} />
+                ) : (
+                  <Text variant="label">{firstName.slice(0, 1)}</Text>
+                )}
+              </Touchable>
+            </>
           }
         />
       }
@@ -157,7 +165,7 @@ export default function HomeScreen() {
             <Shortcut icon={Shield} label="ביטוח" onPress={() => router.push(`/car/${activeCar.id}/insurance`)} />
             <Shortcut icon={FileText} label="מסמכים" onPress={() => router.push(`/car/${activeCar.id}/documents`)} />
             <Shortcut icon={LifeBuoy} label="תא כפפות" onPress={() => router.push(`/car/${activeCar.id}/glovebox`)} />
-            <Shortcut icon={CarFront} label="פרטי הרכב" onPress={() => router.push(`/car/${activeCar.id}`)} />
+            <Shortcut icon={FileSearch} label="דוח רכב" onPress={() => router.push({ pathname: '/report', params: { plate: activeCar.plate } })} />
             <Shortcut icon={Bell} label="תזכורות" onPress={() => router.push('/reminders')} />
           </Appear>
 
@@ -203,6 +211,7 @@ export default function HomeScreen() {
       {sheet === 'document' && activeCar && <DocumentSheet carId={activeCar.id} onClose={() => setSheet(null)} />}
       <NotifyPrompt enabled={cars.length > 0 && sheet === null} />
       {opener.sheet}
+      {searching && <SearchSheet cars={cars} onClose={() => setSearching(false)} />}
       {sheet === 'reminder' && <ReminderSheet cars={cars} defaultCarId={activeCar?.id} onClose={() => setSheet(null)} />}
     </Screen>
   )

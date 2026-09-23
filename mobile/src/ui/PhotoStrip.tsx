@@ -1,5 +1,5 @@
 import { Image } from 'expo-image'
-import { Camera, ImagePlus, Images, X } from 'lucide-react-native'
+import { Camera, ImagePlus, Images, ScanLine, X } from 'lucide-react-native'
 import { useState } from 'react'
 import { ScrollView, StyleSheet, View } from 'react-native'
 import { pickImages, PermissionDenied, type PickSource } from '../data/images'
@@ -80,6 +80,7 @@ export function PhotoStrip({
 
       <Sheet visible={choosing} onClose={() => setChoosing(false)} title={`הוספת ${label}`}>
         <View>
+          <ListItem icon={ScanLine} title="סריקת מסמך" subtitle="חיתוך ויישור אוטומטיים — לקבלות ופוליסות" onPress={() => void add('scan')} />
           <ListItem icon={Camera} title="צילום במצלמה" onPress={() => void add('camera')} />
           <ListItem icon={Images} title="בחירה מהגלריה" subtitle={multiple ? 'אפשר לבחור כמה ביחד' : undefined} onPress={() => void add('library')} />
         </View>

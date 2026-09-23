@@ -1,5 +1,5 @@
 import { Image } from 'expo-image'
-import { Camera, Images, Trash2 } from 'lucide-react-native'
+import { Camera, Images, ScanLine, Trash2 } from 'lucide-react-native'
 import { useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import type { CarDocument, DocumentCategory } from '@shared/types'
@@ -104,9 +104,12 @@ export function DocumentSheet({
           <Image source={draft.imageUrl} style={styles.image} contentFit="contain" />
         </Touchable>
       ) : (
-        <View style={styles.pickers}>
-          <Button label="צילום" icon={Camera} variant="tonal" size="large" onPress={() => void pick('camera')} style={styles.flex} />
-          <Button label="מהגלריה" icon={Images} variant="outlined" size="large" onPress={() => void pick('library')} style={styles.flex} />
+        <View style={styles.pickerColumn}>
+          <Button label="סריקת מסמך" icon={ScanLine} size="large" onPress={() => void pick('scan')} />
+          <View style={styles.pickers}>
+            <Button label="צילום" icon={Camera} variant="tonal" onPress={() => void pick('camera')} style={styles.flex} />
+            <Button label="מהגלריה" icon={Images} variant="outlined" onPress={() => void pick('library')} style={styles.flex} />
+          </View>
         </View>
       )}
       {error && (
@@ -142,6 +145,7 @@ const styles = StyleSheet.create({
   footer: { flexDirection: 'row', gap: space.sm, alignItems: 'center' },
   flex: { flex: 1 },
   pickers: { flexDirection: 'row', gap: space.md },
+  pickerColumn: { gap: space.md },
   preview: { height: 220, borderRadius: radius.card, overflow: 'hidden' },
   image: { width: '100%', height: '100%' },
 })

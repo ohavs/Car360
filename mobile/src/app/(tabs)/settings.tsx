@@ -1,21 +1,26 @@
 import { Image } from 'expo-image'
-import { LogOut, Palette } from 'lucide-react-native'
+import { DatabaseBackup, FileSearch, LogOut, Palette } from 'lucide-react-native'
 import { useRouter } from 'expo-router'
 import { useState } from 'react'
 import { StyleSheet, View } from 'react-native'
+import { useGarage } from '../../data/CarsProvider'
+import { shareBackup } from '../../data/backup'
 import { useAuth } from '../../features/auth/AuthProvider'
 import { NotificationsPanel } from '../../features/notifications/NotificationsPanel'
 import { AppearancePanel } from '../../features/settings/AppearancePanel'
 import { UpdatePanel } from '../../features/updates/UpdatePanel'
 import { useTheme } from '../../theme/ThemeProvider'
 import { radius, space } from '../../theme/tokens'
-import { AppBar, Card, ConfirmDialog, ListItem, Screen, Text } from '../../ui'
+import { AppBar, Card, ConfirmDialog, ListItem, Screen, SectionHeader, Text, useSnackbar } from '../../ui'
 
 export default function SettingsScreen() {
   const { user, signOut } = useAuth()
   const { colors } = useTheme()
   const [confirmSignOut, setConfirmSignOut] = useState(false)
   const router = useRouter()
+  const { cars } = useGarage()
+  const snack = useSnackbar()
+  const [backingUp, setBackingUp] = useState(false)
 
   return (
     <Screen header={<AppBar title="הגדרות" />}>
@@ -43,7 +48,26 @@ export default function SettingsScreen() {
 
       <AppearancePanel />
 
+      <SectionHeader title="כלים ונתונים" />
       <Card padded={false}>
+        <ListItem
+          icon={FileSearch}
+          title="דוח רכב"
+          subtitle="בדיקה לפי מספר רישוי — גם לרכב שחושבים לקנות"
+          onPress={() => router.push('/report')}
+        />
+        <ListItem
+          icon={DatabaseBackup}
+          title="גיבוי הנתונים"
+          subtitle={backingUp ? 'מכין את הקובץ…' : 'כל הרכבים וההיסטוריה בקובץ אחד, לשמירה בדרייב או במייל'}
+          onPress={() => {
+            if (backingUp) return
+            setBackingUp(true)
+            shareBackup(cars)
+              .catch(() => snack('הגיבוי נכשל. בדקו את החיבור ונסו שוב.', { tone: 'error' }))
+              .finally(() => setBackingUp(false))
+          }}
+        />
         <ListItem
           icon={Palette}
           title="גלריית עיצוב"
