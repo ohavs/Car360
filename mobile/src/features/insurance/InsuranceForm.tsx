@@ -21,12 +21,41 @@ function inAYear(from: string): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-export function InsuranceForm({ car, initial }: { car: Car; initial?: InsuranceRecord }) {
+function dayAfter(iso: string): string {
+  const d = new Date(`${iso}T00:00:00`)
+  d.setDate(d.getDate() + 1)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+export function InsuranceForm({
+  car,
+  initial,
+  renewKind,
+  previous,
+}: {
+  car: Car
+  initial?: InsuranceRecord
+  /** "חידשתי": a new policy of this kind, starting when the previous one ends */
+  renewKind?: InsuranceKind
+  previous?: InsuranceRecord
+}) {
   const snack = useSnackbar()
   const [start] = useState<InsuranceRecord>(() => {
     if (initial) return initial
-    const today = todayISO()
-    return { id: newId(), carId: car.id, company: '', kind: 'חובה', startDate: today, endDate: inAYear(today), photos: [], createdAt: 0, updatedAt: 0 }
+    const startDate = previous?.endDate ? dayAfter(previous.endDate) : todayISO()
+    return {
+      id: newId(),
+      carId: car.id,
+      company: previous?.company ?? '',
+      kind: renewKind ?? 'חובה',
+      agentName: previous?.agentName,
+      agentPhone: previous?.agentPhone,
+      startDate,
+      endDate: inAYear(startDate),
+      photos: [],
+      createdAt: 0,
+      updatedAt: 0,
+    }
   })
   const [draft, setDraft] = useState(start)
   const [errors, setErrors] = useState<{ company?: string; endDate?: string }>({})
@@ -70,7 +99,7 @@ export function InsuranceForm({ car, initial }: { car: Car; initial?: InsuranceR
 
   return (
     <FormScreen
-      title={initial ? 'עריכת פוליסה' : 'פוליסה חדשה'}
+      title={initial ? 'עריכת פוליסה' : renewKind ? `חידוש ביטוח ${renewKind}` : 'פוליסה חדשה'}
       subtitle={carDisplayName(car)}
       saving={saving}
       onSave={save}

@@ -1,12 +1,13 @@
-import { Trash2 } from 'lucide-react-native'
+import { CheckCircle2, RotateCcw, Trash2 } from 'lucide-react-native'
 import { useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { carDisplayName } from '@shared/reminders'
 import type { Car, CustomReminder } from '@shared/types'
-import { newId, todayISO } from '@shared/utils'
+import { formatDate, newId, todayISO } from '@shared/utils'
 import { deleteRecord, saveRecord } from '../../data/mutations'
-import { space } from '../../theme/tokens'
-import { Button, Chip, ConfirmDialog, DateField, Select, Sheet, TimeField, TextField, useSnackbar } from '../../ui'
+import { useTheme } from '../../theme/ThemeProvider'
+import { radius, space } from '../../theme/tokens'
+import { Button, Chip, ConfirmDialog, DateField, Select, Sheet, Text, TimeField, TextField, useSnackbar } from '../../ui'
 
 const SUGGESTIONS = ['חידוש רישיון נהיגה', 'בדיקת לחץ אוויר', 'החלפת מגבים', 'תשלום אגרה']
 
@@ -24,6 +25,10 @@ export function ReminderSheet({
   onClose: () => void
 }) {
   const snack = useSnackbar()
+  const { colors } = useTheme()
+  // "סימון כבוצע" opens a when-was-it-done picker in place
+  const [marking, setMarking] = useState(false)
+  const [doneAt, setDoneAt] = useState(todayISO())
   const [start] = useState<CustomReminder>(
     () =>
       reminder ?? {
@@ -66,6 +71,22 @@ export function ReminderSheet({
     }
   }
 
+  const setDone = async (done: boolean) => {
+    if (!reminder) return
+    setSaving(true)
+    try {
+      await saveRecord('reminders', { ...reminder, done, doneAt: done ? doneAt : undefined, updatedAt: Date.now() })
+      snack(done ? `"${reminder.title}" בוצע · ${formatDate(doneAt)}` : 'הסימון בוטל — התזכורת חזרה לרשימה', {
+        tone: 'success',
+      })
+      onClose()
+    } catch {
+      snack('העדכון נכשל', { tone: 'error' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const remove = async () => {
     setConfirming(false)
     try {
@@ -82,7 +103,7 @@ export function ReminderSheet({
       visible
       onClose={onClose}
       dirty={dirty}
-      title={reminder ? 'עריכת תזכורת' : 'תזכורת חדשה'}
+      title={reminder?.done ? 'תזכורת שבוצעה' : reminder ? 'עריכת תזכורת' : 'תזכורת חדשה'}
       footer={
         <View style={styles.footer}>
           {reminder && <Button label="מחיקה" icon={Trash2} variant="text" onPress={() => setConfirming(true)} />}
@@ -90,6 +111,25 @@ export function ReminderSheet({
         </View>
       }
     >
+      {reminder?.done ? (
+        <View style={[styles.doneBox, { backgroundColor: colors.successContainer }]}>
+          <CheckCircle2 size={22} color={colors.success} strokeWidth={2.2} />
+          <Text variant="bodyStrong" tone="success" style={styles.flex}>
+            בוצע{reminder.doneAt ? ` ב-${formatDate(reminder.doneAt)}` : ''}
+          </Text>
+          <Button label="ביטול הסימון" icon={RotateCcw} variant="text" onPress={() => void setDone(false)} />
+        </View>
+      ) : reminder && !marking ? (
+        <Button label="סימון כבוצע" icon={CheckCircle2} variant="tonal" size="large" onPress={() => setMarking(true)} />
+      ) : reminder && marking ? (
+        <View style={[styles.doneBox, styles.doneColumn, { backgroundColor: colors.surfaceContainer }]}>
+          <DateField label="מתי זה בוצע?" value={doneAt} onChange={(v) => setDoneAt(v || todayISO())} max={todayISO()} clearable={false} />
+          <View style={styles.footer}>
+            <Button label="ביטול" variant="text" onPress={() => setMarking(false)} />
+            <Button label="בוצע" icon={CheckCircle2} onPress={() => void setDone(true)} loading={saving} style={styles.flex} />
+          </View>
+        </View>
+      ) : null}
       <TextField
         label="על מה להזכיר"
         value={draft.title}
@@ -148,5 +188,7 @@ const styles = StyleSheet.create({
   footer: { flexDirection: 'row', gap: space.sm, alignItems: 'center' },
   row: { flexDirection: 'row', gap: space.md, alignItems: 'flex-start' },
   flex: { flex: 1 },
+  doneBox: { flexDirection: 'row', alignItems: 'center', gap: space.sm, borderRadius: radius.card, padding: space.md },
+  doneColumn: { flexDirection: 'column', alignItems: 'stretch', gap: space.md },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.xs },
 })

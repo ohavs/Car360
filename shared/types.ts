@@ -125,6 +125,8 @@ export interface CustomReminder {
   /** optional HH:MM */
   time?: string
   done: boolean
+  /** when it was actually done (ISO date) — set with done */
+  doneAt?: string
   createdAt: number
   updatedAt: number
 }

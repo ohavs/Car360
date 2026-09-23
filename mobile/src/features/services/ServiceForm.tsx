@@ -12,10 +12,21 @@ import { useFormGuard } from '../forms/useFormGuard'
 
 const SUGGESTIONS = ['טיפול תקופתי', 'החלפת שמן', 'צמיגים', 'בלמים', 'מצבר', 'מיזוג', 'פחחות וצבע']
 
-export function ServiceForm({ car, initial }: { car: Car; initial?: ServiceRecord }) {
+export function ServiceForm({ car, initial, from }: { car: Car; initial?: ServiceRecord; from?: ServiceRecord }) {
   const snack = useSnackbar()
   const [start] = useState<ServiceRecord>(
-    () => initial ?? { id: newId(), carId: car.id, title: '', date: todayISO(), photos: [], createdAt: 0, updatedAt: 0 },
+    () =>
+      initial ?? {
+        id: newId(),
+        carId: car.id,
+        // "done" on a service reminder: the same service, done today (editable)
+        title: from?.title ?? '',
+        garage: from?.garage,
+        date: todayISO(),
+        photos: [],
+        createdAt: 0,
+        updatedAt: 0,
+      },
   )
   const [draft, setDraft] = useState(start)
   const [error, setError] = useState<string | null>(null)
@@ -43,6 +54,8 @@ export function ServiceForm({ car, initial }: { car: Car; initial?: ServiceRecor
         updatedAt: now,
       })
       removedPhotos(initial, photos).forEach((u) => void deleteImage(u))
+      // the reminder that led here is answered: the old record no longer waits for a next service
+      if (from?.nextDueDate) await saveRecord('services', { ...from, nextDueDate: undefined, updatedAt: now })
       snack(initial ? 'הטיפול עודכן' : 'הטיפול נשמר', { tone: 'success' })
       leave()
     })
@@ -57,7 +70,7 @@ export function ServiceForm({ car, initial }: { car: Car; initial?: ServiceRecor
 
   return (
     <FormScreen
-      title={initial ? 'עריכת טיפול' : 'טיפול חדש'}
+      title={initial ? 'עריכת טיפול' : from ? 'תיעוד טיפול שבוצע' : 'טיפול חדש'}
       subtitle={carDisplayName(car)}
       saving={saving}
       onSave={save}
@@ -72,7 +85,7 @@ export function ServiceForm({ car, initial }: { car: Car; initial?: ServiceRecor
           <Chip key={s} label={s} selected={draft.title === s} onPress={() => setTitle(s)} />
         ))}
       </View>
-      <DateField label="תאריך הטיפול" value={draft.date} onChange={(v) => set('date', v || todayISO())} max={todayISO()} />
+      <DateField label={from ? 'מתי זה בוצע?' : 'תאריך הטיפול'} value={draft.date} onChange={(v) => set('date', v || todayISO())} max={todayISO()} />
       <TextField label="מוסך" value={draft.garage ?? ''} onChangeText={(v) => set('garage', v || undefined)} />
       <View style={styles.row}>
         <NumberField label="קילומטראז׳" suffix="ק״מ" value={draft.odometer} onChangeValue={(v) => set('odometer', v)} style={styles.flex} />

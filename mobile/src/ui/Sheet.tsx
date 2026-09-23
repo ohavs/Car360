@@ -45,11 +45,16 @@ export function Sheet({
   const insets = useSafeAreaInsets()
   const [confirming, setConfirming] = useState(false)
 
+  // Only dismiss what was presented: dismiss() on a never-shown modal leaves
+  // it stuck in "dismissing", and the next present() is silently dropped
+  const presented = useRef(false)
   useEffect(() => {
-    if (visible) {
+    if (visible && !presented.current) {
+      presented.current = true
       haptic.toggle()
       ref.current?.present()
-    } else {
+    } else if (!visible && presented.current) {
+      presented.current = false
       ref.current?.dismiss()
     }
   }, [visible])
@@ -87,7 +92,9 @@ export function Sheet({
     <BottomSheetModal
       ref={ref}
       onDismiss={() => {
-        if (visible) onClose()
+        const wasOpen = presented.current
+        presented.current = false
+        if (wasOpen && visible) onClose()
       }}
       // with unsaved changes a swipe must not throw the work away
       enablePanDownToClose={!dirty}

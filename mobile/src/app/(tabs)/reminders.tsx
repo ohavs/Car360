@@ -1,9 +1,10 @@
 import { useRouter } from 'expo-router'
-import { Bell, BellOff, BellPlus, Car, Check, FileText, Shield, Wrench, type LucideIcon } from 'lucide-react-native'
+import { Bell, BellOff, BellPlus, Car, Check, CheckCircle2, FileText, Shield, Wrench, type LucideIcon } from 'lucide-react-native'
 import { useMemo, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
+import { carDisplayName } from '@shared/reminders'
 import type { CustomReminder, DerivedReminder } from '@shared/types'
-import { dueLabel, dueStatus, formatDate } from '@shared/utils'
+import { dueLabel, dueStatus, formatDate, todayISO } from '@shared/utils'
 import { useGarage } from '../../data/CarsProvider'
 import { saveRecord } from '../../data/mutations'
 import { useAllReminders } from '../../data/reminders'
@@ -19,6 +20,7 @@ import {
   Card,
   EmptyState,
   FAB,
+  ListItem,
   Screen,
   SectionHeader,
   Skeleton,
@@ -45,7 +47,8 @@ const GROUPS: { title: string; test: (d: number) => boolean }[] = [
   { title: 'בהמשך', test: (d) => d > 30 },
 ]
 
-const setDone = (r: CustomReminder, done: boolean) => saveRecord('reminders', { ...r, done, updatedAt: Date.now() })
+const setDone = (r: CustomReminder, done: boolean) =>
+  saveRecord('reminders', { ...r, done, doneAt: done ? todayISO() : undefined, updatedAt: Date.now() })
 
 export default function RemindersScreen() {
   const { cars, loading: carsLoading, activeCar } = useGarage()
@@ -72,6 +75,18 @@ export default function RemindersScreen() {
     } catch {
       snack('העדכון נכשל', { tone: 'error' })
     }
+  }
+  const finished = useMemo(
+    () =>
+      customs
+        .filter((c) => c.done)
+        .sort((a, b) => (b.doneAt ?? '').localeCompare(a.doneAt ?? '') || b.updatedAt - a.updatedAt)
+        .slice(0, 10),
+    [customs],
+  )
+  const carName = (id: string) => {
+    const car = cars.find((c) => c.id === id)
+    return car ? carDisplayName(car) : ''
   }
   const groups = useMemo(
     () => GROUPS.map((g) => ({ ...g, items: reminders.filter((r) => g.test(r.daysLeft)) })).filter((g) => g.items.length),
@@ -119,12 +134,29 @@ export default function RemindersScreen() {
                   key={r.key}
                   reminder={r}
                   onPress={() => opener.openReminder(r)}
-                  onDone={r.source === 'custom' ? () => void markDone(r) : undefined}
+                  onDone={r.source === 'custom' ? () => void markDone(r) : () => opener.openReminder(r)}
                 />
               ))}
             </Card>
           </Appear>
         ))
+      )}
+      {finished.length > 0 && !(carsLoading || loading) && (
+        <Appear index={groups.length} style={styles.stack}>
+          <SectionHeader title="בוצעו לאחרונה" />
+          <Card padded={false}>
+            {finished.map((c) => (
+              <ListItem
+                key={`${c.carId}:${c.id}`}
+                icon={CheckCircle2}
+                tone="success"
+                title={c.title}
+                subtitle={[c.doneAt ? `בוצע ב-${formatDate(c.doneAt)}` : 'בוצע', carName(c.carId)].filter(Boolean).join(' · ')}
+                onPress={() => setEditing(c)}
+              />
+            ))}
+          </Card>
+        </Appear>
       )}
       {opener.sheet}
       {editing && (
