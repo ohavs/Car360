@@ -6,7 +6,16 @@ import { radius, space } from '../../theme/tokens'
 import { Text, Touchable } from '../../ui'
 
 /** Two-column grid of document photos with their titles. */
-export function DocumentGrid({ docs, onOpen }: { docs: CarDocument[]; onOpen: (index: number) => void }) {
+export function DocumentGrid({
+  docs,
+  onOpen,
+  onLongPress,
+}: {
+  docs: CarDocument[]
+  onOpen: (index: number) => void
+  /** long-press: edit */
+  onLongPress?: (doc: CarDocument) => void
+}) {
   const { colors } = useTheme()
   return (
     <View style={styles.grid}>
@@ -14,6 +23,7 @@ export function DocumentGrid({ docs, onOpen }: { docs: CarDocument[]; onOpen: (i
         <Touchable
           key={d.id}
           onPress={() => onOpen(i)}
+          onLongPress={onLongPress ? () => onLongPress(d) : undefined}
           accessibilityLabel={d.title}
           style={[styles.tile, { backgroundColor: colors.surface, borderColor: colors.outline }]}
         >

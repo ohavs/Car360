@@ -52,6 +52,11 @@ function RootNavigator() {
           <Stack.Screen name="car/[id]/documents" />
           <Stack.Screen name="car/[id]/glovebox" />
           <Stack.Screen name="gallery" />
+          {/* full-screen editors rise from the bottom, like a sheet that grew */}
+          <Stack.Screen name="car/new" options={{ animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="car/[id]/edit" options={{ animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="car/[id]/service-edit" options={{ animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="car/[id]/insurance-edit" options={{ animation: 'slide_from_bottom' }} />
         </Stack.Protected>
         <Stack.Protected guard={!user}>
           <Stack.Screen name="login" options={{ animation: 'fade' }} />

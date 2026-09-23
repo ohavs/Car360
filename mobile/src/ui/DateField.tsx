@@ -342,12 +342,32 @@ export function TimeField({
   onChange: (value: string) => void
   hint?: string
 }) {
+  const { colors } = useTheme()
   const [open, setOpen] = useState(false)
   const [h, setH] = useState(() => Number(value.split(':')[0]) || 9)
   const [m, setM] = useState(() => Number(value.split(':')[1]) || 0)
   return (
     <>
-      <FieldTrigger label={label} valueText={value || undefined} icon={Clock} onPress={() => setOpen(true)} hint={hint} />
+      <FieldTrigger
+        label={label}
+        valueText={value || undefined}
+        icon={Clock}
+        onPress={() => setOpen(true)}
+        hint={hint}
+        trailing={
+          value ? (
+            <Touchable
+              borderless
+              onPress={() => onChange('')}
+              accessibilityRole="button"
+              accessibilityLabel={`ניקוי ${label}`}
+              style={styles.clear}
+            >
+              <X size={18} color={colors.muted} strokeWidth={2.2} />
+            </Touchable>
+          ) : undefined
+        }
+      />
       <Sheet visible={open} onClose={() => setOpen(false)} title={label} contentPanning={false}>
         {/* hours on the left, like every clock — even in RTL */}
         <View style={styles.wheels}>

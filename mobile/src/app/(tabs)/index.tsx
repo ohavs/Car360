@@ -2,7 +2,10 @@ import { Image } from 'expo-image'
 import { useRouter } from 'expo-router'
 import {
   Bell,
+  BellPlus,
   CalendarClock,
+  CarFront as CarAdd,
+  FilePlus2,
   CarFront,
   CheckCircle2,
   ChevronLeft,
@@ -14,9 +17,10 @@ import {
   WifiOff,
   Wrench,
   X,
+  Plus,
   type LucideIcon,
 } from 'lucide-react-native'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { carDisplayName } from '@shared/reminders'
 import type { ServiceRecord } from '@shared/types'
@@ -26,12 +30,14 @@ import { useLiveSub } from '../../data/live'
 import { useAllReminders } from '../../data/reminders'
 import { useAuth } from '../../features/auth/AuthProvider'
 import { CarPager } from '../../features/cars/CarPager'
+import { DocumentSheet } from '../../features/documents/DocumentSheet'
+import { ReminderSheet } from '../../features/reminders/ReminderSheet'
 import { AttentionCard } from '../../features/home/AttentionCard'
 import { useUpdates } from '../../features/updates/UpdateProvider'
 import { useTheme } from '../../theme/ThemeProvider'
 import type { Colors } from '../../theme/palettes'
 import { radius, space } from '../../theme/tokens'
-import { AppBar, Card, EmptyState, ListItem, Plate, Screen, SectionHeader, Skeleton, StatusChip, Text, Touchable } from '../../ui'
+import { AppBar, Button, Card, EmptyState, FAB, ListItem, Plate, Screen, SectionHeader, Sheet, Skeleton, StatusChip, Text, Touchable } from '../../ui'
 
 export default function HomeScreen() {
   const { user } = useAuth()
@@ -41,6 +47,7 @@ export default function HomeScreen() {
   const services = useLiveSub<ServiceRecord>(activeCar?.id, 'services')
   const router = useRouter()
   const { colors } = useTheme()
+  const [sheet, setSheet] = useState<'quick' | 'document' | 'reminder' | null>(null)
 
   const carReminders = useMemo(() => reminders.filter((r) => r.carId === activeCar?.id), [reminders, activeCar?.id])
   const recent = useMemo(() => [...services.items].sort((a, b) => b.date.localeCompare(a.date)), [services.items])
@@ -69,6 +76,7 @@ export default function HomeScreen() {
           }
         />
       }
+      fab={activeCar ? <FAB icon={Plus} label="הוספה" onPress={() => setSheet('quick')} /> : undefined}
     >
       {justUpdatedTo && (
         <Banner icon={CheckCircle2} tone="success" text={`Car360 עודכן לגרסה ${justUpdatedTo}`} onDismiss={dismissJustUpdated} />
@@ -91,7 +99,12 @@ export default function HomeScreen() {
       {loading ? (
         <HomeSkeleton />
       ) : !activeCar ? (
-        <EmptyState icon={CarFront} title="עדיין אין רכבים" subtitle="בינתיים אפשר להוסיף רכב באתר — הוא יופיע כאן מיד." />
+        <EmptyState
+          icon={CarFront}
+          title="עדיין אין רכבים"
+          subtitle="הוסיפו את הרכב הראשון — עם מספר הרישוי נמלא את רוב הפרטים לבד"
+          action={<Button label="הוספת רכב" icon={Plus} onPress={() => router.push('/car/new')} />}
+        />
       ) : (
         <>
           <CarPager
@@ -156,8 +169,27 @@ export default function HomeScreen() {
           </Card>
         </>
       )}
+
+      {activeCar && (
+        <Sheet visible={sheet === 'quick'} onClose={() => setSheet(null)} title={`הוספה ל${carDisplayName(activeCar)}`}>
+          <View>
+            <ListItem icon={Wrench} title="טיפול או תיקון" onPress={() => go(`/car/${activeCar.id}/service-edit`)} />
+            <ListItem icon={Shield} title="פוליסת ביטוח" onPress={() => go(`/car/${activeCar.id}/insurance-edit`)} />
+            <ListItem icon={FilePlus2} title="מסמך או תמונה" subtitle="צילום או מהגלריה" onPress={() => setSheet('document')} />
+            <ListItem icon={BellPlus} title="תזכורת" onPress={() => setSheet('reminder')} />
+            <ListItem icon={CarAdd} title="רכב נוסף" onPress={() => go('/car/new')} />
+          </View>
+        </Sheet>
+      )}
+      {sheet === 'document' && activeCar && <DocumentSheet carId={activeCar.id} onClose={() => setSheet(null)} />}
+      {sheet === 'reminder' && <ReminderSheet cars={cars} defaultCarId={activeCar?.id} onClose={() => setSheet(null)} />}
     </Screen>
   )
+
+  function go(href: string) {
+    setSheet(null)
+    router.push(href as never)
+  }
 }
 
 function StatTile({

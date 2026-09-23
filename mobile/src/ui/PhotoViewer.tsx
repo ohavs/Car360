@@ -1,6 +1,6 @@
 import { Image } from 'expo-image'
-import { X } from 'lucide-react-native'
-import { useState } from 'react'
+import { X, type LucideIcon } from 'lucide-react-native'
+import { useState, type ReactNode } from 'react'
 import { Modal, StyleSheet, View } from 'react-native'
 import PagerView from 'react-native-pager-view'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -13,11 +13,14 @@ export function PhotoViewer({
   index = 0,
   title,
   onClose,
+  actions,
 }: {
   photos: string[]
   index?: number
   title?: string
   onClose: () => void
+  /** buttons at the end of the top bar for the photo on screen (edit, delete) */
+  actions?: (index: number) => ReactNode
 }) {
   const insets = useSafeAreaInsets()
   const [current, setCurrent] = useState(index)
@@ -44,9 +47,19 @@ export function PhotoViewer({
             {title}
             {photos.length > 1 ? `  ${current + 1}/${photos.length}` : ''}
           </Text>
+          {actions?.(current)}
         </View>
       </View>
     </Modal>
+  )
+}
+
+/** A white icon button for the viewer's dark top bar. */
+export function ViewerAction({ icon: Icon, label, onPress }: { icon: LucideIcon; label: string; onPress: () => void }) {
+  return (
+    <Touchable borderless onPress={onPress} accessibilityLabel={label} style={styles.close}>
+      <Icon size={20} color="#ffffff" />
+    </Touchable>
   )
 }
 

@@ -1,13 +1,18 @@
 import { collection, getFirestore, onSnapshot } from '@react-native-firebase/firestore'
 import { useEffect, useMemo, useState } from 'react'
 import { deriveReminders, type CarRecords } from '@shared/reminders'
-import type { Car, DerivedReminder } from '@shared/types'
+import type { Car, CustomReminder, DerivedReminder } from '@shared/types'
 
 const SUBS = ['insurances', 'services', 'reminders'] as const
 
 /** Every derived reminder across the given cars, live. One listener per
  *  car × record type — a handful for a family garage. */
-export function useAllReminders(cars: Car[]): { reminders: DerivedReminder[]; loading: boolean } {
+export function useAllReminders(cars: Car[]): {
+  reminders: DerivedReminder[]
+  /** the user's own reminders, done ones included (for editing) */
+  customs: CustomReminder[]
+  loading: boolean
+} {
   const [records, setRecords] = useState<Record<string, Partial<CarRecords>>>({})
   const ids = cars.map((c) => c.id).join(',')
 
@@ -43,7 +48,8 @@ export function useAllReminders(cars: Car[]): { reminders: DerivedReminder[]; lo
         })
       })
       .sort((a, b) => a.daysLeft - b.daysLeft)
-    return { reminders, loading }
+    const customs = cars.flatMap((car) => (records[car.id]?.reminders ?? []) as CustomReminder[])
+    return { reminders, customs, loading }
   }, [cars, records])
 }
 

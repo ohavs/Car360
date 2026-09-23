@@ -97,6 +97,14 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       ],
       // RTL at the native level, so even the very first launch is laid out right-to-left
       ['expo-localization', { supportsRTL: true, forcesRTL: true }],
+      [
+        'expo-image-picker',
+        {
+          cameraPermission: 'Car360 משתמשת במצלמה כדי לצלם את הרכב, קבלות ומסמכים.',
+          photosPermission: 'Car360 ניגשת לתמונות כדי לצרף אותן לרכב ולמסמכים.',
+          microphonePermission: false,
+        },
+      ],
       '@react-native-firebase/app',
       '@react-native-firebase/auth',
       '@react-native-google-signin/google-signin',

@@ -1,14 +1,16 @@
 import { useRouter } from 'expo-router'
-import { Bell, Car, FileText, Shield, Wrench, type LucideIcon } from 'lucide-react-native'
-import { useMemo } from 'react'
+import { Bell, BellPlus, Car, Check, FileText, Shield, Wrench, type LucideIcon } from 'lucide-react-native'
+import { useMemo, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
-import type { DerivedReminder } from '@shared/types'
+import type { CustomReminder, DerivedReminder } from '@shared/types'
 import { dueLabel, dueStatus, formatDate } from '@shared/utils'
 import { useGarage } from '../../data/CarsProvider'
+import { saveRecord } from '../../data/mutations'
 import { routeForReminder, useAllReminders } from '../../data/reminders'
+import { ReminderSheet } from '../../features/reminders/ReminderSheet'
 import { useTheme } from '../../theme/ThemeProvider'
 import { radius, space } from '../../theme/tokens'
-import { AppBar, Card, EmptyState, Screen, SectionHeader, Skeleton, StatusChip, Text, Touchable } from '../../ui'
+import { AppBar, Button, Card, EmptyState, FAB, Screen, SectionHeader, Skeleton, StatusChip, Text, Touchable, useSnackbar } from '../../ui'
 
 const SOURCE: Record<DerivedReminder['source'], { label: string; icon: LucideIcon }> = {
   test: { label: 'טסט', icon: Car },
@@ -27,17 +29,46 @@ const GROUPS: { title: string; test: (d: number) => boolean }[] = [
   { title: 'בהמשך', test: (d) => d > 30 },
 ]
 
+const setDone = (r: CustomReminder, done: boolean) => saveRecord('reminders', { ...r, done, updatedAt: Date.now() })
+
 export default function RemindersScreen() {
-  const { cars, loading: carsLoading } = useGarage()
-  const { reminders, loading } = useAllReminders(cars)
+  const { cars, loading: carsLoading, activeCar } = useGarage()
+  const { reminders, customs, loading } = useAllReminders(cars)
   const router = useRouter()
+  const snack = useSnackbar()
+  // null: closed · 'new' · a reminder to edit
+  const [editing, setEditing] = useState<CustomReminder | 'new' | null>(null)
+  const customOf = (r: DerivedReminder) => customs.find((c) => c.id === r.customId && c.carId === r.carId)
+
+  const open = (r: DerivedReminder) => {
+    const custom = r.source === 'custom' ? customOf(r) : undefined
+    if (custom) setEditing(custom)
+    else router.push(routeForReminder(r) as never)
+  }
+
+  const markDone = async (r: DerivedReminder) => {
+    const custom = customOf(r)
+    if (!custom) return
+    try {
+      await setDone(custom, true)
+      snack(`"${custom.title}" סומנה כבוצעה`, {
+        tone: 'success',
+        action: { label: 'ביטול', onPress: () => void setDone(custom, false) },
+      })
+    } catch {
+      snack('העדכון נכשל', { tone: 'error' })
+    }
+  }
   const groups = useMemo(
     () => GROUPS.map((g) => ({ ...g, items: reminders.filter((r) => g.test(r.daysLeft)) })).filter((g) => g.items.length),
     [reminders],
   )
 
   return (
-    <Screen header={<AppBar title="תזכורות" subtitle="טסט, ביטוחים, טיפולים — הכל במקום אחד" />}>
+    <Screen
+      header={<AppBar title="תזכורות" subtitle="טסט, ביטוחים, טיפולים — הכל במקום אחד" />}
+      fab={cars.length > 0 ? <FAB icon={BellPlus} label="תזכורת חדשה" onPress={() => setEditing('new')} /> : undefined}
+    >
       {carsLoading || loading ? (
         <View style={styles.stack}>
           {[0, 1, 2].map((i) => (
@@ -45,24 +76,42 @@ export default function RemindersScreen() {
           ))}
         </View>
       ) : groups.length === 0 ? (
-        <EmptyState icon={Bell} title="אין תזכורות" subtitle="הוסיפו תאריכי טסט וביטוח לרכבים — והם יופיעו כאן אוטומטית" />
+        <EmptyState
+          icon={Bell}
+          title="אין תזכורות"
+          subtitle="תאריכי טסט, ביטוח וטיפולים יופיעו כאן אוטומטית. אפשר גם להוסיף תזכורת משלכם."
+          action={cars.length > 0 ? <Button label="תזכורת חדשה" icon={BellPlus} onPress={() => setEditing('new')} /> : undefined}
+        />
       ) : (
         groups.map((g) => (
           <View key={g.title} style={styles.stack}>
             <SectionHeader title={`${g.title} · ${g.items.length}`} />
             <Card padded={false}>
               {g.items.map((r) => (
-                <ReminderRow key={r.key} reminder={r} onPress={() => router.push(routeForReminder(r) as never)} />
+                <ReminderRow
+                  key={r.key}
+                  reminder={r}
+                  onPress={() => open(r)}
+                  onDone={r.source === 'custom' ? () => void markDone(r) : undefined}
+                />
               ))}
             </Card>
           </View>
         ))
       )}
+      {editing && (
+        <ReminderSheet
+          cars={cars}
+          defaultCarId={activeCar?.id}
+          reminder={editing === 'new' ? undefined : editing}
+          onClose={() => setEditing(null)}
+        />
+      )}
     </Screen>
   )
 }
 
-function ReminderRow({ reminder: r, onPress }: { reminder: DerivedReminder; onPress: () => void }) {
+function ReminderRow({ reminder: r, onPress, onDone }: { reminder: DerivedReminder; onPress: () => void; onDone?: () => void }) {
   const { colors } = useTheme()
   const { icon: Icon, label } = SOURCE[r.source]
   return (
@@ -80,6 +129,17 @@ function ReminderRow({ reminder: r, onPress }: { reminder: DerivedReminder; onPr
         </Text>
       </View>
       <StatusChip tone={dueStatus(r.dueDate)} label={dueLabel(r.dueDate)} />
+      {onDone && (
+        <Touchable
+          borderless
+          onPress={onDone}
+          accessibilityRole="button"
+          accessibilityLabel={`סימון "${r.title}" כבוצע`}
+          style={[styles.done, { borderColor: colors.outline }]}
+        >
+          <Check size={18} color={colors.success} strokeWidth={2.4} />
+        </Touchable>
+      )}
     </Touchable>
   )
 }
@@ -98,6 +158,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.lg,
     paddingVertical: space.md,
     minHeight: 68,
+  },
+  done: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   icon: {
     width: 40,

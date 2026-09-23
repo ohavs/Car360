@@ -1,11 +1,12 @@
-import { CalendarDays, Car as CarIcon, Fuel, Hash, Link2, Palette, Phone, StickyNote, type LucideIcon } from 'lucide-react-native'
+import { useRouter } from 'expo-router'
+import { CalendarDays, Car as CarIcon, FileBadge, Pencil, Fuel, Hash, Link2, Palette, Phone, StickyNote, type LucideIcon } from 'lucide-react-native'
 import { Linking, StyleSheet, View } from 'react-native'
 import { carDisplayName } from '@shared/reminders'
 import type { InfoBlock } from '@shared/types'
 import { dueLabel, dueStatus, formatDate } from '@shared/utils'
 import { useCarParam } from '../../../features/cars/useCarParam'
 import { space } from '../../../theme/tokens'
-import { AppBar, Card, EmptyState, ListItem, Plate, Screen, SectionHeader, StatusChip, Text } from '../../../ui'
+import { AppBar, Card, EmptyState, IconButton, ListItem, Plate, Screen, SectionHeader, StatusChip, Text } from '../../../ui'
 
 const BLOCK_ICON: Record<InfoBlock['type'], LucideIcon> = {
   text: StickyNote,
@@ -17,6 +18,7 @@ const BLOCK_ICON: Record<InfoBlock['type'], LucideIcon> = {
 
 export default function CarDetailsScreen() {
   const { car, loading } = useCarParam()
+  const router = useRouter()
   if (!car) {
     return (
       <Screen header={<AppBar title="פרטי הרכב" back />}>
@@ -34,7 +36,15 @@ export default function CarDetailsScreen() {
   ].filter(Boolean) as { icon: LucideIcon; title: string; value: string }[]
 
   return (
-    <Screen header={<AppBar title={carDisplayName(car)} back />}>
+    <Screen
+      header={
+        <AppBar
+          title={carDisplayName(car)}
+          back
+          actions={<IconButton icon={Pencil} label="עריכת פרטי הרכב" onPress={() => router.push(`/car/${car.id}/edit`)} />}
+        />
+      }
+    >
       <View style={styles.plate}>
         <Plate plate={car.plate} size="large" />
       </View>
@@ -45,7 +55,17 @@ export default function CarDetailsScreen() {
           title="תוקף טסט"
           subtitle={car.testExpiry ? formatDate(car.testExpiry) : 'לא הוזן תאריך'}
           trailing={car.testExpiry ? <StatusChip tone={dueStatus(car.testExpiry)} label={dueLabel(car.testExpiry)} /> : undefined}
+          onPress={() => router.push(`/car/${car.id}/edit`)}
         />
+        {car.licenseExpiry ? (
+          <ListItem
+            icon={FileBadge}
+            title="תוקף רישיון רכב"
+            subtitle={formatDate(car.licenseExpiry)}
+            trailing={<StatusChip tone={dueStatus(car.licenseExpiry)} label={dueLabel(car.licenseExpiry)} />}
+            onPress={() => router.push(`/car/${car.id}/edit`)}
+          />
+        ) : null}
       </Card>
 
       {specs.length > 0 && (
@@ -91,10 +111,6 @@ export default function CarDetailsScreen() {
           </Card>
         </>
       ) : null}
-
-      <Text variant="caption" tone="muted" align="center">
-        עריכת פרטי הרכב מגיעה בעדכון הבא
-      </Text>
     </Screen>
   )
 }

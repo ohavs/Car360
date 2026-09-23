@@ -1,4 +1,5 @@
-import { Wrench } from 'lucide-react-native'
+import { useRouter } from 'expo-router'
+import { Plus, Wrench } from 'lucide-react-native'
 import { useMemo, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { Image } from 'expo-image'
@@ -8,7 +9,7 @@ import { dueLabel, dueStatus, formatDate, formatMoney, formatNumber } from '@sha
 import { useLiveSub } from '../../../data/live'
 import { useCarParam } from '../../../features/cars/useCarParam'
 import { radius, space } from '../../../theme/tokens'
-import { AppBar, Card, EmptyState, PhotoViewer, Screen, Skeleton, StatusChip, Text, Touchable } from '../../../ui'
+import { AppBar, Button, Card, EmptyState, FAB, PhotoViewer, Screen, Skeleton, StatusChip, Text, Touchable } from '../../../ui'
 
 export default function ServicesScreen() {
   const { id, car } = useCarParam()
@@ -16,13 +17,23 @@ export default function ServicesScreen() {
   const sorted = useMemo(() => [...items].sort((a, b) => b.date.localeCompare(a.date)), [items])
   const total = sorted.reduce((s, r) => s + (r.cost ?? 0), 0)
   const [viewing, setViewing] = useState<{ photos: string[]; index: number; title: string } | null>(null)
+  const router = useRouter()
+  const add = () => router.push(`/car/${id}/service-edit`)
 
   return (
-    <Screen header={<AppBar title="טיפולים ותיקונים" subtitle={car ? carDisplayName(car) : undefined} back />}>
+    <Screen
+      header={<AppBar title="טיפולים ותיקונים" subtitle={car ? carDisplayName(car) : undefined} back />}
+      fab={sorted.length > 0 ? <FAB icon={Plus} label="טיפול חדש" onPress={add} /> : undefined}
+    >
       {loading ? (
         [0, 1, 2].map((i) => <Skeleton key={i} height={96} radius={radius.card} />)
       ) : sorted.length === 0 ? (
-        <EmptyState icon={Wrench} title="אין טיפולים מתועדים" subtitle="תיעוד טיפולים שומר על ערך הרכב ועוזר לזכור מה נעשה ומתי" />
+        <EmptyState
+          icon={Wrench}
+          title="אין טיפולים מתועדים"
+          subtitle="תיעוד טיפולים שומר על ערך הרכב ועוזר לזכור מה נעשה ומתי"
+          action={<Button label="תיעוד טיפול ראשון" icon={Plus} onPress={add} />}
+        />
       ) : (
         <>
           {total > 0 && (
@@ -34,7 +45,12 @@ export default function ServicesScreen() {
             </Card>
           )}
           {sorted.map((s) => (
-            <Card key={s.id} style={styles.card}>
+            <Card
+              key={s.id}
+              style={styles.card}
+              onPress={() => router.push({ pathname: '/car/[id]/service-edit', params: { id: s.carId, rid: s.id } })}
+              accessibilityLabel={`עריכת ${s.title || 'טיפול'}`}
+            >
               <View style={styles.row}>
                 <View style={styles.flex}>
                   <Text variant="bodyStrong">{s.title || `טיפול · ${s.photos.length} תמונות`}</Text>

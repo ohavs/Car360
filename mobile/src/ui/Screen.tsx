@@ -14,17 +14,21 @@ export function AppBar({
   title,
   subtitle,
   back = false,
+  leading,
   actions,
 }: {
   title?: string
   subtitle?: string
   back?: boolean
+  /** replaces the back arrow, e.g. the ✕ of a full-screen form */
+  leading?: ReactNode
   actions?: ReactNode
 }) {
   const router = useRouter()
   return (
     <View style={styles.bar}>
-      {back && <IconButton icon={ArrowRight} label="חזרה" onPress={() => router.back()} />}
+      {leading}
+      {back && !leading && <IconButton icon={ArrowRight} label="חזרה" onPress={() => router.back()} />}
       <View style={styles.titles}>
         {title ? (
           <Text variant="headline" numberOfLines={1}>
@@ -49,9 +53,12 @@ export function Screen({
   header,
   refreshing,
   onRefresh,
+  fab,
 }: {
   children: ReactNode
   header?: ReactNode
+  /** floating action button, kept clear of the last row */
+  fab?: ReactNode
   refreshing?: boolean
   onRefresh?: () => void
 }) {
@@ -64,7 +71,7 @@ export function Screen({
       <KeyboardAwareScrollView
         bottomOffset={space.xxxl}
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + space.xxxl }]}
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + space.xxxl + (fab ? 72 : 0) }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           onRefresh ? (
@@ -79,6 +86,7 @@ export function Screen({
       >
         {children}
       </KeyboardAwareScrollView>
+      {fab}
     </View>
   )
 }
