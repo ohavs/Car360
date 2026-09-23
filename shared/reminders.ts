@@ -21,6 +21,8 @@ export function deriveReminders(car: Car, records: CarRecords): DerivedReminder[
     out.push({ ...r, carId: car.id, carName: name, carImage: car.imageUrl, daysLeft: daysUntil(r.dueDate) })
 
   if (car.testExpiry) push({ key: `test:${car.id}`, title: 'חידוש טסט (רישוי שנתי)', dueDate: car.testExpiry, source: 'test' })
+  if (car.licenseExpiry)
+    push({ key: `license:${car.id}`, title: 'חידוש רישיון רכב', dueDate: car.licenseExpiry, source: 'license' })
 
   for (const block of car.blocks ?? []) {
     if (block.type === 'date' && block.remind && block.value)

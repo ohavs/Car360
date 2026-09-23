@@ -1,10 +1,16 @@
 /**
  * Car360 — scheduled push reminders.
  *
- * Runs every morning, scans every car for test / insurance / service / custom /
- * block reminders and sends an FCM push to the car owner's devices when an item
- * is due — honouring the owner's per-type lead-time settings
- * (users/{uid}.notifications). Invalid tokens are pruned.
+ * Runs every morning, scans every car for test / license / insurance / service /
+ * custom / block reminders and sends an FCM push to the devices of the car's
+ * owner and of everyone it is shared with, when an item is due — honouring each
+ * person's per-type lead-time settings (users/{uid}.notifications). Invalid
+ * tokens are pruned.
+ *
+ * The Android app schedules the same alerts on the phone itself (see
+ * shared/notifySchedule.ts). The push is the safety net for a phone that hasn't
+ * opened the app lately, so Android devices seen in the last few days are
+ * skipped; otherwise both carry the same tag and Android shows only one.
  *
  * Deploy (needs the Blaze plan — scheduled functions require it):
  *   cd functions && npm install && cd ..
@@ -26,6 +32,8 @@ const DAY = 24 * 60 * 60 * 1000
 const MILESTONES = [30, 14, 7, 3, 1, 0]
 
 const DEFAULT_PREFS = { test: 30, insurance: 14, service: 14, custom: 3, block: 7 }
+/** an Android phone that opened the app this recently has the alerts scheduled locally */
+const ANDROID_FRESH_MS = 3 * DAY
 
 function daysLeft(iso) {
   if (!iso) return null
@@ -45,113 +53,162 @@ function shouldNotify(dl, lead) {
 function duePhrase(d) {
   if (d === 0) return 'היום'
   if (d === 1) return 'מחר'
+  if (d === 7) return 'בעוד שבוע'
+  if (d === 14) return 'בעוד שבועיים'
+  if (d === 30) return 'בעוד חודש'
   return `בעוד ${d} ימים`
 }
 
-/** Build the notifications owed for one car (0..n). */
+/** Build the notifications owed for one car (0..n). Keys, titles and urls
+ *  match the app's (shared/reminders.ts, shared/notifySchedule.ts). */
 function carNotifications(car, prefs, insurances, services, reminders) {
   const name = car.nickname || `${car.make || ''} ${car.model || ''}`.trim() || car.plate || 'הרכב'
   const out = []
-  const add = (dl, lead, title) => {
-    if (shouldNotify(dl, lead)) out.push({ title, body: `${name} · ${duePhrase(dl)}` })
+  const add = (key, dueDate, lead, title, url) => {
+    const dl = daysLeft(dueDate)
+    if (shouldNotify(dl, lead)) out.push({ tag: `${key}:${dl}`, title, body: `${name} · ${duePhrase(dl)}`, url })
   }
+  const carUrl = `/car/${car.id}`
 
-  add(daysLeft(car.testExpiry), prefs.test, 'חידוש טסט (רישוי שנתי)')
+  add(`test:${car.id}`, car.testExpiry, prefs.test, 'חידוש טסט (רישוי שנתי)', carUrl)
+  add(`license:${car.id}`, car.licenseExpiry, prefs.test, 'חידוש רישיון רכב', carUrl)
+
+  for (const b of car.blocks || []) {
+    if (b.type === 'date' && b.remind && b.value) add(`block:${car.id}:${b.id}`, b.value, prefs.block, b.title || 'תזכורת', carUrl)
+  }
 
   // latest end-date per insurance kind (mirrors the app)
   const latestByKind = new Map()
   for (const ins of insurances) {
+    if (!ins.endDate) continue
     const prev = latestByKind.get(ins.kind)
-    if (!prev || (ins.endDate || '') > prev) latestByKind.set(ins.kind, ins.endDate)
+    if (!prev || ins.endDate > prev) latestByKind.set(ins.kind, ins.endDate)
   }
   for (const [kind, endDate] of latestByKind) {
-    add(daysLeft(endDate), prefs.insurance, `סיום ביטוח ${kind}`)
+    add(`ins:${car.id}:${kind}`, endDate, prefs.insurance, `סיום ביטוח ${kind}`, `${carUrl}/insurance`)
   }
 
   for (const s of services) {
-    if (s.nextDueDate) add(daysLeft(s.nextDueDate), prefs.service, `טיפול קרוב: ${s.title || ''}`.trim())
+    if (s.nextDueDate) add(`svc:${car.id}:${s.id}`, s.nextDueDate, prefs.service, `טיפול קרוב: ${s.title || ''}`.trim(), `${carUrl}/services`)
   }
 
   for (const r of reminders) {
-    if (!r.done) add(daysLeft(r.dueDate), prefs.custom, r.title || 'תזכורת')
-  }
-
-  for (const b of car.blocks || []) {
-    if (b.type === 'date' && b.remind && b.value) add(daysLeft(b.value), prefs.block, b.title || 'תזכורת')
+    if (!r.done) add(`custom:${car.id}:${r.id}`, r.dueDate, prefs.custom, r.title || 'תזכורת', '/reminders')
   }
 
   return out
+}
+
+/** The message for one alert: a normal notification on the web, and on
+ *  Android the reminders channel with the same tag the phone uses locally. */
+function message(tokens, n) {
+  return {
+    tokens,
+    notification: { title: n.title, body: n.body },
+    data: { url: n.url, tag: n.tag },
+    android: {
+      priority: 'high',
+      notification: { channelId: 'reminders', tag: n.tag, color: '#dc2626' },
+    },
+    webpush: { fcmOptions: { link: n.url } },
+  }
+}
+
+/** uids of the people a car is shared with (users/{uid}.email is set by the apps at sign-in). */
+async function uidsByEmail(emails, cache) {
+  const out = []
+  const missing = []
+  for (const e of emails.map((x) => String(x).toLowerCase())) {
+    if (cache.has(e)) {
+      if (cache.get(e)) out.push(cache.get(e))
+    } else missing.push(e)
+  }
+  for (let i = 0; i < missing.length; i += 30) {
+    const chunk = missing.slice(i, i + 30)
+    const snap = await db.collection('users').where('email', 'in', chunk).get()
+    const found = new Map(snap.docs.map((d) => [d.data().email, d.id]))
+    for (const e of chunk) {
+      cache.set(e, found.get(e) ?? null)
+      if (found.get(e)) out.push(found.get(e))
+    }
+  }
+  return out
+}
+
+/** A person's notification prefs and the devices worth pushing to. */
+async function recipient(uid, cache) {
+  if (cache.has(uid)) return cache.get(uid)
+  const [userSnap, tokensSnap] = await Promise.all([
+    db.collection('users').doc(uid).get(),
+    db.collection('users').doc(uid).collection('fcmTokens').get(),
+  ])
+  const now = Date.now()
+  const devices = tokensSnap.docs.filter((d) => {
+    const t = d.data()
+    return !(t.platform === 'android' && (t.updatedAt ?? 0) > now - ANDROID_FRESH_MS)
+  })
+  const r = {
+    prefs: { ...DEFAULT_PREFS, ...(userSnap.data()?.notifications || {}) },
+    docs: devices,
+    total: tokensSnap.size,
+  }
+  cache.set(uid, r)
+  return r
+}
+
+async function send(n, rec) {
+  if (rec.docs.length === 0) return 0
+  const res = await getMessaging().sendEachForMulticast(message(rec.docs.map((d) => d.id), n))
+  res.responses.forEach((r, i) => {
+    const code = r.error?.code
+    if (code === 'messaging/registration-token-not-registered' || code === 'messaging/invalid-argument') {
+      void rec.docs[i].ref.delete()
+    }
+  })
+  return res.successCount
 }
 
 export const dailyReminderPush = onSchedule(
   { schedule: '0 8 * * *', timeZone: 'Asia/Jerusalem', region: 'us-central1' },
   async () => {
     const carsSnap = await db.collection('cars').get()
-    const prefsCache = new Map()
+    const people = new Map()
+    const emails = new Map()
     let sent = 0
-    const stats = { cars: carsSnap.size, withDue: 0, owners: new Set(), noTokens: new Set(), tokens: 0 }
+    const stats = { cars: carsSnap.size, withDue: 0, people: new Set(), noDevice: new Set(), tokens: 0 }
 
     for (const carDoc of carsSnap.docs) {
-      const car = carDoc.data()
+      const car = { id: carDoc.id, ...carDoc.data() }
       if (!car.ownerId) continue
-
-      // per-owner notification preferences (cached)
-      let prefs = prefsCache.get(car.ownerId)
-      if (!prefs) {
-        const userSnap = await db.collection('users').doc(car.ownerId).get()
-        prefs = { ...DEFAULT_PREFS, ...(userSnap.data()?.notifications || {}) }
-        prefsCache.set(car.ownerId, prefs)
-      }
+      const uids = [car.ownerId, ...(await uidsByEmail(car.sharedWith || [], emails))]
 
       const [insSnap, svcSnap, remSnap] = await Promise.all([
         carDoc.ref.collection('insurances').get(),
         carDoc.ref.collection('services').get(),
         carDoc.ref.collection('reminders').get(),
       ])
-      const notifs = carNotifications(
-        car,
-        prefs,
-        insSnap.docs.map((d) => d.data()),
-        svcSnap.docs.map((d) => d.data()),
-        remSnap.docs.map((d) => d.data()),
-      )
-      if (notifs.length === 0) continue
-      stats.withDue++
-      stats.owners.add(car.ownerId)
+      const records = [insSnap, svcSnap, remSnap].map((snap) => snap.docs.map((d) => d.data()))
 
-      const tokensSnap = await db.collection('users').doc(car.ownerId).collection('fcmTokens').get()
-      const tokens = tokensSnap.docs.map((d) => d.id)
-      if (tokens.length === 0) {
-        // the common failure: reminders are due but no device is registered
-        stats.noTokens.add(car.ownerId)
-        continue
+      let due = false
+      for (const uid of new Set(uids)) {
+        const rec = await recipient(uid, people)
+        const notifs = carNotifications(car, rec.prefs, ...records)
+        if (notifs.length === 0) continue
+        due = true
+        stats.people.add(uid)
+        if (rec.total === 0) stats.noDevice.add(uid)
+        stats.tokens += rec.docs.length
+        for (const n of notifs) sent += await send(n, rec)
       }
-      stats.tokens += tokens.length
-
-      for (const n of notifs) {
-        const res = await getMessaging().sendEachForMulticast({
-          tokens,
-          notification: { title: n.title, body: n.body },
-          data: { url: '/reminders', tag: 'car360-reminder' },
-          webpush: { fcmOptions: { link: '/reminders' } },
-        })
-        sent += res.successCount
-
-        res.responses.forEach((r, i) => {
-          const code = r.error?.code
-          if (code === 'messaging/registration-token-not-registered' || code === 'messaging/invalid-argument') {
-            void tokensSnap.docs[i].ref.delete()
-          }
-        })
-      }
+      if (due) stats.withDue++
     }
 
     logger.info(
       `Car360 reminder push complete — ${sent} messages sent. ` +
         `cars=${stats.cars} carsWithDueItems=${stats.withDue} ` +
-        `owners=${stats.owners.size} ownersWithoutDevice=${stats.noTokens.size} devices=${stats.tokens}`,
+        `people=${stats.people.size} peopleWithoutDevice=${stats.noDevice.size} pushedDevices=${stats.tokens}`,
     )
-    if (stats.withDue > 0 && stats.tokens === 0) {
+    if (stats.withDue > 0 && stats.noDevice.size === stats.people.size) {
       logger.warn(
         'Reminders were due but no device is registered for push — users granted notification ' +
           'permission without an FCM token being stored (see ensurePushRegistered on the client).',
@@ -171,12 +228,9 @@ export const sendTestPush = onCall({ region: 'us-central1' }, async (req) => {
   const tokens = tokensSnap.docs.map((d) => d.id)
   if (tokens.length === 0) return { sent: 0 }
 
-  const res = await getMessaging().sendEachForMulticast({
-    tokens,
-    notification: { title: 'Car360 · בדיקה', body: 'התראת ניסיון מהשרת — זה עובד! 🎉' },
-    data: { url: '/reminders', tag: 'car360-test' },
-    webpush: { fcmOptions: { link: '/reminders' } },
-  })
+  const res = await getMessaging().sendEachForMulticast(
+    message(tokens, { title: 'Car360 · בדיקה', body: 'התראת ניסיון מהשרת — זה עובד! 🎉', url: '/reminders', tag: 'car360-test' }),
+  )
 
   res.responses.forEach((r, i) => {
     const code = r.error?.code

@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router'
 import { useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { useAuth } from '../../features/auth/AuthProvider'
+import { NotificationsPanel } from '../../features/notifications/NotificationsPanel'
 import { AppearancePanel } from '../../features/settings/AppearancePanel'
 import { UpdatePanel } from '../../features/updates/UpdatePanel'
 import { useTheme } from '../../theme/ThemeProvider'
@@ -37,6 +38,8 @@ export default function SettingsScreen() {
           </View>
         </View>
       </Card>
+
+      <NotificationsPanel />
 
       <AppearancePanel />
 

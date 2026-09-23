@@ -8,6 +8,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { KeyboardProvider } from 'react-native-keyboard-controller'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { AuthProvider, useAuth } from '../features/auth/AuthProvider'
+import { NotificationsProvider } from '../features/notifications/NotificationsProvider'
 import { UpdateProvider } from '../features/updates/UpdateProvider'
 import { ThemeProvider, useTheme } from '../theme/ThemeProvider'
 import { CarsProvider } from '../data/CarsProvider'
@@ -52,6 +53,7 @@ function RootNavigator() {
           <Stack.Screen name="car/[id]/documents" />
           <Stack.Screen name="car/[id]/glovebox" />
           <Stack.Screen name="gallery" />
+          <Stack.Screen name="notifications" />
           {/* full-screen editors rise from the bottom, like a sheet that grew */}
           <Stack.Screen name="car/new" options={{ animation: 'slide_from_bottom' }} />
           <Stack.Screen name="car/[id]/edit" options={{ animation: 'slide_from_bottom' }} />
@@ -76,9 +78,11 @@ export default function RootLayout() {
               <SnackbarProvider>
                 <AuthProvider>
                   <CarsProvider>
-                    <UpdateProvider>
-                      <RootNavigator />
-                    </UpdateProvider>
+                    <NotificationsProvider>
+                      <UpdateProvider>
+                        <RootNavigator />
+                      </UpdateProvider>
+                    </NotificationsProvider>
                   </CarsProvider>
                 </AuthProvider>
               </SnackbarProvider>

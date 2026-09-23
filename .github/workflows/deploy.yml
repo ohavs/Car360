@@ -53,3 +53,14 @@ jobs:
         run: npx firebase-tools@13 deploy --only storage --project car360-50b44 --non-interactive --force
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+
+      # Scheduled reminder pushes. Needs the Blaze plan (scheduled functions);
+      # on the free plan this step fails without failing the deploy, and the
+      # Android app's on-device reminders keep working on their own.
+      - name: Deploy Cloud Functions (optional, needs Blaze)
+        continue-on-error: true
+        run: |
+          npm ci --prefix functions
+          npx firebase-tools@13 deploy --only functions --project car360-50b44 --non-interactive --force
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}

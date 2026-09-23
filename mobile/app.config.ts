@@ -57,8 +57,13 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         // in-app updates: install the downloaded APK, silently on Android 12+
         'android.permission.REQUEST_INSTALL_PACKAGES',
         'android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION',
-        // "Car360 updated — tap to open" after an update replaces the app
+        // reminders, and "Car360 updated — tap to open" after an update
         'android.permission.POST_NOTIFICATIONS',
+        // reminders ring at the minute they're set for, not "sometime later"
+        'android.permission.SCHEDULE_EXACT_ALARM',
+        'android.permission.USE_EXACT_ALARM',
+        // the system dialog that exempts Car360 from battery optimisation
+        'android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS',
       ],
       // Expo's template defaults; none of them is used by Car360
       blockedPermissions: [
@@ -105,6 +110,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           microphonePermission: false,
         },
       ],
+      // icon, colour and default channel come from modules/device-health's manifest
+      'expo-notifications',
       '@react-native-firebase/app',
       '@react-native-firebase/auth',
       '@react-native-google-signin/google-signin',

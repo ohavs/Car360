@@ -31,6 +31,7 @@ import { useAllReminders } from '../../data/reminders'
 import { useAuth } from '../../features/auth/AuthProvider'
 import { CarPager } from '../../features/cars/CarPager'
 import { DocumentSheet } from '../../features/documents/DocumentSheet'
+import { NotifyPrompt } from '../../features/notifications/NotifyPrompt'
 import { ReminderSheet } from '../../features/reminders/ReminderSheet'
 import { AttentionCard } from '../../features/home/AttentionCard'
 import { useUpdates } from '../../features/updates/UpdateProvider'
@@ -182,6 +183,7 @@ export default function HomeScreen() {
         </Sheet>
       )}
       {sheet === 'document' && activeCar && <DocumentSheet carId={activeCar.id} onClose={() => setSheet(null)} />}
+      <NotifyPrompt enabled={cars.length > 0 && sheet === null} />
       {sheet === 'reminder' && <ReminderSheet cars={cars} defaultCarId={activeCar?.id} onClose={() => setSheet(null)} />}
     </Screen>
   )

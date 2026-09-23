@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router'
-import { Bell, BellPlus, Car, Check, FileText, Shield, Wrench, type LucideIcon } from 'lucide-react-native'
+import { Bell, BellOff, BellPlus, Car, Check, FileText, Shield, Wrench, type LucideIcon } from 'lucide-react-native'
 import { useMemo, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import type { CustomReminder, DerivedReminder } from '@shared/types'
@@ -7,6 +7,7 @@ import { dueLabel, dueStatus, formatDate } from '@shared/utils'
 import { useGarage } from '../../data/CarsProvider'
 import { saveRecord } from '../../data/mutations'
 import { routeForReminder, useAllReminders } from '../../data/reminders'
+import { useNotifications } from '../../features/notifications/NotificationsProvider'
 import { ReminderSheet } from '../../features/reminders/ReminderSheet'
 import { useTheme } from '../../theme/ThemeProvider'
 import { radius, space } from '../../theme/tokens'
@@ -36,6 +37,8 @@ export default function RemindersScreen() {
   const { reminders, customs, loading } = useAllReminders(cars)
   const router = useRouter()
   const snack = useSnackbar()
+  const { permission, canAsk, requestPermission } = useNotifications()
+  const { colors } = useTheme()
   // null: closed · 'new' · a reminder to edit
   const [editing, setEditing] = useState<CustomReminder | 'new' | null>(null)
   const customOf = (r: DerivedReminder) => customs.find((c) => c.id === r.customId && c.carId === r.carId)
@@ -69,6 +72,19 @@ export default function RemindersScreen() {
       header={<AppBar title="תזכורות" subtitle="טסט, ביטוחים, טיפולים — הכל במקום אחד" />}
       fab={cars.length > 0 ? <FAB icon={BellPlus} label="תזכורת חדשה" onPress={() => setEditing('new')} /> : undefined}
     >
+      {permission !== 'granted' && (
+        <Card onPress={() => void (canAsk ? requestPermission() : router.push('/notifications'))} accessibilityLabel="הפעלת התראות">
+          <View style={styles.offRow}>
+            <BellOff size={20} color={colors.danger} strokeWidth={2} />
+            <View style={styles.flex}>
+              <Text variant="bodyStrong">ההתראות כבויות</Text>
+              <Text variant="caption" tone="muted">
+                התזכורות מופיעות כאן, אבל לא יקפצו בטלפון. הקישו להפעלה.
+              </Text>
+            </View>
+          </View>
+        </Card>
+      )}
       {carsLoading || loading ? (
         <View style={styles.stack}>
           {[0, 1, 2].map((i) => (
@@ -158,6 +174,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.lg,
     paddingVertical: space.md,
     minHeight: 68,
+  },
+  offRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
   },
   done: {
     width: 40,
