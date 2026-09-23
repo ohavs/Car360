@@ -10,7 +10,7 @@ import { dueLabel, dueTone, formatDate, formatPlate, type DueTone } from '../lib
 import { useTheme } from '../theme/ThemeProvider'
 import type { Colors } from '../theme/palettes'
 import { radius, space } from '../theme/tokens'
-import { AppBar, Card, IconButton, Screen, Text } from '../ui'
+import { AppBar, Card, IconButton, Screen, Skeleton, Text } from '../ui'
 import { CarSilhouette } from '../ui/CarSilhouette'
 
 /** M1 home: proves the whole chain (native sign-in → Firestore → live data)
@@ -60,6 +60,8 @@ export default function HomeScreen() {
 
       {error && <Banner icon={WifiOff} tone="danger" text="לא הצלחנו לטעון את הרכבים. בדקו את החיבור." />}
 
+      {loading && <CarCardSkeleton />}
+
       {!loading && cars.length === 0 && !error && <EmptyGarage />}
 
       {cars.map((car) => (
@@ -104,6 +106,23 @@ function CarCard({ car }: { car: Car }) {
           </Text>
           {car.testExpiry ? <DueChip tone={dueTone(car.testExpiry)} label={dueLabel(car.testExpiry)} /> : null}
         </View>
+      </View>
+    </Card>
+  )
+}
+
+/** Same shape as a CarCard, so the list does not jump when the cars arrive. */
+function CarCardSkeleton() {
+  return (
+    <Card padded={false}>
+      <Skeleton height={170} radius={0} />
+      <View style={styles.body}>
+        <View style={styles.row}>
+          <Skeleton width="55%" height={22} />
+          <View style={styles.flex} />
+          <Skeleton width={96} height={26} radius={radius.sm} />
+        </View>
+        <Skeleton width="40%" height={16} />
       </View>
     </Card>
   )
