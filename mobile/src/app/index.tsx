@@ -6,11 +6,10 @@ import { useAuth } from '../features/auth/AuthProvider'
 import { carDisplayName, type Car } from '../features/cars/types'
 import { useCars } from '../features/cars/useCars'
 import { useUpdates } from '../features/updates/UpdateProvider'
-import { dueLabel, dueTone, formatDate, formatPlate, type DueTone } from '../lib/format'
+import { dueLabel, dueTone, formatDate } from '../lib/format'
 import { useTheme } from '../theme/ThemeProvider'
-import type { Colors } from '../theme/palettes'
 import { radius, space } from '../theme/tokens'
-import { AppBar, Card, IconButton, Screen, Skeleton, Text } from '../ui'
+import { AppBar, Card, IconButton, Plate, Screen, Skeleton, StatusChip, Text } from '../ui'
 import { CarSilhouette } from '../ui/CarSilhouette'
 
 /** M1 home: proves the whole chain (native sign-in → Firestore → live data)
@@ -93,18 +92,14 @@ function CarCard({ car }: { car: Car }) {
           <Text variant="title" numberOfLines={1} style={styles.flex}>
             {carDisplayName(car)}
           </Text>
-          <View style={styles.plate}>
-            <Text variant="label" style={styles.plateText}>
-              {formatPlate(car.plate)}
-            </Text>
-          </View>
+          <Plate plate={car.plate} />
         </View>
         <View style={styles.row}>
           <CalendarClock size={16} color={colors.muted} strokeWidth={2} />
           <Text variant="label" tone="onSurfaceVariant" style={styles.flex}>
             טסט: {formatDate(car.testExpiry)}
           </Text>
-          {car.testExpiry ? <DueChip tone={dueTone(car.testExpiry)} label={dueLabel(car.testExpiry)} /> : null}
+          {car.testExpiry ? <StatusChip tone={dueTone(car.testExpiry)} label={dueLabel(car.testExpiry)} /> : null}
         </View>
       </View>
     </Card>
@@ -125,24 +120,6 @@ function CarCardSkeleton() {
         <Skeleton width="40%" height={16} />
       </View>
     </Card>
-  )
-}
-
-function DueChip({ tone, label }: { tone: DueTone; label: string }) {
-  const { colors } = useTheme()
-  const map: Record<DueTone, [keyof Colors, keyof Colors]> = {
-    neutral: ['surfaceContainer', 'onSurfaceVariant'],
-    ok: ['successContainer', 'success'],
-    warn: ['warningContainer', 'warning'],
-    danger: ['dangerContainer', 'danger'],
-  }
-  const [bg, fg] = map[tone]
-  return (
-    <View style={[styles.chip, { backgroundColor: colors[bg] }]}>
-      <Text variant="overline" tone={fg}>
-        {label}
-      </Text>
-    </View>
   )
 }
 
@@ -208,23 +185,6 @@ const styles = StyleSheet.create({
   body: {
     padding: space.lg,
     gap: space.md,
-  },
-  plate: {
-    backgroundColor: '#fcd34d',
-    borderRadius: radius.sm,
-    paddingHorizontal: space.md,
-    paddingVertical: 4,
-  },
-  plateText: {
-    color: '#000000',
-    letterSpacing: 2,
-    // plate digits always read left-to-right
-    writingDirection: 'ltr',
-  },
-  chip: {
-    borderRadius: radius.full,
-    paddingHorizontal: space.sm,
-    paddingVertical: 3,
   },
   empty: {
     alignItems: 'center',

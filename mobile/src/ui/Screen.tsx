@@ -1,7 +1,8 @@
 import { useRouter } from 'expo-router'
 import { ArrowRight } from 'lucide-react-native'
 import type { ReactNode } from 'react'
-import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native'
+import { RefreshControl, StyleSheet, View } from 'react-native'
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTheme } from '../theme/ThemeProvider'
 import { space } from '../theme/tokens'
@@ -59,7 +60,10 @@ export function Screen({
   return (
     <View style={[styles.root, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       {header}
-      <ScrollView
+      {/* keeps the focused field above the keyboard, with room for its error line */}
+      <KeyboardAwareScrollView
+        bottomOffset={space.xxxl}
+        keyboardShouldPersistTaps="handled"
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + space.xxxl }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -74,7 +78,7 @@ export function Screen({
         }
       >
         {children}
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </View>
   )
 }

@@ -177,3 +177,69 @@ export function paletteColors(palette: PaletteId, dark: boolean): Colors {
   if (palette === 'classic') return base
   return { ...base, ...overrides[palette][dark ? 'dark' : 'light'] }
 }
+
+export interface PaletteMeta {
+  id: PaletteId
+  label: string
+  /** swatch preview: deep tone, vivid tone, canvas */
+  preview: [string, string, string]
+}
+
+export const PALETTES: PaletteMeta[] = [
+  { id: 'classic', label: 'קלאסי', preview: ['#0f172a', '#dc2626', '#f6f7f9'] },
+  { id: 'ocean', label: 'אוקיינוס', preview: ['#0c4a6e', '#0284c7', '#eff6fa'] },
+  { id: 'forest', label: 'יער', preview: ['#14532d', '#16a34a', '#f2f7f2'] },
+  { id: 'sunset', label: 'שקיעה', preview: ['#7c2d12', '#ea580c', '#faf5f0'] },
+  { id: 'violet', label: 'סגול לילה', preview: ['#4c1d95', '#7c3aed', '#f7f5fb'] },
+]
+
+export const ACCENT_PRESETS = [
+  '#dc2626', '#ea580c', '#d97706', '#16a34a', '#0d9488',
+  '#0284c7', '#4f46e5', '#7c3aed', '#db2777', '#e11d48',
+]
+
+function parseHex(hex: string): [number, number, number] {
+  const h = hex.replace('#', '')
+  return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16)) as [number, number, number]
+}
+
+function toHex([r, g, b]: [number, number, number]): string {
+  return '#' + [r, g, b].map((v) => Math.round(v).toString(16).padStart(2, '0')).join('')
+}
+
+/** `amount` of `a` over `b` (0..1) */
+export function mix(a: string, b: string, amount: number): string {
+  const [ar, ag, ab] = parseHex(a)
+  const [br, bg, bb] = parseHex(b)
+  return toHex([ar * amount + br * (1 - amount), ag * amount + bg * (1 - amount), ab * amount + bb * (1 - amount)])
+}
+
+/** readable text colour on top of `hex` */
+export function contrastOn(hex: string): string {
+  const [r, g, b] = parseHex(hex).map((v) => {
+    const c = v / 255
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
+  })
+  const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
+  return luminance > 0.4 ? '#0b1120' : '#ffffff'
+}
+
+export function hslToHex(h: number, s: number, l: number): string {
+  const c = (1 - Math.abs(2 * l - 1)) * s
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1))
+  const m = l - c / 2
+  const [r, g, b] =
+    h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x] : h < 240 ? [0, x, c] : h < 300 ? [x, 0, c] : [c, 0, x]
+  return toHex([(r + m) * 255, (g + m) * 255, (b + m) * 255])
+}
+
+/** The palette with a personal accent replacing its vivid (brand) tone. */
+export function withAccent(colors: Colors, accent: string | null): Colors {
+  if (!accent) return colors
+  return {
+    ...colors,
+    brand: accent,
+    onBrand: contrastOn(accent),
+    brandContainer: mix(accent, colors.surface, 0.16),
+  }
+}

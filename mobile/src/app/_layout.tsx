@@ -3,10 +3,14 @@ import * as SplashScreen from 'expo-splash-screen'
 import { StatusBar } from 'expo-status-bar'
 import * as SystemUI from 'expo-system-ui'
 import { useEffect } from 'react'
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet'
+import { GestureHandlerRootView } from 'react-native-gesture-handler'
+import { KeyboardProvider } from 'react-native-keyboard-controller'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { AuthProvider, useAuth } from '../features/auth/AuthProvider'
 import { UpdateProvider } from '../features/updates/UpdateProvider'
 import { ThemeProvider, useTheme } from '../theme/ThemeProvider'
+import { SnackbarProvider } from '../ui'
 
 // keep the native splash up until we know whether someone is signed in, so
 // the first thing on screen is the right screen rather than a flash of login
@@ -42,6 +46,7 @@ function RootNavigator() {
         <Stack.Protected guard={Boolean(user)}>
           <Stack.Screen name="index" />
           <Stack.Screen name="settings" />
+          <Stack.Screen name="gallery" />
         </Stack.Protected>
         <Stack.Protected guard={!user}>
           <Stack.Screen name="login" options={{ animation: 'fade' }} />
@@ -53,14 +58,22 @@ function RootNavigator() {
 
 export default function RootLayout() {
   return (
-    <SafeAreaProvider>
-      <ThemeProvider>
-        <AuthProvider>
-          <UpdateProvider>
-            <RootNavigator />
-          </UpdateProvider>
-        </AuthProvider>
-      </ThemeProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <KeyboardProvider>
+          <ThemeProvider>
+            <BottomSheetModalProvider>
+              <SnackbarProvider>
+                <AuthProvider>
+                  <UpdateProvider>
+                    <RootNavigator />
+                  </UpdateProvider>
+                </AuthProvider>
+              </SnackbarProvider>
+            </BottomSheetModalProvider>
+          </ThemeProvider>
+        </KeyboardProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   )
 }

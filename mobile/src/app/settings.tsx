@@ -1,8 +1,10 @@
 import { Image } from 'expo-image'
-import { LogOut } from 'lucide-react-native'
+import { LogOut, Palette } from 'lucide-react-native'
+import { useRouter } from 'expo-router'
 import { useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { useAuth } from '../features/auth/AuthProvider'
+import { AppearancePanel } from '../features/settings/AppearancePanel'
 import { UpdatePanel } from '../features/updates/UpdatePanel'
 import { useTheme } from '../theme/ThemeProvider'
 import { radius, space } from '../theme/tokens'
@@ -12,6 +14,7 @@ export default function SettingsScreen() {
   const { user, signOut } = useAuth()
   const { colors } = useTheme()
   const [confirmSignOut, setConfirmSignOut] = useState(false)
+  const router = useRouter()
 
   return (
     <Screen header={<AppBar title="הגדרות" back />}>
@@ -33,6 +36,17 @@ export default function SettingsScreen() {
             </Text>
           </View>
         </View>
+      </Card>
+
+      <AppearancePanel />
+
+      <Card padded={false}>
+        <ListItem
+          icon={Palette}
+          title="גלריית עיצוב"
+          subtitle="כל רכיבי האפליקציה בכל המצבים — לאישור שפת העיצוב"
+          onPress={() => router.push('/gallery')}
+        />
       </Card>
 
       <UpdatePanel />
