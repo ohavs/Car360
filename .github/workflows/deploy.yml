@@ -5,6 +5,11 @@ on:
     branches:
       - claude/car-management-app-q76ejk
       - main
+    # the Android app and docs have their own lifecycle; they never change the site
+    paths-ignore:
+      - 'mobile/**'
+      - 'docs/**'
+      - '.github/workflows/android.yml'
   workflow_dispatch:
 
 concurrency:
