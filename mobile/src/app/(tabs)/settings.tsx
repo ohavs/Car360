@@ -3,12 +3,12 @@ import { LogOut, Palette } from 'lucide-react-native'
 import { useRouter } from 'expo-router'
 import { useState } from 'react'
 import { StyleSheet, View } from 'react-native'
-import { useAuth } from '../features/auth/AuthProvider'
-import { AppearancePanel } from '../features/settings/AppearancePanel'
-import { UpdatePanel } from '../features/updates/UpdatePanel'
-import { useTheme } from '../theme/ThemeProvider'
-import { radius, space } from '../theme/tokens'
-import { AppBar, Card, ConfirmDialog, ListItem, Screen, Text } from '../ui'
+import { useAuth } from '../../features/auth/AuthProvider'
+import { AppearancePanel } from '../../features/settings/AppearancePanel'
+import { UpdatePanel } from '../../features/updates/UpdatePanel'
+import { useTheme } from '../../theme/ThemeProvider'
+import { radius, space } from '../../theme/tokens'
+import { AppBar, Card, ConfirmDialog, ListItem, Screen, Text } from '../../ui'
 
 export default function SettingsScreen() {
   const { user, signOut } = useAuth()
@@ -17,7 +17,7 @@ export default function SettingsScreen() {
   const router = useRouter()
 
   return (
-    <Screen header={<AppBar title="הגדרות" back />}>
+    <Screen header={<AppBar title="הגדרות" />}>
       <Card>
         <View style={styles.profile}>
           <View style={[styles.avatar, { backgroundColor: colors.surfaceContainer }]}>

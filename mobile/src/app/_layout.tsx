@@ -10,6 +10,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { AuthProvider, useAuth } from '../features/auth/AuthProvider'
 import { UpdateProvider } from '../features/updates/UpdateProvider'
 import { ThemeProvider, useTheme } from '../theme/ThemeProvider'
+import { CarsProvider } from '../data/CarsProvider'
 import { SnackbarProvider } from '../ui'
 
 // keep the native splash up until we know whether someone is signed in, so
@@ -44,8 +45,12 @@ function RootNavigator() {
         }}
       >
         <Stack.Protected guard={Boolean(user)}>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="settings" />
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="car/[id]/index" />
+          <Stack.Screen name="car/[id]/services" />
+          <Stack.Screen name="car/[id]/insurance" />
+          <Stack.Screen name="car/[id]/documents" />
+          <Stack.Screen name="car/[id]/glovebox" />
           <Stack.Screen name="gallery" />
         </Stack.Protected>
         <Stack.Protected guard={!user}>
@@ -65,9 +70,11 @@ export default function RootLayout() {
             <BottomSheetModalProvider>
               <SnackbarProvider>
                 <AuthProvider>
-                  <UpdateProvider>
-                    <RootNavigator />
-                  </UpdateProvider>
+                  <CarsProvider>
+                    <UpdateProvider>
+                      <RootNavigator />
+                    </UpdateProvider>
+                  </CarsProvider>
                 </AuthProvider>
               </SnackbarProvider>
             </BottomSheetModalProvider>
