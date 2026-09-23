@@ -28,6 +28,14 @@ module.exports = defineConfig([
     ignores: ['android/*', 'dist/*', '.expo/*'],
   },
   {
+    // build-time Node scripts, not bundled into the app: reading process.env
+    // dynamically is exactly what they are for
+    files: ['scripts/**', 'plugins/**', 'app.config.ts'],
+    rules: {
+      'expo/no-dynamic-env-var': 'off',
+    },
+  },
+  {
     files: ['src/**/*.{ts,tsx}'],
     ignores: ['src/ui/**'],
     rules: {
