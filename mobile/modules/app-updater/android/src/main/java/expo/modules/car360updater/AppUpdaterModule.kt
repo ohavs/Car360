@@ -24,6 +24,7 @@ import kotlin.concurrent.thread
 private const val ACTION_INSTALL_STATUS = "com.ohavs.car360.UPDATE_INSTALL_STATUS"
 private const val APK_NAME = "car360-update.apk"
 private const val PROGRESS_INTERVAL_MS = 120L
+private const val KEY_RESUME_UPDATE = "resume_update"
 
 /**
  * In-app updates for a sideloaded app.
@@ -63,16 +64,25 @@ class AppUpdaterModule : Module() {
 
     /** Opens the one system screen where "allow from this source" is toggled for Car360. */
     Function("openInstallPermissionSettings") {
+      // Android may restart the app when that permission changes; remember
+      // that an update was under way so the next launch can pick it up
+      prefs().edit().putBoolean(KEY_RESUME_UPDATE, true).apply()
       val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:${context.packageName}"))
         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
       (appContext.currentActivity ?: context).startActivity(intent)
     }
 
+    /** true once after the user was sent to grant the install permission */
+    Function("consumeResumeRequest") {
+      val requested = prefs().getBoolean(KEY_RESUME_UPDATE, false)
+      if (requested) prefs().edit().remove(KEY_RESUME_UPDATE).apply()
+      requested
+    }
+
     /** Set by the receiver after an update, read once by JS to show "what's new". */
     Function("consumeJustUpdated") {
-      val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-      val version = prefs.getString(KEY_JUST_UPDATED, null)
-      if (version != null) prefs.edit().remove(KEY_JUST_UPDATED).apply()
+      val version = prefs().getString(KEY_JUST_UPDATED, null)
+      if (version != null) prefs().edit().remove(KEY_JUST_UPDATED).apply()
       AppReplacedReceiver.dismissNotification(context)
       version
     }
@@ -119,6 +129,8 @@ class AppUpdaterModule : Module() {
   }
 
   private fun updatesDir() = File(context.cacheDir, "updates")
+
+  private fun prefs() = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
   private fun downloadVerified(url: String, sha256: String, expectedSize: Long): File {
     val dir = updatesDir().apply { mkdirs() }

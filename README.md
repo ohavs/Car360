@@ -30,6 +30,13 @@ npm run dev
 
 מאותו רגע — כל push עולה לאוויר לבד. פריסת חוקי Storage מדלגת אוטומטית כל עוד Storage לא הופעל בפרויקט.
 
+## אפליקציית אנדרואיד
+
+אפליקציה נייטיב (Expo / React Native) בתיקייה `mobile/`. כל push שנוגע בה נבנה ב-`.github/workflows/android.yml` ומתפרסם כ-APK חתום ב-GitHub Releases, ומשם מגיע לטלפון דרך **הגדרות ← עדכוני אפליקציה**.
+
+- התכנית המלאה: `docs/ANDROID_PLAN.md`
+- הגדרה חד-פעמית (Firebase, מפתח חתימה, סודות): `docs/ANDROID_SETUP.md`
+
 ## ארכיטקטורה
 
 ```

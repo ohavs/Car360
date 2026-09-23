@@ -114,6 +114,8 @@ export function UpdateProvider({ children }: { children: ReactNode }) {
     const sub = AppState.addEventListener('change', (state) => {
       const current = phaseRef.current
       if (state === 'active' && current.kind === 'needsPermission' && AppUpdater.canRequestPackageInstalls()) {
+        // the app survived the trip to settings, so the relaunch hand-off is not needed
+        AppUpdater.consumeResumeRequest()
         void downloadAndInstall(current.release)
       }
     })
@@ -145,11 +147,19 @@ export function UpdateProvider({ children }: { children: ReactNode }) {
     }
   }, [setPhase])
 
-  // once per launch: free the space a previous download used, and look for a newer build
+  // once per launch: free the space a previous download used, and look for a
+  // newer build — carrying on by itself if Android restarted the app while the
+  // user was granting the install permission
   useEffect(() => {
     AppUpdater.cleanup()
-    void check()
-  }, [check])
+    const resume = AppUpdater.consumeResumeRequest()
+    void check().then(() => {
+      const current = phaseRef.current
+      if (resume && current.kind === 'available' && AppUpdater.canRequestPackageInstalls()) {
+        void downloadAndInstall(current.release)
+      }
+    })
+  }, [check, downloadAndInstall])
 
   const value = useMemo<UpdateState>(
     () => ({

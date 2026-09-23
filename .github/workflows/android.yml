@@ -86,13 +86,18 @@ jobs:
         id: signing
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
+          # all four or none: a half-configured key would fail the build late
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ] && [ -n "$ANDROID_KEYSTORE_PASSWORD" ] &&
+             [ -n "$ANDROID_KEY_ALIAS" ] && [ -n "$ANDROID_KEY_PASSWORD" ]; then
             printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/car360-release.jks"
             echo "CAR360_KEYSTORE_PATH=$RUNNER_TEMP/car360-release.jks" >> "$GITHUB_ENV"
             echo "signed=true" >> "$GITHUB_OUTPUT"
           else
-            echo "::warning title=No signing key::ANDROID_KEYSTORE_BASE64 secret is missing — signing with the debug key and not publishing a release."
+            echo "::warning title=No signing key::One of the ANDROID_KEY* / ANDROID_KEYSTORE_* secrets is missing — signing with the debug key and not publishing a release."
             echo "signed=false" >> "$GITHUB_OUTPUT"
           fi
 
