@@ -1,5 +1,6 @@
 /** The design system. Screens build only from these — never from raw
  *  react-native controls — so every element carries the same look. */
+export { Appear } from './Appear'
 export { Button, type ButtonVariant } from './Button'
 export { Card } from './Card'
 export { Chip, FilterChips, Radio, SegmentedButtons, Switch, type ChoiceOption } from './choices'

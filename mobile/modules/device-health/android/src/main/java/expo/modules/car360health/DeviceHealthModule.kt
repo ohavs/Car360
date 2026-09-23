@@ -29,8 +29,11 @@ class DeviceHealthModule : Module() {
 
     /** exact alarms: without them Android may delay a reminder by minutes to hours */
     Function("canScheduleExactAlarms") {
-      Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         (context.getSystemService(Context.ALARM_SERVICE) as AlarmManager).canScheduleExactAlarms()
+      } else {
+        true
+      }
     }
 
     Function("openExactAlarmSettings") {
@@ -52,6 +55,7 @@ class DeviceHealthModule : Module() {
       }.onFailure {
         start(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
       }
+      Unit
     }
 
     /** Car360's notification settings (all channels) */

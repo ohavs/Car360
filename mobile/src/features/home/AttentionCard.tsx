@@ -2,15 +2,22 @@ import { useRouter } from 'expo-router'
 import { CheckCircle2, ChevronLeft, TriangleAlert } from 'lucide-react-native'
 import { StyleSheet, View } from 'react-native'
 import type { DerivedReminder } from '@shared/types'
-import { dueLabel } from '@shared/utils'
-import { routeForReminder } from '../../data/reminders'
+import { dueLabel, dueStatus } from '@shared/utils'
 import { useTheme } from '../../theme/ThemeProvider'
 import { radius, space } from '../../theme/tokens'
-import { Card, Text, Touchable } from '../../ui'
+import { Card, StatusChip, Text, Touchable } from '../../ui'
 
 /** The first answer on the home screen: what needs action, most urgent first.
  *  A single quiet line when nothing is due. */
-export function AttentionCard({ reminders, max = 3 }: { reminders: DerivedReminder[]; max?: number }) {
+export function AttentionCard({
+  reminders,
+  max = 3,
+  onOpen,
+}: {
+  reminders: DerivedReminder[]
+  max?: number
+  onOpen: (r: DerivedReminder) => void
+}) {
   const { colors } = useTheme()
   const router = useRouter()
   const due = reminders.filter((r) => r.daysLeft <= 30)
@@ -42,20 +49,20 @@ export function AttentionCard({ reminders, max = 3 }: { reminders: DerivedRemind
       {due.slice(0, max).map((r) => (
         <Touchable
           key={r.key}
-          onPress={() => router.push(routeForReminder(r) as never)}
+          onPress={() => onOpen(r)}
           accessibilityRole="button"
           accessibilityLabel={`${r.title}, ${dueLabel(r.dueDate)}`}
           style={styles.row}
         >
-          <View style={[styles.bar, { backgroundColor: r.daysLeft <= 7 ? colors.danger : colors.warning }]} />
           <View style={styles.flex}>
             <Text variant="label" numberOfLines={1}>
               {r.title}
             </Text>
-            <Text variant="caption" tone={r.daysLeft < 0 ? 'danger' : 'muted'} numberOfLines={1}>
-              {dueLabel(r.dueDate)}
+            <Text variant="caption" tone="muted" numberOfLines={1}>
+              {r.carName}
             </Text>
           </View>
+          <StatusChip tone={dueStatus(r.dueDate)} label={dueLabel(r.dueDate)} />
           <ChevronLeft size={18} color={colors.muted} />
         </Touchable>
       ))}
@@ -97,11 +104,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.lg,
     paddingVertical: space.sm,
     minHeight: 56,
-  },
-  bar: {
-    width: 4,
-    height: 32,
-    borderRadius: 2,
   },
   more: {
     paddingVertical: space.md,

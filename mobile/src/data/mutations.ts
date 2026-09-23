@@ -1,4 +1,4 @@
-import { collection, deleteDoc, doc, getDocs, getFirestore, setDoc } from '@react-native-firebase/firestore'
+import { collection, deleteDoc, doc, getDocs, getFirestore, setDoc, updateDoc } from '@react-native-firebase/firestore'
 import type { Car, CarDocument, CustomReminder, InsuranceRecord, ServiceRecord } from '@shared/types'
 import { deleteImage } from './images'
 
@@ -11,6 +11,11 @@ const db = () => getFirestore()
 
 export async function saveCar(car: Car): Promise<void> {
   await setDoc(doc(db(), 'cars', car.id), clean(car))
+}
+
+/** Changes only the given fields — safe alongside an edit made elsewhere. */
+export async function patchCar(id: string, patch: Partial<Car>): Promise<void> {
+  await updateDoc(doc(db(), 'cars', id), clean({ ...patch, updatedAt: Date.now() }))
 }
 
 /** Deletes the car, its records and their photos. */

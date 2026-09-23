@@ -56,7 +56,7 @@ function CarDocs({ car }: { car: Car }) {
       {recent.length > 0 && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip}>
           {recent.map((d) => (
-            <Touchable key={d.id} onPress={open} accessibilityLabel={d.title} style={styles.doc}>
+            <Touchable feedback="scale" key={d.id} onPress={open} accessibilityLabel={d.title} style={styles.doc}>
               <Image source={d.imageUrl} style={styles.docImage} contentFit="cover" />
             </Touchable>
           ))}

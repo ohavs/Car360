@@ -2,6 +2,7 @@ import { Tabs, type BottomTabBarProps } from 'expo-router/tabs'
 import { Bell, FileText, House, Settings } from 'lucide-react-native'
 import { useGarage } from '../../data/CarsProvider'
 import { useAllReminders } from '../../data/reminders'
+import { useRegistrySync } from '../../data/registrySync'
 import { useUpdates } from '../../features/updates/UpdateProvider'
 import { NavigationBar, type NavItem } from '../../ui'
 
@@ -35,6 +36,8 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
 }
 
 export default function TabsLayout() {
+  // test dates follow the Ministry of Transport without a manual fetch
+  useRegistrySync()
   return (
     <Tabs
       tabBar={(props) => <TabBar {...props} />}

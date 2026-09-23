@@ -41,8 +41,10 @@ function RootNavigator() {
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: colors.background },
-          // right-to-left app: a new screen comes in from the left (the "end" side)
-          animation: 'slide_from_left',
+          // right-to-left app: a new screen comes in from the left (the "end"
+          // side). The iOS-style push is the quick one on Android (~200ms, with
+          // parallax); plain slides take twice as long and feel dated
+          animation: 'ios_from_left',
         }}
       >
         <Stack.Protected guard={Boolean(user)}>
@@ -54,11 +56,11 @@ function RootNavigator() {
           <Stack.Screen name="car/[id]/glovebox" />
           <Stack.Screen name="gallery" />
           <Stack.Screen name="notifications" />
-          {/* full-screen editors rise from the bottom, like a sheet that grew */}
-          <Stack.Screen name="car/new" options={{ animation: 'slide_from_bottom' }} />
-          <Stack.Screen name="car/[id]/edit" options={{ animation: 'slide_from_bottom' }} />
-          <Stack.Screen name="car/[id]/service-edit" options={{ animation: 'slide_from_bottom' }} />
-          <Stack.Screen name="car/[id]/insurance-edit" options={{ animation: 'slide_from_bottom' }} />
+          {/* full-screen editors rise and fade in — quick, like a sheet that grew */}
+          <Stack.Screen name="car/new" options={{ animation: 'fade_from_bottom' }} />
+          <Stack.Screen name="car/[id]/edit" options={{ animation: 'fade_from_bottom' }} />
+          <Stack.Screen name="car/[id]/service-edit" options={{ animation: 'fade_from_bottom' }} />
+          <Stack.Screen name="car/[id]/insurance-edit" options={{ animation: 'fade_from_bottom' }} />
         </Stack.Protected>
         <Stack.Protected guard={!user}>
           <Stack.Screen name="login" options={{ animation: 'fade' }} />

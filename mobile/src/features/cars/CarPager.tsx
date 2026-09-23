@@ -49,6 +49,7 @@ export function CarPager({
         {cars.map((car) => (
           <Touchable
             key={car.id}
+            feedback="scale"
             onPress={() => onPressCar(car.id)}
             accessibilityLabel={`${carDisplayName(car)} — פרטי הרכב`}
             style={styles.page}

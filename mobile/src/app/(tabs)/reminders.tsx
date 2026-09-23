@@ -6,12 +6,27 @@ import type { CustomReminder, DerivedReminder } from '@shared/types'
 import { dueLabel, dueStatus, formatDate } from '@shared/utils'
 import { useGarage } from '../../data/CarsProvider'
 import { saveRecord } from '../../data/mutations'
-import { routeForReminder, useAllReminders } from '../../data/reminders'
+import { useAllReminders } from '../../data/reminders'
 import { useNotifications } from '../../features/notifications/NotificationsProvider'
 import { ReminderSheet } from '../../features/reminders/ReminderSheet'
+import { useReminderOpener } from '../../features/reminders/useReminderOpener'
 import { useTheme } from '../../theme/ThemeProvider'
 import { radius, space } from '../../theme/tokens'
-import { AppBar, Button, Card, EmptyState, FAB, Screen, SectionHeader, Skeleton, StatusChip, Text, Touchable, useSnackbar } from '../../ui'
+import {
+  AppBar,
+  Appear,
+  Button,
+  Card,
+  EmptyState,
+  FAB,
+  Screen,
+  SectionHeader,
+  Skeleton,
+  StatusChip,
+  Text,
+  Touchable,
+  useSnackbar,
+} from '../../ui'
 
 const SOURCE: Record<DerivedReminder['source'], { label: string; icon: LucideIcon }> = {
   test: { label: 'טסט', icon: Car },
@@ -43,11 +58,7 @@ export default function RemindersScreen() {
   const [editing, setEditing] = useState<CustomReminder | 'new' | null>(null)
   const customOf = (r: DerivedReminder) => customs.find((c) => c.id === r.customId && c.carId === r.carId)
 
-  const open = (r: DerivedReminder) => {
-    const custom = r.source === 'custom' ? customOf(r) : undefined
-    if (custom) setEditing(custom)
-    else router.push(routeForReminder(r) as never)
-  }
+  const opener = useReminderOpener(cars, customs, activeCar?.id)
 
   const markDone = async (r: DerivedReminder) => {
     const custom = customOf(r)
@@ -99,22 +110,23 @@ export default function RemindersScreen() {
           action={cars.length > 0 ? <Button label="תזכורת חדשה" icon={BellPlus} onPress={() => setEditing('new')} /> : undefined}
         />
       ) : (
-        groups.map((g) => (
-          <View key={g.title} style={styles.stack}>
+        groups.map((g, i) => (
+          <Appear key={g.title} index={i} style={styles.stack}>
             <SectionHeader title={`${g.title} · ${g.items.length}`} />
             <Card padded={false}>
               {g.items.map((r) => (
                 <ReminderRow
                   key={r.key}
                   reminder={r}
-                  onPress={() => open(r)}
+                  onPress={() => opener.openReminder(r)}
                   onDone={r.source === 'custom' ? () => void markDone(r) : undefined}
                 />
               ))}
             </Card>
-          </View>
+          </Appear>
         ))
       )}
+      {opener.sheet}
       {editing && (
         <ReminderSheet
           cars={cars}

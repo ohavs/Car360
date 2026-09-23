@@ -96,7 +96,7 @@ export function DocumentSheet({
       }
     >
       {draft.imageUrl ? (
-        <Touchable
+        <Touchable feedback="scale"
           onPress={() => void pick('library')}
           accessibilityLabel="החלפת התמונה"
           style={[styles.preview, { backgroundColor: colors.surfaceContainer }]}

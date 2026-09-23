@@ -29,7 +29,7 @@ export function Card({
 
   if (onPress) {
     return (
-      <Touchable onPress={onPress} accessibilityRole="button" accessibilityLabel={accessibilityLabel} style={body}>
+      <Touchable feedback="scale" onPress={onPress} accessibilityRole="button" accessibilityLabel={accessibilityLabel} style={body}>
         {children}
       </Touchable>
     )

@@ -52,7 +52,7 @@ export function PhotoStrip({
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip}>
         {photos.map((uri, i) => (
           <View key={`${i}-${uri.slice(-16)}`}>
-            <Touchable onPress={() => setViewing(i)} accessibilityLabel={`תמונה ${i + 1}`} style={styles.thumb}>
+            <Touchable feedback="scale" onPress={() => setViewing(i)} accessibilityLabel={`תמונה ${i + 1}`} style={styles.thumb}>
               <Image source={uri} style={styles.image} contentFit="cover" />
             </Touchable>
             <Touchable
@@ -67,7 +67,7 @@ export function PhotoStrip({
           </View>
         ))}
         {(multiple || photos.length === 0) && (
-          <Touchable
+          <Touchable feedback="scale"
             onPress={() => setChoosing(true)}
             accessibilityRole="button"
             accessibilityLabel={`הוספת ${label}`}

@@ -33,22 +33,39 @@ import { CarPager } from '../../features/cars/CarPager'
 import { DocumentSheet } from '../../features/documents/DocumentSheet'
 import { NotifyPrompt } from '../../features/notifications/NotifyPrompt'
 import { ReminderSheet } from '../../features/reminders/ReminderSheet'
+import { useReminderOpener } from '../../features/reminders/useReminderOpener'
 import { AttentionCard } from '../../features/home/AttentionCard'
 import { useUpdates } from '../../features/updates/UpdateProvider'
 import { useTheme } from '../../theme/ThemeProvider'
-import type { Colors } from '../../theme/palettes'
 import { radius, space } from '../../theme/tokens'
-import { AppBar, Button, Card, EmptyState, FAB, ListItem, Plate, Screen, SectionHeader, Sheet, Skeleton, StatusChip, Text, Touchable } from '../../ui'
+import {
+  AppBar,
+  Appear,
+  Button,
+  Card,
+  EmptyState,
+  FAB,
+  ListItem,
+  Plate,
+  Screen,
+  SectionHeader,
+  Sheet,
+  Skeleton,
+  StatusChip,
+  Text,
+  Touchable,
+} from '../../ui'
 
 export default function HomeScreen() {
   const { user } = useAuth()
   const { cars, loading, error, activeCar, setActiveCarId } = useGarage()
-  const { reminders } = useAllReminders(cars)
+  const { reminders, customs } = useAllReminders(cars)
   const { hasUpdate, justUpdatedTo, dismissJustUpdated } = useUpdates()
   const services = useLiveSub<ServiceRecord>(activeCar?.id, 'services')
   const router = useRouter()
   const { colors } = useTheme()
   const [sheet, setSheet] = useState<'quick' | 'document' | 'reminder' | null>(null)
+  const opener = useReminderOpener(cars, customs, activeCar?.id)
 
   const carReminders = useMemo(() => reminders.filter((r) => r.carId === activeCar?.id), [reminders, activeCar?.id])
   const recent = useMemo(() => [...services.items].sort((a, b) => b.date.localeCompare(a.date)), [services.items])
@@ -63,7 +80,7 @@ export default function HomeScreen() {
           subtitle={activeCar ? `שלום, ${firstName}` : undefined}
           actions={
             <Touchable
-              borderless
+              feedback="scale"
               onPress={() => router.push('/settings')}
               accessibilityLabel="פרופיל והגדרות"
               style={[styles.avatar, { backgroundColor: colors.surfaceContainer }]}
@@ -108,26 +125,23 @@ export default function HomeScreen() {
         />
       ) : (
         <>
-          <CarPager
-            cars={cars}
-            activeId={activeCar.id}
-            onChange={setActiveCarId}
-            onPressCar={(id) => router.push(`/car/${id}`)}
-          />
+          <CarPager cars={cars} activeId={activeCar.id} onChange={setActiveCarId} onPressCar={(id) => router.push(`/car/${id}`)} />
           <View style={styles.plateRow}>
             <Plate plate={activeCar.plate} />
           </View>
 
-          <AttentionCard reminders={carReminders} />
+          <Appear index={0}>
+            <AttentionCard reminders={carReminders} onOpen={opener.openReminder} />
+          </Appear>
 
-          <View style={styles.stats}>
+          <Appear index={1} style={styles.stats}>
             <StatTile
               icon={CalendarClock}
               label="טסט"
               value={activeCar.testExpiry ? formatDate(activeCar.testExpiry) : '—'}
               meta={activeCar.testExpiry ? dueLabel(activeCar.testExpiry) : 'לא הוזן תאריך'}
               tone={dueStatus(activeCar.testExpiry)}
-              onPress={() => router.push(`/car/${activeCar.id}`)}
+              onPress={() => opener.openTest(activeCar.id)}
             />
             <StatTile
               icon={Wallet}
@@ -136,38 +150,42 @@ export default function HomeScreen() {
               meta={recent.length ? `ב-${recent.length} טיפולים` : 'אין טיפולים מתועדים'}
               onPress={() => router.push(`/car/${activeCar.id}/services`)}
             />
-          </View>
+          </Appear>
 
-          <View style={styles.shortcuts}>
+          <Appear index={2} style={styles.shortcuts}>
             <Shortcut icon={Wrench} label="טיפולים" onPress={() => router.push(`/car/${activeCar.id}/services`)} />
             <Shortcut icon={Shield} label="ביטוח" onPress={() => router.push(`/car/${activeCar.id}/insurance`)} />
             <Shortcut icon={FileText} label="מסמכים" onPress={() => router.push(`/car/${activeCar.id}/documents`)} />
             <Shortcut icon={LifeBuoy} label="תא כפפות" onPress={() => router.push(`/car/${activeCar.id}/glovebox`)} />
             <Shortcut icon={CarFront} label="פרטי הרכב" onPress={() => router.push(`/car/${activeCar.id}`)} />
             <Shortcut icon={Bell} label="תזכורות" onPress={() => router.push('/reminders')} />
-          </View>
+          </Appear>
 
           <SectionHeader title="טיפולים אחרונים" />
-          <Card padded={false}>
-            {services.loading ? (
-              <View style={styles.pad}>
-                <Skeleton height={44} />
-              </View>
-            ) : recent.length === 0 ? (
-              <ListItem icon={Wrench} title="עדיין לא תועדו טיפולים" subtitle="כאן יופיעו הטיפולים האחרונים" />
-            ) : (
-              recent.slice(0, 3).map((s) => (
-                <ListItem
-                  key={s.id}
-                  icon={Wrench}
-                  title={s.title || 'טיפול'}
-                  subtitle={[formatDate(s.date), s.garage].filter(Boolean).join(' · ')}
-                  trailing={s.cost != null ? <Text variant="label">{formatMoney(s.cost)}</Text> : undefined}
-                  onPress={() => router.push(`/car/${activeCar.id}/services`)}
-                />
-              ))
-            )}
-          </Card>
+          <Appear index={3}>
+            <Card padded={false}>
+              {services.loading ? (
+                <View style={styles.pad}>
+                  <Skeleton height={44} />
+                </View>
+              ) : recent.length === 0 ? (
+                <ListItem icon={Wrench} title="עדיין לא תועדו טיפולים" subtitle="כאן יופיעו הטיפולים האחרונים" />
+              ) : (
+                recent
+                  .slice(0, 3)
+                  .map((s) => (
+                    <ListItem
+                      key={s.id}
+                      icon={Wrench}
+                      title={s.title || 'טיפול'}
+                      subtitle={[formatDate(s.date), s.garage].filter(Boolean).join(' · ')}
+                      trailing={s.cost != null ? <Text variant="label">{formatMoney(s.cost)}</Text> : undefined}
+                      onPress={() => router.push(`/car/${activeCar.id}/services`)}
+                    />
+                  ))
+              )}
+            </Card>
+          </Appear>
         </>
       )}
 
@@ -184,6 +202,7 @@ export default function HomeScreen() {
       )}
       {sheet === 'document' && activeCar && <DocumentSheet carId={activeCar.id} onClose={() => setSheet(null)} />}
       <NotifyPrompt enabled={cars.length > 0 && sheet === null} />
+      {opener.sheet}
       {sheet === 'reminder' && <ReminderSheet cars={cars} defaultCarId={activeCar?.id} onClose={() => setSheet(null)} />}
     </Screen>
   )
@@ -210,7 +229,6 @@ function StatTile({
   onPress: () => void
 }) {
   const { colors } = useTheme()
-  const toneColor: Record<string, keyof Colors> = { neutral: 'muted', ok: 'success', warn: 'warning', danger: 'danger' }
   return (
     <Card onPress={onPress} style={styles.stat} accessibilityLabel={`${label}: ${value}, ${meta}`}>
       <View style={styles.row}>
@@ -230,7 +248,6 @@ function StatTile({
       ) : (
         <StatusChip tone={tone} label={meta} />
       )}
-      <View style={[styles.statEdge, { backgroundColor: colors[toneColor[tone]] }]} />
     </Card>
   )
 }
@@ -239,6 +256,7 @@ function Shortcut({ icon: Icon, label, onPress }: { icon: LucideIcon; label: str
   const { colors } = useTheme()
   return (
     <Touchable
+      feedback="scale"
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={label}
@@ -333,13 +351,6 @@ const styles = StyleSheet.create({
   stat: {
     flex: 1,
     gap: space.xs,
-  },
-  statEdge: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    start: 0,
-    width: 3,
   },
   shortcuts: {
     flexDirection: 'row',

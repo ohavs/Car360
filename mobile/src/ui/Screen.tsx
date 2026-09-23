@@ -108,6 +108,8 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: space.lg,
+    // room for an outlined field's floating label when a form starts at the top
+    paddingTop: space.md,
     gap: space.lg,
   },
 })

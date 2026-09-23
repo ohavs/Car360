@@ -59,7 +59,7 @@ function Destination({ item, active, onPress }: { item: NavItem; active: boolean
   const count = typeof item.badge === 'number' ? item.badge : 0
   return (
     <Touchable
-      borderless
+      feedback="none"
       onPress={onPress}
       accessibilityRole="tab"
       accessibilityState={{ selected: active }}

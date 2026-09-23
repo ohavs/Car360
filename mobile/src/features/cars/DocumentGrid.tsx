@@ -20,7 +20,7 @@ export function DocumentGrid({
   return (
     <View style={styles.grid}>
       {docs.map((d, i) => (
-        <Touchable
+        <Touchable feedback="scale"
           key={d.id}
           onPress={() => onOpen(i)}
           onLongPress={onLongPress ? () => onLongPress(d) : undefined}

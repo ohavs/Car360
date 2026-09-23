@@ -1,9 +1,11 @@
 import { useRouter } from 'expo-router'
+import { useState } from 'react'
 import { CalendarDays, Car as CarIcon, FileBadge, Pencil, Fuel, Hash, Link2, Palette, Phone, StickyNote, type LucideIcon } from 'lucide-react-native'
 import { Linking, StyleSheet, View } from 'react-native'
 import { carDisplayName } from '@shared/reminders'
 import type { InfoBlock } from '@shared/types'
 import { dueLabel, dueStatus, formatDate } from '@shared/utils'
+import { TestSheet } from '../../../features/cars/TestSheet'
 import { useCarParam } from '../../../features/cars/useCarParam'
 import { space } from '../../../theme/tokens'
 import { AppBar, Card, EmptyState, IconButton, ListItem, Plate, Screen, SectionHeader, StatusChip, Text } from '../../../ui'
@@ -19,6 +21,7 @@ const BLOCK_ICON: Record<InfoBlock['type'], LucideIcon> = {
 export default function CarDetailsScreen() {
   const { car, loading } = useCarParam()
   const router = useRouter()
+  const [dateSheet, setDateSheet] = useState<'test' | 'license' | null>(null)
   if (!car) {
     return (
       <Screen header={<AppBar title="פרטי הרכב" back />}>
@@ -55,7 +58,7 @@ export default function CarDetailsScreen() {
           title="תוקף טסט"
           subtitle={car.testExpiry ? formatDate(car.testExpiry) : 'לא הוזן תאריך'}
           trailing={car.testExpiry ? <StatusChip tone={dueStatus(car.testExpiry)} label={dueLabel(car.testExpiry)} /> : undefined}
-          onPress={() => router.push(`/car/${car.id}/edit`)}
+          onPress={() => setDateSheet('test')}
         />
         {car.licenseExpiry ? (
           <ListItem
@@ -63,7 +66,7 @@ export default function CarDetailsScreen() {
             title="תוקף רישיון רכב"
             subtitle={formatDate(car.licenseExpiry)}
             trailing={<StatusChip tone={dueStatus(car.licenseExpiry)} label={dueLabel(car.licenseExpiry)} />}
-            onPress={() => router.push(`/car/${car.id}/edit`)}
+            onPress={() => setDateSheet('license')}
           />
         ) : null}
       </Card>
@@ -111,6 +114,7 @@ export default function CarDetailsScreen() {
           </Card>
         </>
       ) : null}
+      {dateSheet && <TestSheet car={car} kind={dateSheet} onClose={() => setDateSheet(null)} />}
     </Screen>
   )
 }
