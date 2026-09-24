@@ -1,7 +1,7 @@
 import { Image } from 'expo-image'
-import { useRouter } from 'expo-router'
+import { useLocalSearchParams, useRouter } from 'expo-router'
 import { CarFront, DatabaseBackup, LogOut } from 'lucide-react-native'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { useGarage } from '../../data/CarsProvider'
 import { shareBackup } from '../../data/backup'
@@ -12,7 +12,7 @@ import { UpdatePanel } from '../../features/updates/UpdatePanel'
 import { useUpdates } from '../../features/updates/UpdateProvider'
 import { useTheme } from '../../theme/ThemeProvider'
 import { radius, space } from '../../theme/tokens'
-import { AppBar, Card, ConfirmDialog, ListItem, Screen, SectionHeader, Text, useSnackbar } from '../../ui'
+import { AppBar, Card, ConfirmDialog, ListItem, Screen, SectionHeader, Text, useSnackbar, type ScreenScroll } from '../../ui'
 
 export default function SettingsScreen() {
   const { user, signOut } = useAuth()
@@ -23,17 +23,21 @@ export default function SettingsScreen() {
   const router = useRouter()
   const { hasUpdate } = useUpdates()
   const [backingUp, setBackingUp] = useState(false)
+  // arriving from the "new version" card: glide down to the update section
+  const { focus } = useLocalSearchParams<{ focus?: string }>()
+  const scrollRef = useRef<ScreenScroll>(null)
+  const [updateY, setUpdateY] = useState<number | null>(null)
+  useEffect(() => {
+    if (focus !== 'update' || updateY === null) return
+    const t = setTimeout(() => {
+      scrollRef.current?.scrollTo({ y: Math.max(0, updateY - space.lg), animated: true })
+      router.setParams({ focus: undefined })
+    }, 250)
+    return () => clearTimeout(t)
+  }, [focus, updateY, router])
 
   return (
-    <Screen header={<AppBar title="הגדרות" />}>
-      {/* a waiting update comes first — that's why you came here */}
-      {hasUpdate && (
-        <>
-          <SectionHeader title="עדכון זמין" />
-          <UpdatePanel />
-        </>
-      )}
-
+    <Screen header={<AppBar title="הגדרות" />} scrollRef={scrollRef}>
       <SectionHeader title="חשבון" />
       <Card padded={false}>
         <View style={styles.profile}>
@@ -78,12 +82,10 @@ export default function SettingsScreen() {
         />
       </Card>
 
-      {!hasUpdate && (
-        <>
-          <SectionHeader title="עדכונים" />
-          <UpdatePanel />
-        </>
-      )}
+      <View onLayout={(e) => setUpdateY(e.nativeEvent.layout.y)} style={styles.section}>
+        <SectionHeader title={hasUpdate ? 'עדכון זמין' : 'עדכונים'} />
+        <UpdatePanel />
+      </View>
 
       <ConfirmDialog
         visible={confirmSignOut}
@@ -101,6 +103,7 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
+  section: { gap: space.lg },
   profile: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -42,7 +42,6 @@ import { ExpensesSheet } from '../../features/home/ExpensesSheet'
 import { ExpenseSheet, OdometerSheet } from '../../features/expenses/ExpenseSheet'
 import { currentOdometer, readings, type Reading } from '@shared/odometer'
 import { useUpdates } from '../../features/updates/UpdateProvider'
-import { UpdatePanel } from '../../features/updates/UpdatePanel'
 import { WhatsNewSheet } from '../../features/updates/WhatsNewSheet'
 import { useTheme } from '../../theme/ThemeProvider'
 import { radius, space } from '../../theme/tokens'
@@ -75,7 +74,7 @@ export default function HomeScreen() {
   const services = useLiveSub<ServiceRecord>(activeCar?.id, 'services')
   const router = useRouter()
   const { colors } = useTheme()
-  const [sheet, setSheet] = useState<'quick' | 'document' | 'reminder' | 'expenses' | 'update' | 'expense' | 'odometer' | null>(null)
+  const [sheet, setSheet] = useState<'quick' | 'document' | 'reminder' | 'expenses' | 'expense' | 'odometer' | null>(null)
   const opener = useReminderOpener(cars, customs, activeCar?.id)
   const { openService, openPolicy, element: recordActionsSheet } = useRecordActions()
 
@@ -189,7 +188,10 @@ export default function HomeScreen() {
         <Banner icon={CheckCircle2} tone="success" text={`Car360 עודכן לגרסה ${justUpdatedTo}`} onDismiss={dismissJustUpdated} />
       )}
       {hasUpdate && (
-        <Card onPress={() => setSheet('update')} accessibilityLabel="עדכון זמין — פרטים והתקנה">
+        <Card
+          onPress={() => router.push({ pathname: '/settings', params: { focus: 'update' } })}
+          accessibilityLabel="עדכון זמין — פרטים והתקנה"
+        >
           <View style={styles.row}>
             <Sparkles size={20} color={colors.brand} strokeWidth={2} />
             <Text variant="bodyStrong" style={styles.flex}>
@@ -282,11 +284,6 @@ export default function HomeScreen() {
             <ListItem icon={BellPlus} title="תזכורת" onPress={() => setSheet('reminder')} />
             <ListItem icon={CarAdd} title="רכב נוסף" onPress={() => go('/car/new')} />
           </View>
-        </Sheet>
-      )}
-      {sheet === 'update' && (
-        <Sheet visible onClose={() => setSheet(null)} title="עדכון לאפליקציה">
-          <UpdatePanel />
         </Sheet>
       )}
       {sheet === 'expense' && activeCar && <ExpenseSheet car={activeCar} onClose={() => setSheet(null)} />}

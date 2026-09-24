@@ -1,8 +1,8 @@
 import { useRouter } from 'expo-router'
 import { ArrowRight } from 'lucide-react-native'
-import { createContext, useState, type ReactNode } from 'react'
+import { createContext, useState, type ReactNode, type Ref } from 'react'
 import { RefreshControl, StyleSheet, View } from 'react-native'
-import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
+import { KeyboardAwareScrollView, type KeyboardAwareScrollViewRef } from 'react-native-keyboard-controller'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTheme } from '../theme/ThemeProvider'
 import { space } from '../theme/tokens'
@@ -48,6 +48,9 @@ export function AppBar({
 
 /** When the current screen opened — content that arrives while it is still
  *  sliding in shows up without an extra animation of its own. */
+/** the screen's scroll view, for `scrollRef` */
+export type ScreenScroll = KeyboardAwareScrollViewRef
+
 export const ScreenOpenedAt = createContext(0)
 
 /** A full screen: edge-to-edge background, the app bar under the status bar,
@@ -58,8 +61,11 @@ export function Screen({
   refreshing,
   onRefresh,
   fab,
+  scrollRef,
 }: {
   children: ReactNode
+  /** to scroll the screen to a section of it */
+  scrollRef?: Ref<ScreenScroll>
   header?: ReactNode
   /** floating action button, kept clear of the last row */
   fab?: ReactNode
@@ -75,6 +81,7 @@ export function Screen({
         {header}
         {/* keeps the focused field above the keyboard, with room for its error line */}
         <KeyboardAwareScrollView
+          ref={scrollRef}
           bottomOffset={space.xxxl}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + space.xxxl + (fab ? 72 : 0) }]}
