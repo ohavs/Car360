@@ -3,7 +3,7 @@ import { Bell, BellOff, BellPlus, Car, Check, CheckCircle2, FileText, Shield, Wr
 import { useMemo, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { carDisplayName } from '@shared/reminders'
-import type { CustomReminder, DerivedReminder } from '@shared/types'
+import type { Car as CarModel, CustomReminder, DerivedReminder } from '@shared/types'
 import { dueLabel, dueStatus, formatDate, todayISO } from '@shared/utils'
 import { useGarage } from '../../data/CarsProvider'
 import { saveRecord } from '../../data/mutations'
@@ -18,6 +18,7 @@ import {
   Appear,
   Button,
   Card,
+  CarThumb,
   EmptyState,
   FAB,
   ListItem,
@@ -84,6 +85,7 @@ export default function RemindersScreen() {
         .slice(0, 10),
     [customs],
   )
+  const carOf = (id: string) => cars.find((c) => c.id === id)
   const carName = (id: string) => {
     const car = cars.find((c) => c.id === id)
     return car ? carDisplayName(car) : ''
@@ -133,6 +135,7 @@ export default function RemindersScreen() {
                 <ReminderRow
                   key={r.key}
                   reminder={r}
+                  car={cars.find((c) => c.id === r.carId)}
                   onPress={() => opener.openReminder(r)}
                   onDone={r.source === 'custom' ? () => void markDone(r) : () => opener.openReminder(r)}
                 />
@@ -148,10 +151,10 @@ export default function RemindersScreen() {
             {finished.map((c) => (
               <ListItem
                 key={`${c.carId}:${c.id}`}
-                icon={CheckCircle2}
-                tone="success"
+                leading={<CarThumb uri={carOf(c.carId)?.imageUrl} kind={carOf(c.carId)?.imageKind} badge={CheckCircle2} />}
+                overline={carName(c.carId)}
                 title={c.title}
-                subtitle={[c.doneAt ? `בוצע ב-${formatDate(c.doneAt)}` : 'בוצע', carName(c.carId)].filter(Boolean).join(' · ')}
+                subtitle={c.doneAt ? `בוצע ב-${formatDate(c.doneAt)}` : 'בוצע'}
                 onPress={() => setEditing(c)}
               />
             ))}
@@ -172,15 +175,26 @@ export default function RemindersScreen() {
 }
 
 /** A reminder is a regular list row: its status chip and a ✓ at the end. */
-function ReminderRow({ reminder: r, onPress, onDone }: { reminder: DerivedReminder; onPress: () => void; onDone?: () => void }) {
+function ReminderRow({
+  reminder: r,
+  car,
+  onPress,
+  onDone,
+}: {
+  reminder: DerivedReminder
+  car?: CarModel
+  onPress: () => void
+  onDone?: () => void
+}) {
   const { colors } = useTheme()
   const { icon: Icon, label } = SOURCE[r.source]
   return (
     <ListItem
-      icon={Icon}
+      leading={<CarThumb uri={car?.imageUrl ?? r.carImage} kind={car?.imageKind} badge={Icon} />}
+      overline={r.carName}
       title={r.title}
       titleLines={2}
-      subtitle={`${r.carName} · ${formatDate(r.dueDate)}${r.time ? ` · ${r.time}` : ''} · ${label}`}
+      subtitle={`${formatDate(r.dueDate)}${r.time ? ` · ${r.time}` : ''} · ${label}`}
       onPress={onPress}
       trailing={
         <View style={styles.trailing}>

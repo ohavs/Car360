@@ -10,11 +10,13 @@ import { readPref, writePref } from '../../lib/storage'
 import { useTheme } from '../../theme/ThemeProvider'
 import { space } from '../../theme/tokens'
 import { useGarage } from '../../data/CarsProvider'
-import { Card, Chip, EmptyState, IconButton, ListItem, Screen, SectionHeader, Skeleton, Text, TextField } from '../../ui'
+import { Card, CarThumb, Chip, EmptyState, IconButton, ListItem, Screen, SectionHeader, Skeleton, Text, TextField } from '../../ui'
 
 interface Hit {
   key: string
   icon: LucideIcon
+  /** the car this hit belongs to — shown as its picture and a bold name */
+  car?: Car
   title: string
   subtitle: string
   href: string
@@ -83,7 +85,7 @@ export function SearchScreen() {
     const out: Record<(typeof GROUPS)[number], Hit[]> = { רכבים: [], טיפולים: [], ביטוחים: [], מסמכים: [], תזכורות: [] }
     for (const c of cars) {
       if (has(q, c.nickname, c.make, c.model, c.plate, c.vin, c.color, c.year))
-        out['רכבים'].push({ key: c.id, icon: CarFront, title: carDisplayName(c), subtitle: formatPlate(c.plate), href: `/car/${c.id}` })
+        out['רכבים'].push({ key: c.id, icon: CarFront, car: c, title: carDisplayName(c), subtitle: formatPlate(c.plate), href: `/car/${c.id}` })
     }
     for (const s of index?.services ?? []) {
       if (has(q, s.title, s.garage, s.notes))
@@ -190,7 +192,14 @@ export function SearchScreen() {
             <SectionHeader title={g.title} />
             <Card padded={false}>
               {g.hits.map((h) => (
-                <ListItem key={h.key} icon={h.icon} title={h.title} subtitle={h.subtitle} onPress={() => open(h)} />
+                <ListItem
+                  key={h.key}
+                  icon={h.icon}
+                  leading={h.car ? <CarThumb uri={h.car.imageUrl} kind={h.car.imageKind} /> : undefined}
+                  title={h.title}
+                  subtitle={h.subtitle}
+                  onPress={() => open(h)}
+                />
               ))}
             </Card>
           </View>

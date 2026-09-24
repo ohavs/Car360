@@ -8,7 +8,7 @@ import { formatDate, formatPlate, todayISO } from '@shared/utils'
 import { useGarage } from '../data/CarsProvider'
 import { deleteCar, patchCar } from '../data/mutations'
 import { useAuth } from '../features/auth/AuthProvider'
-import { AppBar, Button, Card, ConfirmDialog, EmptyState, IconButton, ListItem, Screen, SectionHeader, Text, useSnackbar } from '../ui'
+import { AppBar, Button, Card, CarThumb, ConfirmDialog, EmptyState, IconButton, ListItem, Screen, SectionHeader, Text, useSnackbar } from '../ui'
 
 /** The garage: order the cars, archive one that was sold (its history stays),
  *  bring it back, or delete it for good. */
@@ -47,7 +47,7 @@ export default function GarageScreen() {
           {active.map((car, i) => (
             <ListItem
               key={car.id}
-              icon={CarFront}
+              leading={<CarThumb uri={car.imageUrl} kind={car.imageKind} />}
               title={carDisplayName(car)}
               subtitle={[formatPlate(car.plate), car.ownerId !== user?.uid ? 'משותף איתך' : null].filter(Boolean).join(' · ')}
               onPress={() => router.push(`/car/${car.id}`)}
@@ -71,7 +71,7 @@ export default function GarageScreen() {
             {archived.map((car) => (
               <ListItem
                 key={car.id}
-                icon={Archive}
+                leading={<CarThumb uri={car.imageUrl} kind={car.imageKind} badge={Archive} />}
                 title={carDisplayName(car)}
                 subtitle={[formatPlate(car.plate), car.archivedAt ? `בארכיון מ-${formatDate(car.archivedAt)}` : null].filter(Boolean).join(' · ')}
                 onPress={() => router.push(`/car/${car.id}`)}

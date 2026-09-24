@@ -11,6 +11,8 @@ import { Text } from './Text'
  *  whole row is the touch target, never just the control at its end. */
 export function ListItem({
   icon: Icon,
+  leading,
+  overline,
   title,
   subtitle,
   trailing,
@@ -20,6 +22,10 @@ export function ListItem({
   tone = 'onSurface',
 }: {
   icon?: LucideIcon
+  /** replaces the icon badge (e.g. the car's own picture) */
+  leading?: ReactNode
+  /** a short bold line above the title — e.g. which car the row is about */
+  overline?: string
   title: string
   subtitle?: string
   trailing?: ReactNode
@@ -32,12 +38,18 @@ export function ListItem({
   const { colors } = useTheme()
   const body = (
     <>
-      {Icon && (
+      {leading}
+      {!leading && Icon && (
         <View style={[styles.icon, { backgroundColor: colors.surfaceContainer }]}>
           <Icon size={icon.md} color={colors[tone]} strokeWidth={1.9} />
         </View>
       )}
       <View style={styles.text}>
+        {overline ? (
+          <Text variant="label" tone="brand" numberOfLines={1} style={styles.overline}>
+            {overline}
+          </Text>
+        ) : null}
         <Text variant="bodyStrong" tone={tone} numberOfLines={titleLines}>
           {title}
         </Text>
@@ -80,5 +92,8 @@ const styles = StyleSheet.create({
   text: {
     flex: 1,
     gap: 2,
+  },
+  overline: {
+    fontWeight: '800',
   },
 })
