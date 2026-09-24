@@ -269,7 +269,7 @@ function TestLine({ testExpiry, onPress }: { testExpiry?: string; onPress: () =>
 function HomeSkeleton() {
   return (
     <View style={styles.skeleton}>
-      <Skeleton height={190} radius={radius.card} />
+      <Skeleton height={210} radius={radius.card} />
       <Skeleton height={56} radius={radius.full} />
       <View style={styles.stats}>
         <View style={styles.flex}>

@@ -9,7 +9,7 @@ import { TestSheet } from '../../../features/cars/TestSheet'
 import { ShareSheet } from '../../../features/share/ShareSheet'
 import { useCarParam } from '../../../features/cars/useCarParam'
 import { space } from '../../../theme/tokens'
-import { AppBar, Card, EmptyState, IconButton, ListItem, Shortcut, ShortcutRow, Plate, Screen, SectionHeader, StatusChip, Text } from '../../../ui'
+import { AppBar, CarImage, Card, EmptyState, IconButton, ListItem, Shortcut, ShortcutRow, Plate, Screen, SectionHeader, StatusChip, Text } from '../../../ui'
 
 const BLOCK_ICON: Record<InfoBlock['type'], LucideIcon> = {
   text: StickyNote,
@@ -54,6 +54,7 @@ export default function CarDetailsScreen() {
         />
       }
     >
+      {car.imageUrl ? <CarImage uri={car.imageUrl} kind={car.imageKind} height={180} /> : null}
       <View style={styles.plate}>
         <Plate plate={car.plate} size="large" />
       </View>

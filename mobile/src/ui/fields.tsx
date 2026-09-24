@@ -90,7 +90,7 @@ export function Plate({ plate, size = 'regular' }: { plate: string; size?: 'regu
 
 const styles = StyleSheet.create({
   plate: {
-    alignSelf: 'flex-start',
+    alignSelf: 'center',
     backgroundColor: '#fcd34d',
     borderRadius: radius.sm,
     borderWidth: 1,

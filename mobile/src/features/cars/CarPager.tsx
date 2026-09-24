@@ -1,4 +1,3 @@
-import { Image } from 'expo-image'
 import { useEffect, useRef } from 'react'
 import { StyleSheet, View } from 'react-native'
 import PagerView from 'react-native-pager-view'
@@ -7,8 +6,9 @@ import { carDisplayName } from '@shared/reminders'
 import { haptic } from '../../lib/haptics'
 import { useTheme } from '../../theme/ThemeProvider'
 import { radius, space } from '../../theme/tokens'
-import { Touchable } from '../../ui'
-import { CarSilhouette } from '../../ui/CarSilhouette'
+import { CarImage, Touchable } from '../../ui'
+
+const PAGER_HEIGHT = 210
 
 /** Swipe between cars — a native ViewPager, laid out right-to-left. */
 export function CarPager({
@@ -54,11 +54,7 @@ export function CarPager({
             accessibilityLabel={`${carDisplayName(car)} — פרטי הרכב`}
             style={styles.page}
           >
-            {car.imageUrl ? (
-              <Image source={car.imageUrl} style={styles.image} contentFit="contain" transition={180} />
-            ) : (
-              <CarSilhouette width={260} color={colors.muted} />
-            )}
+            <CarImage uri={car.imageUrl} kind={car.imageKind} height={PAGER_HEIGHT} />
           </Touchable>
         ))}
       </PagerView>
@@ -81,16 +77,12 @@ export function CarPager({
 
 const styles = StyleSheet.create({
   pager: {
-    height: 190,
+    height: PAGER_HEIGHT,
   },
   page: {
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radius.card,
-  },
-  image: {
-    width: '100%',
-    height: '100%',
   },
   dots: {
     flexDirection: 'row',

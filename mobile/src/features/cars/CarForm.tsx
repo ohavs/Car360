@@ -12,12 +12,14 @@ import { deleteCar, saveCar } from '../../data/mutations'
 import { space } from '../../theme/tokens'
 import {
   Button,
+  CarImage,
   DateField,
   EXPIRY_PRESETS,
   NumberField,
   PhotoStrip,
   PlateField,
   SectionHeader,
+  SegmentedButtons,
   Select,
   TextField,
   useSnackbar,
@@ -82,7 +84,7 @@ export function CarForm({ initial }: { initial?: Car }) {
     setCutting(true)
     try {
       const cut = await removeBackground(original)
-      set('imageUrl', cut)
+      setDraft((d) => ({ ...d, imageUrl: cut, imageKind: 'cutout' }))
       snack('הרקע הוסר', { tone: 'success', action: { label: 'ביטול', onPress: () => set('imageUrl', original) } })
     } catch (e) {
       snack(
@@ -150,7 +152,19 @@ export function CarForm({ initial }: { initial?: Car }) {
         onChange={(p) => set('imageUrl', p[0])}
       />
       {draft.imageUrl ? (
-        <Button label="הסרת רקע" icon={Wand2} variant="tonal" loading={cutting} onPress={() => void cutOut()} />
+        <>
+          <CarImage uri={draft.imageUrl} kind={draft.imageKind} height={160} />
+          <SegmentedButtons
+            label="איך להציג את התמונה"
+            value={draft.imageKind ?? 'cutout'}
+            onChange={(v) => set('imageKind', v)}
+            options={[
+              { value: 'cutout', label: 'רכב בלי רקע' },
+              { value: 'photo', label: 'תמונה רגילה' },
+            ]}
+          />
+          <Button label="הסרת רקע" icon={Wand2} variant="tonal" loading={cutting} onPress={() => void cutOut()} />
+        </>
       ) : null}
 
       <PlateField label="מספר רישוי" value={draft.plate} onChangeText={(v) => set('plate', v)} error={errors.plate} />

@@ -29,6 +29,9 @@ export interface Car {
   fuelType?: string
   /** compressed image (data URL in local mode, download URL in Firebase mode) */
   imageUrl?: string
+  /** how the image is shown: a cut-out car on a stage with a shadow
+   *  (default), or a regular photo with its background */
+  imageKind?: 'cutout' | 'photo'
   /** key dates surfaced on the quick-info row */
   testExpiry?: string // ISO yyyy-mm-dd
   licenseExpiry?: string
