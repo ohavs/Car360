@@ -5,6 +5,8 @@ import {
   BellPlus,
   CarFront as CarAdd,
   FilePlus2,
+  Fuel,
+  Gauge,
   FileSearch,
   CarFront,
   CheckCircle2,
@@ -23,7 +25,7 @@ import {
 import { useMemo, useState, type ReactNode } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { carDisplayName } from '@shared/reminders'
-import type { CarDocument, InsuranceRecord, ServiceRecord } from '@shared/types'
+import type { CarDocument, ExpenseRecord, InsuranceRecord, ServiceRecord } from '@shared/types'
 import { daysUntil, dueLabel, dueStatus, formatDate, formatMoney } from '@shared/utils'
 import { useGarage } from '../../data/CarsProvider'
 import { useLiveSub } from '../../data/live'
@@ -37,6 +39,8 @@ import { useReminderOpener } from '../../features/reminders/useReminderOpener'
 import { useRecordActions } from '../../features/forms/useRecordActions'
 import { AttentionCard } from '../../features/home/AttentionCard'
 import { ExpensesSheet } from '../../features/home/ExpensesSheet'
+import { ExpenseSheet, OdometerSheet } from '../../features/expenses/ExpenseSheet'
+import { currentOdometer, readings, type Reading } from '@shared/odometer'
 import { useUpdates } from '../../features/updates/UpdateProvider'
 import { UpdatePanel } from '../../features/updates/UpdatePanel'
 import { WhatsNewSheet } from '../../features/updates/WhatsNewSheet'
@@ -71,13 +75,14 @@ export default function HomeScreen() {
   const services = useLiveSub<ServiceRecord>(activeCar?.id, 'services')
   const router = useRouter()
   const { colors } = useTheme()
-  const [sheet, setSheet] = useState<'quick' | 'document' | 'reminder' | 'expenses' | 'update' | null>(null)
+  const [sheet, setSheet] = useState<'quick' | 'document' | 'reminder' | 'expenses' | 'update' | 'expense' | 'odometer' | null>(null)
   const opener = useReminderOpener(cars, customs, activeCar?.id)
   const { openService, openPolicy, element: recordActionsSheet } = useRecordActions()
 
   const carReminders = useMemo(() => reminders.filter((r) => r.carId === activeCar?.id), [reminders, activeCar?.id])
   const documents = useLiveSub<CarDocument>(activeCar?.id, 'documents')
   const insurances = useLiveSub<InsuranceRecord>(activeCar?.id, 'insurances')
+  const expenses = useLiveSub<ExpenseRecord>(activeCar?.id, 'expenses')
   // the newest things that happened to this car, whatever they were
   const latest = useMemo(() => {
     if (!activeCar) return []
@@ -116,8 +121,19 @@ export default function HomeScreen() {
           onLongPress: () => openPolicy(p),
         })),
     ]
+    const electric = /חשמל/.test(activeCar.fuelType ?? '')
+    for (const e of expenses.items)
+      items.push({
+        key: `e:${e.id}`,
+        at: e.date,
+        icon: Fuel,
+        title: e.note || (e.category === 'דלק' && electric ? 'טעינה' : e.category),
+        subtitle: [formatDate(e.date), e.odometer ? `${e.odometer.toLocaleString('he-IL')} ק״מ` : null].filter(Boolean).join(' · '),
+        trailing: <Text variant="label">{formatMoney(e.amount)}</Text>,
+        onPress: () => setSheet('expenses'),
+      })
     return items.sort((a, b) => b.at.localeCompare(a.at)).slice(0, 4)
-  }, [activeCar, services.items, documents.items, insurances.items, router, openService, openPolicy])
+  }, [activeCar, services.items, documents.items, insurances.items, expenses.items, router, openService, openPolicy])
   const firstName = user?.displayName.split(' ')[0] ?? ''
 
   return (
@@ -179,6 +195,10 @@ export default function HomeScreen() {
           <View style={styles.plateRow}>
             <Plate plate={activeCar.plate} />
             <TestLine testExpiry={activeCar.testExpiry} onPress={() => opener.openTest(activeCar.id)} />
+            <OdometerLine
+              reading={currentOdometer(readings(activeCar, services.items, expenses.items))}
+              onPress={() => setSheet('odometer')}
+            />
           </View>
 
           <ShortcutRow>
@@ -217,6 +237,13 @@ export default function HomeScreen() {
             <ListItem icon={Wrench} title="טיפול או תיקון" onPress={() => go(`/car/${activeCar.id}/service-edit`)} />
             <ListItem icon={Shield} title="פוליסת ביטוח" onPress={() => go(`/car/${activeCar.id}/insurance-edit`)} />
             <ListItem icon={FilePlus2} title="מסמך או תמונה" subtitle="צילום או מהגלריה" onPress={() => setSheet('document')} />
+            <ListItem
+              icon={Fuel}
+              title="הוצאה"
+              subtitle={/חשמל/.test(activeCar.fuelType ?? '') ? 'טעינה, חניה, כביש אגרה, דוח…' : 'דלק, חניה, כביש אגרה, דוח…'}
+              onPress={() => setSheet('expense')}
+            />
+            <ListItem icon={Gauge} title="עדכון קילומטראז׳" onPress={() => setSheet('odometer')} />
             <ListItem icon={BellPlus} title="תזכורת" onPress={() => setSheet('reminder')} />
             <ListItem icon={CarAdd} title="רכב נוסף" onPress={() => go('/car/new')} />
           </View>
@@ -227,7 +254,9 @@ export default function HomeScreen() {
           <UpdatePanel />
         </Sheet>
       )}
-      {sheet === 'expenses' && activeCar && <ExpensesSheet car={activeCar} onClose={() => setSheet(null)} />}
+      {sheet === 'expense' && activeCar && <ExpenseSheet car={activeCar} onClose={() => setSheet(null)} />}
+      {sheet === 'odometer' && activeCar && <OdometerSheet car={activeCar} onClose={() => setSheet(null)} />}
+      {sheet === 'expenses' && activeCar && <ExpensesSheet car={activeCar} services={services} insurances={insurances} expenses={expenses} onClose={() => setSheet(null)} />}
       {sheet === 'document' && activeCar && <DocumentSheet carId={activeCar.id} onClose={() => setSheet(null)} />}
       <NotifyPrompt enabled={cars.length > 0 && sheet === null && !justUpdatedTo} />
       {justUpdatedTo && whatsNew.length > 0 && <WhatsNewSheet version={justUpdatedTo} notes={whatsNew} onClose={dismissJustUpdated} />}
@@ -260,6 +289,22 @@ function TestLine({ testExpiry, onPress }: { testExpiry?: string; onPress: () =>
     >
       <StatusDot tone={tone} />
       <Text variant="label" tone={tone === 'danger' ? 'danger' : 'onSurfaceVariant'}>
+        {text}
+      </Text>
+    </Touchable>
+  )
+}
+
+/** The odometer as a quiet line under the test: last reading and how long ago. */
+function OdometerLine({ reading, onPress }: { reading: Reading | null; onPress: () => void }) {
+  const { colors } = useTheme()
+  const text = reading
+    ? `${reading.km.toLocaleString('he-IL')} ק״מ · ${formatDate(reading.date)}`
+    : 'עדכון קילומטראז׳ — לתזכורות לפי ק״מ'
+  return (
+    <Touchable feedback="scale" onPress={onPress} accessibilityRole="button" accessibilityLabel={text} style={styles.testLine}>
+      <Gauge size={16} color={colors.muted} strokeWidth={2} />
+      <Text variant="label" tone="onSurfaceVariant">
         {text}
       </Text>
     </Touchable>

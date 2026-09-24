@@ -47,7 +47,7 @@ export function DocumentSheet({
         setError(null)
       }
     } catch (e) {
-      snack(e instanceof PermissionDenied ? 'צריך לאשר גישה למצלמה בהגדרות הטלפון' : 'לא הצלחנו לפתוח את הקובץ', { tone: 'error' })
+      snack(e instanceof PermissionDenied ? 'צריך לאשר גישה למצלמה בהגדרות הטלפון' : 'פתיחת הקובץ נכשלה — נסו שוב', { tone: 'error' })
     }
   }
 
@@ -89,7 +89,7 @@ export function DocumentSheet({
       snack(doc ? 'המסמך עודכן' : total > 1 ? `המסמך נשמר (${total} עמודים)` : 'המסמך נשמר', { tone: 'success' })
       onClose()
     } catch {
-      snack('השמירה נכשלה. בדקו את החיבור ונסו שוב.', { tone: 'error' })
+      snack('השמירה נכשלה — בדקו את החיבור ונסו שוב', { tone: 'error' })
     } finally {
       setSaving(false)
     }
@@ -102,7 +102,7 @@ export function DocumentSheet({
       snack('המסמך נמחק', { tone: 'info' })
       onClose()
     } catch {
-      snack('המחיקה נכשלה', { tone: 'error' })
+      snack('המחיקה נכשלה — בדקו את החיבור ונסו שוב', { tone: 'error' })
     }
   }
 

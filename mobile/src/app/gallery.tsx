@@ -179,7 +179,7 @@ export default function GalleryScreen() {
           <Button
             label="הודעה: שגיאה עם פעולה"
             variant="tonal"
-            onPress={() => snack('השמירה נכשלה', { tone: 'error', action: { label: 'נסו שוב', onPress: () => {} } })}
+            onPress={() => snack('השמירה נכשלה — בדקו את החיבור ונסו שוב', { tone: 'error', action: { label: 'נסו שוב', onPress: () => {} } })}
           />
           <Button
             label="הודעה: ביטול פעולה"

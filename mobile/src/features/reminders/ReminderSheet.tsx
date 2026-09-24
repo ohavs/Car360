@@ -65,7 +65,7 @@ export function ReminderSheet({
       snack(reminder ? 'התזכורת עודכנה' : 'התזכורת נוספה', { tone: 'success' })
       onClose()
     } catch {
-      snack('השמירה נכשלה. בדקו את החיבור ונסו שוב.', { tone: 'error' })
+      snack('השמירה נכשלה — בדקו את החיבור ונסו שוב', { tone: 'error' })
     } finally {
       setSaving(false)
     }
@@ -81,7 +81,7 @@ export function ReminderSheet({
       })
       onClose()
     } catch {
-      snack('העדכון נכשל', { tone: 'error' })
+      snack('העדכון נכשל — בדקו את החיבור ונסו שוב', { tone: 'error' })
     } finally {
       setSaving(false)
     }
@@ -94,7 +94,7 @@ export function ReminderSheet({
       snack('התזכורת נמחקה', { tone: 'info' })
       onClose()
     } catch {
-      snack('המחיקה נכשלה', { tone: 'error' })
+      snack('המחיקה נכשלה — בדקו את החיבור ונסו שוב', { tone: 'error' })
     }
   }
 

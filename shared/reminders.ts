@@ -1,4 +1,5 @@
-import type { Car, CustomReminder, DerivedReminder, InsuranceRecord, ServiceRecord } from './types'
+import { kmServiceDue } from './odometer'
+import type { Car, CustomReminder, DerivedReminder, ExpenseRecord, InsuranceRecord, ServiceRecord } from './types'
 import { daysUntil } from './utils'
 
 export function carDisplayName(car: Pick<Car, 'nickname' | 'make' | 'model' | 'plate'>): string {
@@ -9,6 +10,8 @@ export interface CarRecords {
   insurances: InsuranceRecord[]
   services: ServiceRecord[]
   reminders: CustomReminder[]
+  /** odometer readings from fuel entries sharpen the km-based estimate */
+  expenses?: ExpenseRecord[]
 }
 
 /** Every upcoming or overdue date of one car: test, date blocks with a
@@ -43,6 +46,16 @@ export function deriveReminders(car: Car, records: CarRecords): DerivedReminder[
     if (s.nextDueDate)
       push({ key: `svc:${car.id}:${s.id}`, title: `טיפול קרוב: ${s.title}`, dueDate: s.nextDueDate, source: 'service' })
   }
+
+  // km-based service: last service km + the car's interval, dated by its pace
+  const km = kmServiceDue(car, records.services, records.expenses)
+  if (km)
+    push({
+      key: `km:${car.id}`,
+      title: km.remainingKm >= 0 ? `טיפול לפי ק״מ — עוד כ-${km.remainingKm.toLocaleString('he-IL')} ק״מ` : 'עברת את ק״מ הטיפול',
+      dueDate: km.dueDate,
+      source: 'service',
+    })
 
   for (const r of records.reminders) {
     if (!r.done)

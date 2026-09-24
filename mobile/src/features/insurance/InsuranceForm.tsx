@@ -95,7 +95,7 @@ export function InsuranceForm({
       await deleteRecord('insurances', start)
       snack('הפוליסה נמחקה', { tone: 'info' })
       leave()
-    }, 'המחיקה נכשלה')
+    }, 'המחיקה נכשלה — בדקו את החיבור ונסו שוב')
 
   return (
     <FormScreen

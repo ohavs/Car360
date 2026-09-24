@@ -24,11 +24,11 @@ export function TestSheet({ car, kind = 'test', onClose }: { car: Car; kind?: 't
     setChecking(true)
     try {
       const { found, patch } = await syncCarNow(car)
-      if (!found) snack('לא הצלחנו לקבל נתונים ממשרד התחבורה. נסו שוב מאוחר יותר.', { tone: 'error' })
+      if (!found) snack('משרד התחבורה לא זמין כרגע — נסו שוב מאוחר יותר', { tone: 'error' })
       else if (patch.testExpiry) snack(`עודכן — הטסט בתוקף עד ${formatDate(patch.testExpiry)}`, { tone: 'success' })
       else snack('אין שינוי — התאריך תואם את משרד התחבורה', { tone: 'info' })
     } catch {
-      snack('העדכון נכשל', { tone: 'error' })
+      snack('העדכון נכשל — בדקו את החיבור ונסו שוב', { tone: 'error' })
     } finally {
       setChecking(false)
     }
@@ -37,7 +37,7 @@ export function TestSheet({ car, kind = 'test', onClose }: { car: Car; kind?: 't
   const change = (iso: string) => {
     patchCar(car.id, { [field]: iso || null } as never).then(
       () => snack(iso ? `נשמר: ${formatDate(iso)}` : 'התאריך נמחק', { tone: 'success' }),
-      () => snack('השמירה נכשלה', { tone: 'error' }),
+      () => snack('השמירה נכשלה — בדקו את החיבור ונסו שוב', { tone: 'error' }),
     )
   }
 

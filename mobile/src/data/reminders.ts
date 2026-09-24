@@ -3,7 +3,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { deriveReminders, type CarRecords } from '@shared/reminders'
 import type { Car, CustomReminder, DerivedReminder } from '@shared/types'
 
-const SUBS = ['insurances', 'services', 'reminders'] as const
+// expenses carry odometer readings for the km-based service estimate
+const SUBS = ['insurances', 'services', 'reminders', 'expenses'] as const
 
 /** Every derived reminder across the given cars, live. One listener per
  *  car × record type — a handful for a family garage. */
@@ -45,6 +46,7 @@ export function useAllReminders(cars: Car[]): {
           insurances: r?.insurances ?? [],
           services: r?.services ?? [],
           reminders: r?.reminders ?? [],
+          expenses: r?.expenses ?? [],
         })
       })
       .sort((a, b) => a.daysLeft - b.daysLeft)

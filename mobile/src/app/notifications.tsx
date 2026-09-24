@@ -84,11 +84,11 @@ export default function NotificationsHealthScreen() {
     setSending('server')
     try {
       const res = await httpsCallable<unknown, { sent: number }>(getFunctions(undefined, 'us-central1'), 'sendTestPush')()
-      snack(res.data.sent ? 'נשלחה התראה מהשרת — היא אמורה להגיע תוך כמה שניות' : 'השרת לא מצא את הטלפון הזה. נסו "רישום מחדש" למעלה.', {
+      snack(res.data.sent ? 'נשלחה התראה מהשרת — היא אמורה להגיע תוך כמה שניות' : 'השרת לא מצא את הטלפון הזה — נסו "רישום מחדש" למעלה', {
         tone: res.data.sent ? 'success' : 'error',
       })
     } catch {
-      snack('השרת לא זמין. ההתראות מהטלפון עצמו ממשיכות לעבוד.', { tone: 'error' })
+      snack('השרת לא זמין — ההתראות מהטלפון ממשיכות לעבוד', { tone: 'error' })
     } finally {
       setSending(null)
     }
@@ -178,7 +178,7 @@ export default function NotificationsHealthScreen() {
               allowed
                 ? () =>
                     void retryPushToken().then((ok) =>
-                      snack(ok ? 'הטלפון נרשם' : 'הרישום נכשל. בדקו את החיבור.', { tone: ok ? 'success' : 'error' }),
+                      snack(ok ? 'הטלפון נרשם' : 'הרישום נכשל — בדקו את החיבור ונסו שוב', { tone: ok ? 'success' : 'error' }),
                     )
                 : undefined
             }

@@ -35,6 +35,12 @@ export interface Car {
   /** key dates surfaced on the quick-info row */
   testExpiry?: string // ISO yyyy-mm-dd
   licenseExpiry?: string
+  /** latest known odometer reading (km) and when it was taken — kept up to
+   *  date from services, fuel entries and manual updates */
+  odometer?: number
+  odometerAt?: string
+  /** service every N km (e.g. 15000) — drives the km-based service reminder */
+  serviceIntervalKm?: number
   notes?: string
   blocks: InfoBlock[]
   /** emails of users the car is shared with */
@@ -120,6 +126,25 @@ export interface CarDocument {
   imageUrl: string
   /** small rendition for grids (Android app); falls back to imageUrl */
   thumbUrl?: string
+  createdAt: number
+  updatedAt: number
+}
+
+export type ExpenseCategory = 'דלק' | 'חניה' | 'כביש אגרה' | 'דוח' | 'שטיפה' | 'אחר'
+
+/** Running costs beyond services and insurance: fuel/charging, parking, tolls,
+ *  fines, washes. Fuel entries may carry the amount filled and the odometer,
+ *  which give consumption and cost per km. */
+export interface ExpenseRecord {
+  id: string
+  carId: string
+  category: ExpenseCategory
+  date: string // ISO
+  amount: number
+  /** litres — or kWh for an electric car */
+  quantity?: number
+  odometer?: number
+  note?: string
   createdAt: number
   updatedAt: number
 }

@@ -1,5 +1,5 @@
 import { collection, deleteDoc, doc, getDocs, getFirestore, setDoc, updateDoc, writeBatch } from '@react-native-firebase/firestore'
-import type { Car, CarDocument, CustomReminder, InsuranceRecord, ServiceRecord } from '@shared/types'
+import type { Car, CarDocument, CustomReminder, ExpenseRecord, InsuranceRecord, ServiceRecord } from '@shared/types'
 import { deleteImage } from './images'
 import { commit } from './sync'
 
@@ -26,7 +26,7 @@ export async function patchCar(id: string, patch: Partial<Car>): Promise<void> {
 export async function deleteCar(car: Car): Promise<void> {
   const refs = []
   const urls: string[] = car.imageUrl ? [car.imageUrl] : []
-  for (const sub of ['services', 'insurances', 'documents', 'reminders'] as const) {
+  for (const sub of ['services', 'insurances', 'documents', 'reminders', 'expenses'] as const) {
     const snap = await getDocs(collection(db(), 'cars', car.id, sub))
     for (const d of snap.docs) {
       const data = d.data() as { photos?: string[]; thumbs?: string[]; imageUrl?: string; thumbUrl?: string }
@@ -44,8 +44,8 @@ export async function deleteCar(car: Car): Promise<void> {
   await Promise.all(urls.map(deleteImage))
 }
 
-type SubRecord = ServiceRecord | InsuranceRecord | CarDocument | CustomReminder
-type Sub = 'services' | 'insurances' | 'documents' | 'reminders'
+type SubRecord = ServiceRecord | InsuranceRecord | CarDocument | CustomReminder | ExpenseRecord
+type Sub = 'services' | 'insurances' | 'documents' | 'reminders' | 'expenses'
 
 export async function saveRecord(sub: Sub, rec: SubRecord): Promise<void> {
   await commit(setDoc(doc(db(), 'cars', rec.carId, sub, rec.id), clean(rec)))
@@ -57,4 +57,10 @@ export async function deleteRecord(sub: Sub, rec: SubRecord): Promise<void> {
   const r = rec as { photos?: string[]; thumbs?: string[]; imageUrl?: string; thumbUrl?: string }
   const urls = [...(r.photos ?? []), ...(r.thumbs ?? []), ...(r.imageUrl ? [r.imageUrl] : []), ...(r.thumbUrl ? [r.thumbUrl] : [])]
   await Promise.all(urls.map(deleteImage))
+}
+
+/** A new odometer reading: kept on the car when it's the highest one yet. */
+export async function recordOdometer(car: Car, km: number | undefined, date: string): Promise<void> {
+  if (!km || km <= (car.odometer ?? 0)) return
+  await patchCar(car.id, { odometer: km, odometerAt: date })
 }

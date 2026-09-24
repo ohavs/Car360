@@ -68,12 +68,12 @@ export default function RemindersScreen() {
     if (!custom) return
     try {
       await setDone(custom, true)
-      snack(`"${custom.title}" סומנה כבוצעה`, {
+      snack(`"${custom.title}" סומן כבוצע`, {
         tone: 'success',
         action: { label: 'ביטול', onPress: () => void setDone(custom, false) },
       })
     } catch {
-      snack('העדכון נכשל', { tone: 'error' })
+      snack('העדכון נכשל — בדקו את החיבור ונסו שוב', { tone: 'error' })
     }
   }
   const finished = useMemo(

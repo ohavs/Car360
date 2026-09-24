@@ -1,7 +1,7 @@
 import { collection, getFirestore, onSnapshot } from '@react-native-firebase/firestore'
 import { useEffect, useState } from 'react'
 
-export type Sub = 'services' | 'insurances' | 'documents' | 'reminders'
+export type Sub = 'services' | 'insurances' | 'documents' | 'reminders' | 'expenses'
 
 export interface Live<T> {
   items: T[]

@@ -4,7 +4,7 @@ import { shareAsync } from 'expo-sharing'
 import type { Car } from '@shared/types'
 import { todayISO } from '@shared/utils'
 
-const SUBS = ['services', 'insurances', 'documents', 'reminders'] as const
+const SUBS = ['services', 'insurances', 'documents', 'reminders', 'expenses'] as const
 
 /**
  * Everything in the garage as one JSON file — the same shape as the web

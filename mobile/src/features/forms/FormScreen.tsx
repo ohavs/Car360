@@ -73,13 +73,13 @@ export function FormScreen({
 export function useSaver() {
   const snack = useSnackbar()
   const [saving, setSaving] = useState(false)
-  const run = async (work: () => Promise<void>, failure = 'השמירה נכשלה') => {
+  const run = async (work: () => Promise<void>, failure = 'השמירה נכשלה — בדקו את החיבור ונסו שוב') => {
     if (saving) return
     setSaving(true)
     try {
       await work()
     } catch {
-      snack(`${failure}. בדקו את החיבור ונסו שוב.`, { tone: 'error', action: { label: 'נסו שוב', onPress: () => void run(work, failure) } })
+      snack(`${failure} — בדקו את החיבור ונסו שוב`, { tone: 'error', action: { label: 'נסו שוב', onPress: () => void run(work, failure) } })
     } finally {
       setSaving(false)
     }

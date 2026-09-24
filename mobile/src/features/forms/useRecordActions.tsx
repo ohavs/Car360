@@ -22,7 +22,7 @@ export function useRecordActions() {
       await deleteRecord(k.sub, k.rec)
       snack(`${NOUN[k.sub]} נמחק${k.sub === 'insurances' ? 'ה' : ''}`, { tone: 'info' })
     } catch {
-      snack('המחיקה נכשלה', { tone: 'error' })
+      snack('המחיקה נכשלה — בדקו את החיבור ונסו שוב', { tone: 'error' })
     }
   }
 

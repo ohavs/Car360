@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { carDisplayName } from '@shared/reminders'
 import type { Car } from '@shared/types'
-import { newId } from '@shared/utils'
+import { newId, todayISO } from '@shared/utils'
 import { lookupVehicle } from '@shared/vehicleApi'
 import { useGarage } from '../../data/CarsProvider'
 import { deleteImage, isLocal, ModelNotReady, removeBackground, uploadImage } from '../../data/images'
@@ -132,7 +132,7 @@ export function CarForm({ initial }: { initial?: Car }) {
       snack(`${carDisplayName(start)} נמחק`, { tone: 'info' })
       release()
       router.dismissTo('/')
-    }, 'המחיקה נכשלה')
+    }, 'המחיקה נכשלה — בדקו את החיבור ונסו שוב')
 
   return (
     <FormScreen
@@ -207,6 +207,25 @@ export function CarForm({ initial }: { initial?: Car }) {
         autoCapitalize="characters"
         ltr
       />
+
+      <SectionHeader title="קילומטראז׳ וטיפולים" />
+      <View style={styles.row}>
+        <NumberField
+          label="מד אוץ היום"
+          suffix="ק״מ"
+          value={draft.odometer}
+          onChangeValue={(v) => setDraft((d) => ({ ...d, odometer: v, odometerAt: v ? todayISO() : undefined }))}
+          style={styles.flex}
+        />
+        <NumberField
+          label="טיפול כל"
+          suffix="ק״מ"
+          value={draft.serviceIntervalKm}
+          onChangeValue={(v) => set('serviceIntervalKm', v)}
+          hint="נזכיר לפי הקצב שבו אתם נוסעים"
+          style={styles.flex}
+        />
+      </View>
 
       <SectionHeader title="תאריכים" />
       <DateField

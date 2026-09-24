@@ -37,7 +37,7 @@ export function useCarDocuments(id: string | undefined) {
       await deleteRecord('documents', doc)
       snack('המסמך נמחק', { tone: 'info' })
     } catch {
-      snack('המחיקה נכשלה', { tone: 'error' })
+      snack('המחיקה נכשלה — בדקו את החיבור ונסו שוב', { tone: 'error' })
     }
   }
 

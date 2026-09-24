@@ -38,7 +38,7 @@ export function PhotoStrip({
       const picked = await pickImages(source, multiple)
       if (picked.length) onChange(multiple ? [...photos, ...picked] : picked.slice(0, 1))
     } catch (e) {
-      snack(e instanceof PermissionDenied ? 'צריך לאשר גישה למצלמה בהגדרות הטלפון' : 'לא הצלחנו לפתוח את הקובץ', {
+      snack(e instanceof PermissionDenied ? 'צריך לאשר גישה למצלמה בהגדרות הטלפון' : 'פתיחת הקובץ נכשלה — נסו שוב', {
         tone: 'error',
       })
     }

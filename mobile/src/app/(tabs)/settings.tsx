@@ -69,7 +69,7 @@ export default function SettingsScreen() {
             if (backingUp) return
             setBackingUp(true)
             shareBackup(cars)
-              .catch(() => snack('הגיבוי נכשל. בדקו את החיבור ונסו שוב.', { tone: 'error' }))
+              .catch(() => snack('הגיבוי נכשל — בדקו את החיבור ונסו שוב', { tone: 'error' }))
               .finally(() => setBackingUp(false))
           }}
         />

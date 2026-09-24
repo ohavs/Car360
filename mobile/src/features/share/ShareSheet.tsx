@@ -64,7 +64,7 @@ export function ShareSheet({ car, onClose }: { car: Car; onClose: () => void }) 
         title="דרכון רכב (PDF)"
         subtitle="כל הפרטים וההיסטוריה במסמך אחד — מצוין למכירה"
         trailing={busy === 'pdf' ? <Text tone="muted">מכין…</Text> : undefined}
-        onPress={() => void run('pdf', () => sharePassportPdf(car), 'לא הצלחנו להכין את הקובץ')}
+        onPress={() => void run('pdf', () => sharePassportPdf(car), 'הכנת הקובץ נכשלה — נסו שוב')}
       />
 
       <SectionHeader title="קישור לצפייה" />
@@ -96,7 +96,7 @@ export function ShareSheet({ car, onClose }: { car: Car; onClose: () => void }) 
                 void run('link', async () => {
                   await publishPassport(car)
                   snack('הקישור מציג עכשיו את הנתונים העדכניים', { tone: 'success' })
-                }, 'העדכון נכשל')
+                }, 'העדכון נכשל — בדקו את החיבור ונסו שוב')
               }
             />
             <IconButton icon={Link2Off} label="ביטול הקישור" onPress={() => setRevoking(true)} />

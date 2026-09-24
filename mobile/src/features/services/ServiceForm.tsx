@@ -4,7 +4,7 @@ import { carDisplayName } from '@shared/reminders'
 import type { Car, ServiceRecord } from '@shared/types'
 import { formatDate, newId, todayISO } from '@shared/utils'
 import { deleteImage, removedPhotos, storePhotos } from '../../data/images'
-import { deleteRecord, saveRecord } from '../../data/mutations'
+import { deleteRecord, recordOdometer, saveRecord } from '../../data/mutations'
 import { space } from '../../theme/tokens'
 import { Chip, DateField, EXPIRY_PRESETS, NumberField, PhotoStrip, SectionHeader, TextField, useSnackbar } from '../../ui'
 import { FormScreen, useSaver } from '../forms/FormScreen'
@@ -54,6 +54,7 @@ export function ServiceForm({ car, initial, from }: { car: Car; initial?: Servic
         updatedAt: now,
       })
       removedPhotos(initial, photos).forEach((u) => void deleteImage(u))
+      await recordOdometer(car, draft.odometer, draft.date)
       // the reminder that led here is answered: the old record no longer waits for a next service
       if (from?.nextDueDate) await saveRecord('services', { ...from, nextDueDate: undefined, updatedAt: now })
       snack(initial ? 'הטיפול עודכן' : 'הטיפול נשמר', { tone: 'success' })
@@ -66,7 +67,7 @@ export function ServiceForm({ car, initial, from }: { car: Car; initial?: Servic
       await deleteRecord('services', start)
       snack('הטיפול נמחק', { tone: 'info' })
       leave()
-    }, 'המחיקה נכשלה')
+    }, 'המחיקה נכשלה — בדקו את החיבור ונסו שוב')
 
   return (
     <FormScreen

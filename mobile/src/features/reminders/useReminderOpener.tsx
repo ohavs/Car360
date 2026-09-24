@@ -57,7 +57,7 @@ export function useReminderOpener(cars: Car[], customs: CustomReminder[], active
         action: { label: 'ביטול', onPress: () => void patchCar(car.id, { blocks: car.blocks }) },
       })
     } catch {
-      snack('העדכון נכשל', { tone: 'error' })
+      snack('העדכון נכשל — בדקו את החיבור ונסו שוב', { tone: 'error' })
     }
   }
 

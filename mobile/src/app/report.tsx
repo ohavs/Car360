@@ -87,7 +87,7 @@ export default function ReportScreen() {
         writePref('recentReports', next)
       }
     } catch {
-      snack('הבדיקה נכשלה — בדקו את החיבור לאינטרנט', { tone: 'error' })
+      snack('הבדיקה נכשלה — בדקו את החיבור ונסו שוב', { tone: 'error' })
     } finally {
       setLoading(false)
     }
@@ -182,7 +182,7 @@ function ReportBody({ report }: { report: VehicleReport }) {
       const { uri } = await printToFileAsync({ html })
       await shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: `דוח רכב ${formatPlate(report.plate)}`, UTI: 'com.adobe.pdf' })
     } catch {
-      snack('לא הצלחנו להכין את הקובץ', { tone: 'error' })
+      snack('הכנת הקובץ נכשלה — נסו שוב', { tone: 'error' })
     } finally {
       setExporting(false)
     }
