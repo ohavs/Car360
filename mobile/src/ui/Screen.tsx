@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router'
 import { ArrowRight } from 'lucide-react-native'
-import type { ReactNode } from 'react'
+import { createContext, useState, type ReactNode } from 'react'
 import { RefreshControl, StyleSheet, View } from 'react-native'
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -46,6 +46,10 @@ export function AppBar({
   )
 }
 
+/** When the current screen opened — content that arrives while it is still
+ *  sliding in shows up without an extra animation of its own. */
+export const ScreenOpenedAt = createContext(0)
+
 /** A full screen: edge-to-edge background, the app bar under the status bar,
  *  and scrollable content that clears the gesture/navigation bar. */
 export function Screen({
@@ -64,30 +68,33 @@ export function Screen({
 }) {
   const { colors } = useTheme()
   const insets = useSafeAreaInsets()
+  const [openedAt] = useState(() => Date.now())
   return (
-    <View style={[styles.root, { backgroundColor: colors.background, paddingTop: insets.top }]}>
-      {header}
-      {/* keeps the focused field above the keyboard, with room for its error line */}
-      <KeyboardAwareScrollView
-        bottomOffset={space.xxxl}
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + space.xxxl + (fab ? 72 : 0) }]}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          onRefresh ? (
-            <RefreshControl
-              refreshing={Boolean(refreshing)}
-              onRefresh={onRefresh}
-              colors={[colors.brand]}
-              progressBackgroundColor={colors.surface}
-            />
-          ) : undefined
-        }
-      >
-        {children}
-      </KeyboardAwareScrollView>
-      {fab}
-    </View>
+    <ScreenOpenedAt.Provider value={openedAt}>
+      <View style={[styles.root, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+        {header}
+        {/* keeps the focused field above the keyboard, with room for its error line */}
+        <KeyboardAwareScrollView
+          bottomOffset={space.xxxl}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + space.xxxl + (fab ? 72 : 0) }]}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            onRefresh ? (
+              <RefreshControl
+                refreshing={Boolean(refreshing)}
+                onRefresh={onRefresh}
+                colors={[colors.brand]}
+                progressBackgroundColor={colors.surface}
+              />
+            ) : undefined
+          }
+        >
+          {children}
+        </KeyboardAwareScrollView>
+        {fab}
+      </View>
+    </ScreenOpenedAt.Provider>
   )
 }
 

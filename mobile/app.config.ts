@@ -123,6 +123,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       ],
       './plugins/withForcedRtl',
       './plugins/withReleaseSigning',
+      './plugins/withScreenTransitions',
     ],
     experiments: {
       typedRoutes: true,

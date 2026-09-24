@@ -2,6 +2,8 @@ import { deleteObject, getDownloadURL, getStorage, putFile, ref } from '@react-n
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator'
 import * as ImagePicker from 'expo-image-picker'
 import DocumentScanner from 'react-native-document-scanner-plugin'
+import { File, Paths } from 'expo-file-system'
+import ImageTools from '../../modules/image-tools'
 
 /** Same budgets as the web app: a phone photo becomes ~100–350KB of WebP. */
 const PROFILES = {
@@ -122,3 +124,24 @@ export function removedPhotos(
     return thumb && thumb !== p ? [p, thumb] : [p]
   })
 }
+
+/**
+ * Cuts the car out of its photo (on the device, ML Kit). Returns a local
+ * transparent PNG; the photo is shrunk first so it takes a second, not ten.
+ * Throws ModelNotReady while Play services is still fetching the model.
+ */
+export async function removeBackground(uri: string): Promise<string> {
+  let local = uri
+  if (uri.startsWith('http')) {
+    local = (await File.downloadFileAsync(uri, new File(Paths.cache, `car360-src-${Date.now()}.img`))).uri
+  }
+  const small = await compress(local, 'hero')
+  try {
+    return await ImageTools.removeBackground(small.uri)
+  } catch (e) {
+    if (String((e as { code?: string }).code ?? e).includes('MODEL_DOWNLOADING')) throw new ModelNotReady()
+    throw e
+  }
+}
+
+export class ModelNotReady extends Error {}

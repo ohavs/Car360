@@ -1,7 +1,7 @@
 import { Image } from 'expo-image'
 import { useRouter } from 'expo-router'
 import {
-  Bell,
+  BarChart3,
   BellPlus,
   CalendarClock,
   CarFront as CarAdd,
@@ -9,12 +9,11 @@ import {
   FileSearch,
   CarFront,
   CheckCircle2,
-  ChevronLeft,
+  Clock,
   FileText,
   LifeBuoy,
   Shield,
   Sparkles,
-  Wallet,
   WifiOff,
   Wrench,
   X,
@@ -22,10 +21,10 @@ import {
   Search,
   type LucideIcon,
 } from 'lucide-react-native'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { carDisplayName } from '@shared/reminders'
-import type { ServiceRecord } from '@shared/types'
+import type { CarDocument, InsuranceRecord, ServiceRecord } from '@shared/types'
 import { dueLabel, dueStatus, formatDate, formatMoney } from '@shared/utils'
 import { useGarage } from '../../data/CarsProvider'
 import { useLiveSub } from '../../data/live'
@@ -38,6 +37,7 @@ import { ReminderSheet } from '../../features/reminders/ReminderSheet'
 import { SearchSheet } from '../../features/search/SearchSheet'
 import { useReminderOpener } from '../../features/reminders/useReminderOpener'
 import { AttentionCard } from '../../features/home/AttentionCard'
+import { ExpensesSheet } from '../../features/home/ExpensesSheet'
 import { useUpdates } from '../../features/updates/UpdateProvider'
 import { useTheme } from '../../theme/ThemeProvider'
 import { radius, space } from '../../theme/tokens'
@@ -55,7 +55,6 @@ import {
   SectionHeader,
   Sheet,
   Skeleton,
-  StatusChip,
   Text,
   Touchable,
 } from '../../ui'
@@ -68,13 +67,51 @@ export default function HomeScreen() {
   const services = useLiveSub<ServiceRecord>(activeCar?.id, 'services')
   const router = useRouter()
   const { colors } = useTheme()
-  const [sheet, setSheet] = useState<'quick' | 'document' | 'reminder' | null>(null)
+  const [sheet, setSheet] = useState<'quick' | 'document' | 'reminder' | 'expenses' | null>(null)
   const opener = useReminderOpener(cars, customs, activeCar?.id)
   const [searching, setSearching] = useState(false)
 
   const carReminders = useMemo(() => reminders.filter((r) => r.carId === activeCar?.id), [reminders, activeCar?.id])
-  const recent = useMemo(() => [...services.items].sort((a, b) => b.date.localeCompare(a.date)), [services.items])
-  const spend = recent.reduce((sum, s) => sum + (s.cost ?? 0), 0)
+  const documents = useLiveSub<CarDocument>(activeCar?.id, 'documents')
+  const insurances = useLiveSub<InsuranceRecord>(activeCar?.id, 'insurances')
+  // the newest things that happened to this car, whatever they were
+  const latest = useMemo(() => {
+    if (!activeCar) return []
+    const id = activeCar.id
+    const items: { key: string; at: string; icon: LucideIcon; title: string; subtitle: string; trailing?: ReactNode; onPress: () => void }[] = [
+      ...services.items.map((s) => ({
+        key: `s:${s.id}`,
+        at: s.date,
+        icon: Wrench,
+        title: s.title || 'טיפול',
+        subtitle: [formatDate(s.date), s.garage].filter(Boolean).join(' · '),
+        trailing: s.cost != null ? <Text variant="label">{formatMoney(s.cost)}</Text> : undefined,
+        onPress: () => router.push({ pathname: '/car/[id]/service-edit', params: { id, rid: s.id } }),
+      })),
+      ...documents.items.map((d) => {
+        const at = new Date(d.createdAt).toISOString().slice(0, 10)
+        return {
+          key: `d:${d.id}`,
+          at,
+          icon: FileText,
+          title: d.title,
+          subtitle: `${d.category} · נוסף ${formatDate(at)}`,
+          onPress: () => router.push(`/car/${id}/documents`),
+        }
+      }),
+      ...insurances.items
+        .filter((p) => p.startDate)
+        .map((p) => ({
+          key: `i:${p.id}`,
+          at: p.startDate!,
+          icon: Shield,
+          title: `ביטוח ${p.kind}${p.company ? ` · ${p.company}` : ''}`,
+          subtitle: `מ-${formatDate(p.startDate)} עד ${formatDate(p.endDate)}`,
+          onPress: () => router.push({ pathname: '/car/[id]/insurance-edit', params: { id, rid: p.id } }),
+        })),
+    ]
+    return items.sort((a, b) => b.at.localeCompare(a.at)).slice(0, 4)
+  }, [activeCar, services.items, documents.items, insurances.items, router])
   const firstName = user?.displayName.split(' ')[0] ?? ''
 
   return (
@@ -136,64 +173,36 @@ export default function HomeScreen() {
           <CarPager cars={cars} activeId={activeCar.id} onChange={setActiveCarId} onPressCar={(id) => router.push(`/car/${id}`)} />
           <View style={styles.plateRow}>
             <Plate plate={activeCar.plate} />
+            <TestChip testExpiry={activeCar.testExpiry} onPress={() => opener.openTest(activeCar.id)} />
           </View>
 
-          <Appear index={0}>
-            <AttentionCard reminders={carReminders} onOpen={opener.openReminder} />
-          </Appear>
-
-          <Appear index={1} style={styles.stats}>
-            <StatTile
-              icon={CalendarClock}
-              label="טסט"
-              value={activeCar.testExpiry ? formatDate(activeCar.testExpiry) : '—'}
-              meta={activeCar.testExpiry ? dueLabel(activeCar.testExpiry) : 'לא הוזן תאריך'}
-              tone={dueStatus(activeCar.testExpiry)}
-              onPress={() => opener.openTest(activeCar.id)}
-            />
-            <StatTile
-              icon={Wallet}
-              label="הוצאות"
-              value={spend > 0 ? formatMoney(spend) : '—'}
-              meta={recent.length ? `ב-${recent.length} טיפולים` : 'אין טיפולים מתועדים'}
-              onPress={() => router.push(`/car/${activeCar.id}/services`)}
-            />
-          </Appear>
-
-          <Appear index={2} style={styles.shortcuts}>
+          <View style={styles.shortcuts}>
             <Shortcut icon={Wrench} label="טיפולים" onPress={() => router.push(`/car/${activeCar.id}/services`)} />
             <Shortcut icon={Shield} label="ביטוח" onPress={() => router.push(`/car/${activeCar.id}/insurance`)} />
             <Shortcut icon={FileText} label="מסמכים" onPress={() => router.push(`/car/${activeCar.id}/documents`)} />
+            <Shortcut icon={BarChart3} label="הוצאות" onPress={() => setSheet('expenses')} />
             <Shortcut icon={LifeBuoy} label="תא כפפות" onPress={() => router.push(`/car/${activeCar.id}/glovebox`)} />
             <Shortcut icon={FileSearch} label="דוח רכב" onPress={() => router.push({ pathname: '/report', params: { plate: activeCar.plate } })} />
-            <Shortcut icon={Bell} label="תזכורות" onPress={() => router.push('/reminders')} />
-          </Appear>
+          </View>
 
-          <SectionHeader title="טיפולים אחרונים" />
-          <Appear index={3}>
-            <Card padded={false}>
-              {services.loading ? (
-                <View style={styles.pad}>
-                  <Skeleton height={44} />
-                </View>
-              ) : recent.length === 0 ? (
-                <ListItem icon={Wrench} title="עדיין לא תועדו טיפולים" subtitle="כאן יופיעו הטיפולים האחרונים" />
-              ) : (
-                recent
-                  .slice(0, 3)
-                  .map((s) => (
-                    <ListItem
-                      key={s.id}
-                      icon={Wrench}
-                      title={s.title || 'טיפול'}
-                      subtitle={[formatDate(s.date), s.garage].filter(Boolean).join(' · ')}
-                      trailing={s.cost != null ? <Text variant="label">{formatMoney(s.cost)}</Text> : undefined}
-                      onPress={() => router.push(`/car/${activeCar.id}/services`)}
-                    />
-                  ))
-              )}
-            </Card>
-          </Appear>
+          <SectionHeader title="לאחרונה" />
+          <Card padded={false}>
+            {services.loading ? (
+              <View style={styles.pad}>
+                <Skeleton height={44} />
+              </View>
+            ) : latest.length === 0 ? (
+              <ListItem icon={Clock} title="עוד אין כאן כלום" subtitle="טיפולים, מסמכים ופוליסות שתוסיפו יופיעו כאן" />
+            ) : (
+              latest.map((a) => (
+                <Appear key={a.key}>
+                  <ListItem icon={a.icon} title={a.title} subtitle={a.subtitle} trailing={a.trailing} onPress={a.onPress} />
+                </Appear>
+              ))
+            )}
+          </Card>
+
+          <AttentionCard reminders={carReminders} onOpen={opener.openReminder} />
         </>
       )}
 
@@ -208,6 +217,7 @@ export default function HomeScreen() {
           </View>
         </Sheet>
       )}
+      {sheet === 'expenses' && activeCar && <ExpensesSheet car={activeCar} onClose={() => setSheet(null)} />}
       {sheet === 'document' && activeCar && <DocumentSheet carId={activeCar.id} onClose={() => setSheet(null)} />}
       <NotifyPrompt enabled={cars.length > 0 && sheet === null} />
       {opener.sheet}
@@ -222,59 +232,37 @@ export default function HomeScreen() {
   }
 }
 
-function StatTile({
-  icon: Icon,
-  label,
-  value,
-  meta,
-  tone = 'neutral',
-  onPress,
-}: {
-  icon: LucideIcon
-  label: string
-  value: string
-  meta: string
-  tone?: 'neutral' | 'ok' | 'warn' | 'danger'
-  onPress: () => void
-}) {
+/** The test date as a small tappable chip beside the plate. */
+function TestChip({ testExpiry, onPress }: { testExpiry?: string; onPress: () => void }) {
   const { colors } = useTheme()
-  return (
-    <Card onPress={onPress} style={styles.stat} accessibilityLabel={`${label}: ${value}, ${meta}`}>
-      <View style={styles.row}>
-        <Icon size={16} color={colors.muted} strokeWidth={2} />
-        <Text variant="caption" tone="muted" style={styles.flex}>
-          {label}
-        </Text>
-        <ChevronLeft size={16} color={colors.muted} />
-      </View>
-      <Text variant="title" numberOfLines={1}>
-        {value}
-      </Text>
-      {tone === 'neutral' ? (
-        <Text variant="caption" tone="muted" numberOfLines={1}>
-          {meta}
-        </Text>
-      ) : (
-        <StatusChip tone={tone} label={meta} />
-      )}
-    </Card>
-  )
-}
-
-function Shortcut({ icon: Icon, label, onPress }: { icon: LucideIcon; label: string; onPress: () => void }) {
-  const { colors } = useTheme()
+  const tone = dueStatus(testExpiry)
+  const tint = { neutral: colors.surfaceContainer, ok: colors.successContainer, warn: colors.warningContainer, danger: colors.dangerContainer }[tone]
+  const ink = { neutral: 'onSurfaceVariant', ok: 'success', warn: 'warning', danger: 'danger' } as const
   return (
     <Touchable
       feedback="scale"
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={label}
-      style={[styles.shortcut, { backgroundColor: colors.surface, borderColor: colors.outline }]}
+      accessibilityLabel={testExpiry ? `טסט עד ${formatDate(testExpiry)}, ${dueLabel(testExpiry)}` : 'טסט: לא הוזן תאריך'}
+      style={[styles.testChip, { backgroundColor: tint }]}
     >
-      <View style={[styles.shortcutIcon, { backgroundColor: colors.brandContainer }]}>
+      <CalendarClock size={16} color={colors[ink[tone]]} strokeWidth={2.2} />
+      <Text variant="label" tone={ink[tone]}>
+        {testExpiry ? `טסט · ${dueLabel(testExpiry)}` : 'טסט · להוספה'}
+      </Text>
+    </Touchable>
+  )
+}
+
+/** One compact destination: a round icon and a short label. */
+function Shortcut({ icon: Icon, label, onPress }: { icon: LucideIcon; label: string; onPress: () => void }) {
+  const { colors } = useTheme()
+  return (
+    <Touchable feedback="scale" onPress={onPress} accessibilityRole="button" accessibilityLabel={label} style={styles.shortcut}>
+      <View style={[styles.shortcutIcon, { backgroundColor: colors.surfaceContainer }]}>
         <Icon size={22} color={colors.onSurface} strokeWidth={1.9} />
       </View>
-      <Text variant="label" numberOfLines={1}>
+      <Text variant="overline" tone="onSurfaceVariant" numberOfLines={1}>
         {label}
       </Text>
     </Touchable>
@@ -351,32 +339,37 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   plateRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: space.sm,
+  },
+  testChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.xs,
+    borderRadius: radius.full,
+    paddingHorizontal: space.md,
+    minHeight: 36,
   },
   stats: {
     flexDirection: 'row',
     gap: space.md,
   },
-  stat: {
-    flex: 1,
-    gap: space.xs,
-  },
   shortcuts: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: space.sm,
+    justifyContent: 'space-between',
   },
   shortcut: {
-    width: '31.8%',
+    flex: 1,
     alignItems: 'center',
-    gap: space.sm,
-    paddingVertical: space.md,
-    borderRadius: radius.card,
-    borderWidth: StyleSheet.hairlineWidth,
+    gap: space.xs,
+    paddingVertical: space.xs,
   },
   shortcutIcon: {
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
     borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',

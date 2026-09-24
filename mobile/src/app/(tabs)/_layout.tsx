@@ -43,7 +43,7 @@ export default function TabsLayout() {
       tabBar={(props) => <TabBar {...props} />}
       // back from any tab returns home; back on home leaves the app
       backBehavior="firstRoute"
-      screenOptions={{ headerShown: false, animation: 'fade' }}
+      screenOptions={{ headerShown: false, animation: 'none' }}
     >
       <Tabs.Screen name="index" />
       <Tabs.Screen name="reminders" />

@@ -91,6 +91,9 @@ export function Sheet({
   return (
     <BottomSheetModal
       ref={ref}
+      // a picker opened from inside a sheet (date, time) stacks on top of it;
+      // the default "switch" minimises the sheet underneath, which closed it
+      stackBehavior="push"
       onDismiss={() => {
         const wasOpen = presented.current
         presented.current = false

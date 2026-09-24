@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react-native'
-import { StyleSheet, View } from 'react-native'
-import Animated, { useAnimatedStyle, withSpring } from 'react-native-reanimated'
+import { I18nManager, StyleSheet, View } from 'react-native'
+import { useEffect, useState } from 'react'
+import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { haptic } from '../lib/haptics'
 import { useTheme } from '../theme/ThemeProvider'
@@ -16,8 +17,11 @@ export interface NavItem {
   badge?: number | boolean
 }
 
-/** Material 3 navigation bar: the active destination gets a pill behind its
- *  icon and a bold label. Sits above the system gesture area. */
+const PILL_WIDTH = 64
+
+/** Material 3 navigation bar: one pill glides to the active destination's
+ *  icon (with a little stretch on the way) and its label turns bold. Sits
+ *  above the system gesture area. */
 export function NavigationBar({
   items,
   activeKey,
@@ -29,11 +33,38 @@ export function NavigationBar({
 }) {
   const { colors } = useTheme()
   const insets = useSafeAreaInsets()
+  const [width, setWidth] = useState(0)
+  // RTL: the first destination is on the right
+  const index = Math.max(0, items.findIndex((i) => i.key === activeKey))
+  const count = items.length
+  const x = useSharedValue(0)
+  const stretch = useSharedValue(1)
+  const placed = useSharedValue(false)
+  useEffect(() => {
+    if (width <= 0) return
+    const slotWidth = width / Math.max(1, count)
+    const fromStart = index * slotWidth + (slotWidth - PILL_WIDTH) / 2
+    const to = I18nManager.isRTL ? width - fromStart - PILL_WIDTH : fromStart
+    if (!placed.value) {
+      x.value = to
+      placed.value = true
+      return
+    }
+    x.value = withSpring(to, { damping: 22, stiffness: 260, mass: 0.8 })
+    // a little stretch while it travels
+    stretch.value = withSequence(withTiming(1.3, { duration: 90 }), withSpring(1, { damping: 14, stiffness: 180 }))
+  }, [width, index, count, x, stretch, placed])
+  const pill = useAnimatedStyle(() => ({
+    opacity: placed.value ? 1 : 0,
+    transform: [{ translateX: x.value }, { scaleX: stretch.value }],
+  }))
   return (
     <View
       accessibilityRole="tablist"
+      onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
       style={[styles.bar, { backgroundColor: colors.surface, borderTopColor: colors.outline, paddingBottom: insets.bottom }]}
     >
+      <Animated.View pointerEvents="none" style={[styles.pill, { backgroundColor: colors.brandContainer }, pill]} />
       {items.map((item) => (
         <Destination
           key={item.key}
@@ -51,10 +82,6 @@ export function NavigationBar({
 
 function Destination({ item, active, onPress }: { item: NavItem; active: boolean; onPress: () => void }) {
   const { colors } = useTheme()
-  const pill = useAnimatedStyle(() => ({
-    opacity: withSpring(active ? 1 : 0, { damping: 20 }),
-    transform: [{ scaleX: withSpring(active ? 1 : 0.4, { damping: 18, stiffness: 240 }) }],
-  }))
   const Icon = item.icon
   const count = typeof item.badge === 'number' ? item.badge : 0
   return (
@@ -67,7 +94,6 @@ function Destination({ item, active, onPress }: { item: NavItem; active: boolean
       style={styles.item}
     >
       <View style={styles.iconWrap}>
-        <Animated.View style={[styles.pill, { backgroundColor: colors.brandContainer }, pill]} />
         <Icon size={24} color={active ? colors.onSurface : colors.onSurfaceVariant} strokeWidth={active ? 2.3 : 1.8} />
         {item.badge ? (
           <View
@@ -111,7 +137,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   pill: {
-    ...StyleSheet.absoluteFill,
+    position: 'absolute',
+    // RN positions absolute children from the physical left even in RTL when
+    // using `left`; the translateX above is computed in those terms
+    left: 0,
+    top: space.sm,
+    width: PILL_WIDTH,
+    height: 32,
     borderRadius: radius.full,
   },
   activeLabel: {

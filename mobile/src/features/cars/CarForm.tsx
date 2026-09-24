@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router'
-import { Sparkles } from 'lucide-react-native'
+import { Sparkles, Wand2 } from 'lucide-react-native'
 import { useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { carDisplayName } from '@shared/reminders'
@@ -7,7 +7,7 @@ import type { Car } from '@shared/types'
 import { newId } from '@shared/utils'
 import { lookupVehicle } from '@shared/vehicleApi'
 import { useGarage } from '../../data/CarsProvider'
-import { isLocal, uploadImage, deleteImage } from '../../data/images'
+import { deleteImage, isLocal, ModelNotReady, removeBackground, uploadImage } from '../../data/images'
 import { deleteCar, saveCar } from '../../data/mutations'
 import { space } from '../../theme/tokens'
 import {
@@ -43,6 +43,7 @@ export function CarForm({ initial }: { initial?: Car }) {
   const [draft, setDraft] = useState(start)
   const [errors, setErrors] = useState<{ name?: string; plate?: string }>({})
   const [fetching, setFetching] = useState(false)
+  const [cutting, setCutting] = useState(false)
   const dirty = JSON.stringify(draft) !== JSON.stringify(start)
   const { dialog, leave, release } = useFormGuard(dirty)
   const { saving, run } = useSaver()
@@ -73,6 +74,26 @@ export function CarForm({ initial }: { initial?: Car }) {
     }))
     setErrors({})
     snack('הפרטים נמשכו ממשרד התחבורה', { tone: 'success' })
+  }
+
+  const cutOut = async () => {
+    const original = draft.imageUrl
+    if (!original) return
+    setCutting(true)
+    try {
+      const cut = await removeBackground(original)
+      set('imageUrl', cut)
+      snack('הרקע הוסר', { tone: 'success', action: { label: 'ביטול', onPress: () => set('imageUrl', original) } })
+    } catch (e) {
+      snack(
+        e instanceof ModelNotReady
+          ? 'הכלי עוד יורד לטלפון מ-Google. נסו שוב בעוד דקה.'
+          : 'לא הצלחנו להפריד את הרכב מהרקע. נסו תמונה שבה הרכב שלם וברור.',
+        { tone: 'error' },
+      )
+    } finally {
+      setCutting(false)
+    }
   }
 
   const save = () => {
@@ -128,6 +149,9 @@ export function CarForm({ initial }: { initial?: Car }) {
         photos={draft.imageUrl ? [draft.imageUrl] : []}
         onChange={(p) => set('imageUrl', p[0])}
       />
+      {draft.imageUrl ? (
+        <Button label="הסרת רקע" icon={Wand2} variant="tonal" loading={cutting} onPress={() => void cutOut()} />
+      ) : null}
 
       <PlateField label="מספר רישוי" value={draft.plate} onChangeText={(v) => set('plate', v)} error={errors.plate} />
       <Button
