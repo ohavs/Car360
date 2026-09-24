@@ -5,6 +5,7 @@ import { useTheme } from '../theme/ThemeProvider'
 import type { Colors } from '../theme/palettes'
 import { badge, icon, radius, space } from '../theme/tokens'
 import { Touchable } from './Pressable'
+import { NoteLine } from './NoteLine'
 import { Text } from './Text'
 
 /** A settings-style row: leading icon, title and subtitle, trailing slot. The
@@ -15,6 +16,7 @@ export function ListItem({
   overline,
   title,
   subtitle,
+  note,
   trailing,
   onPress,
   onLongPress,
@@ -28,6 +30,8 @@ export function ListItem({
   overline?: string
   title: string
   subtitle?: string
+  /** the record's free-text note, on its own line */
+  note?: string
   trailing?: ReactNode
   onPress?: () => void
   /** the row's actions (edit, delete…) in a sheet */
@@ -58,6 +62,7 @@ export function ListItem({
             {subtitle}
           </Text>
         ) : null}
+        <NoteLine text={note} />
       </View>
       {trailing}
     </>

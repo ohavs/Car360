@@ -10,7 +10,21 @@ import { useLiveSub } from '../../../data/live'
 import { useCarParam } from '../../../features/cars/useCarParam'
 import { useRecordActions } from '../../../features/forms/useRecordActions'
 import { radius, space } from '../../../theme/tokens'
-import { AppBar, Appear, Button, Card, EmptyState, FAB, PhotoViewer, Screen, Skeleton, StatusChip, Text, Touchable } from '../../../ui'
+import {
+  AppBar,
+  Appear,
+  Button,
+  Card,
+  EmptyState,
+  FAB,
+  NoteLine,
+  PhotoViewer,
+  Screen,
+  Skeleton,
+  StatusChip,
+  Text,
+  Touchable,
+} from '../../../ui'
 
 export default function InsuranceScreen() {
   const { id, car } = useCarParam()
@@ -80,7 +94,8 @@ export default function InsuranceScreen() {
                 {p.photos.length > 0 && (
                   <View style={styles.photos}>
                     {p.photos.map((ph, i) => (
-                      <Touchable feedback="scale"
+                      <Touchable
+                        feedback="scale"
                         key={i}
                         onPress={() => setViewing({ photos: p.photos, index: i, title })}
                         accessibilityLabel={`צילום ${i + 1}`}
@@ -91,6 +106,7 @@ export default function InsuranceScreen() {
                     ))}
                   </View>
                 )}
+                <NoteLine text={p.notes} lines={6} />
                 {p.agentPhone ? (
                   <Button
                     label={`חיוג לסוכן${p.agentName ? ` · ${p.agentName}` : ''}`}

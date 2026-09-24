@@ -87,13 +87,26 @@ export default function HomeScreen() {
   const latest = useMemo(() => {
     if (!activeCar) return []
     const id = activeCar.id
-    const items: { key: string; at: string; icon: LucideIcon; title: string; subtitle: string; trailing?: ReactNode; onPress: () => void; onLongPress?: () => void }[] = [
+    const items: {
+      key: string
+      at: string
+      icon: LucideIcon
+      title: string
+      subtitle: string
+      note?: string
+      trailing?: ReactNode
+      onPress: () => void
+      onLongPress?: () => void
+    }[] = [
       ...services.items.map((s) => ({
         key: `s:${s.id}`,
         at: s.date,
         icon: Wrench,
         title: s.title || 'טיפול',
-        subtitle: [formatDate(s.date), s.garage].filter(Boolean).join(' · '),
+        subtitle: [formatDate(s.date), s.garage, s.odometer != null ? `${s.odometer.toLocaleString('he-IL')} ק״מ` : null]
+          .filter(Boolean)
+          .join(' · '),
+        note: s.notes,
         trailing: s.cost != null ? <Text variant="label">{formatMoney(s.cost)}</Text> : undefined,
         onPress: () => router.push({ pathname: '/car/[id]/service-edit', params: { id, rid: s.id } }),
         onLongPress: () => openService(s),
@@ -116,7 +129,11 @@ export default function HomeScreen() {
           at: p.startDate!,
           icon: Shield,
           title: `ביטוח ${p.kind}${p.company ? ` · ${p.company}` : ''}`,
-          subtitle: `מ-${formatDate(p.startDate)} עד ${formatDate(p.endDate)}`,
+          subtitle: [`מ-${formatDate(p.startDate)} עד ${formatDate(p.endDate)}`, p.policyNumber && `פוליסה ${p.policyNumber}`]
+            .filter(Boolean)
+            .join(' · '),
+          note: p.notes,
+          trailing: p.cost != null ? <Text variant="label">{formatMoney(p.cost)}</Text> : undefined,
           onPress: () => router.push({ pathname: '/car/[id]/insurance-edit', params: { id, rid: p.id } }),
           onLongPress: () => openPolicy(p),
         })),
@@ -128,7 +145,13 @@ export default function HomeScreen() {
         at: e.date,
         icon: Fuel,
         title: e.note || (e.category === 'דלק' && electric ? 'טעינה' : e.category),
-        subtitle: [formatDate(e.date), e.odometer ? `${e.odometer.toLocaleString('he-IL')} ק״מ` : null].filter(Boolean).join(' · '),
+        subtitle: [
+          formatDate(e.date),
+          e.note ? (e.category === 'דלק' && electric ? 'טעינה' : e.category) : null,
+          e.odometer ? `${e.odometer.toLocaleString('he-IL')} ק״מ` : null,
+        ]
+          .filter(Boolean)
+          .join(' · '),
         trailing: <Text variant="label">{formatMoney(e.amount)}</Text>,
         onPress: () => setSheet('expenses'),
       })
@@ -207,7 +230,11 @@ export default function HomeScreen() {
             <Shortcut icon={FileText} label="מסמכים" onPress={() => router.push(`/car/${activeCar.id}/documents`)} />
             <Shortcut icon={BarChart3} label="הוצאות" onPress={() => setSheet('expenses')} />
             <Shortcut icon={LifeBuoy} label="תא כפפות" onPress={() => router.push(`/car/${activeCar.id}/glovebox`)} />
-            <Shortcut icon={FileSearch} label="דוח רכב" onPress={() => router.push({ pathname: '/report', params: { plate: activeCar.plate } })} />
+            <Shortcut
+              icon={FileSearch}
+              label="דוח רכב"
+              onPress={() => router.push({ pathname: '/report', params: { plate: activeCar.plate } })}
+            />
           </ShortcutRow>
 
           <SectionHeader title="לאחרונה" />
@@ -221,7 +248,15 @@ export default function HomeScreen() {
             ) : (
               latest.map((a) => (
                 <Appear key={a.key}>
-                  <ListItem icon={a.icon} title={a.title} subtitle={a.subtitle} trailing={a.trailing} onPress={a.onPress} onLongPress={a.onLongPress} />
+                  <ListItem
+                    icon={a.icon}
+                    title={a.title}
+                    subtitle={a.subtitle}
+                    note={a.note}
+                    trailing={a.trailing}
+                    onPress={a.onPress}
+                    onLongPress={a.onLongPress}
+                  />
                 </Appear>
               ))
             )}
@@ -256,7 +291,9 @@ export default function HomeScreen() {
       )}
       {sheet === 'expense' && activeCar && <ExpenseSheet car={activeCar} onClose={() => setSheet(null)} />}
       {sheet === 'odometer' && activeCar && <OdometerSheet car={activeCar} onClose={() => setSheet(null)} />}
-      {sheet === 'expenses' && activeCar && <ExpensesSheet car={activeCar} services={services} insurances={insurances} expenses={expenses} onClose={() => setSheet(null)} />}
+      {sheet === 'expenses' && activeCar && (
+        <ExpensesSheet car={activeCar} services={services} insurances={insurances} expenses={expenses} onClose={() => setSheet(null)} />
+      )}
       {sheet === 'document' && activeCar && <DocumentSheet carId={activeCar.id} onClose={() => setSheet(null)} />}
       <NotifyPrompt enabled={cars.length > 0 && sheet === null && !justUpdatedTo} />
       {justUpdatedTo && whatsNew.length > 0 && <WhatsNewSheet version={justUpdatedTo} notes={whatsNew} onClose={dismissJustUpdated} />}
@@ -280,13 +317,7 @@ function TestLine({ testExpiry, onPress }: { testExpiry?: string; onPress: () =>
     ? `${daysUntil(testExpiry) < 0 ? 'הטסט פג' : 'טסט בתוקף עד'} ${formatDate(testExpiry)} · ${dueLabel(testExpiry)}`
     : 'לא הוזן תאריך טסט — להוספה'
   return (
-    <Touchable
-      feedback="scale"
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={text}
-      style={styles.testLine}
-    >
+    <Touchable feedback="scale" onPress={onPress} accessibilityRole="button" accessibilityLabel={text} style={styles.testLine}>
       <StatusDot tone={tone} />
       <Text variant="label" tone={tone === 'danger' ? 'danger' : 'onSurfaceVariant'}>
         {text}
@@ -298,9 +329,7 @@ function TestLine({ testExpiry, onPress }: { testExpiry?: string; onPress: () =>
 /** The odometer as a quiet line under the test: last reading and how long ago. */
 function OdometerLine({ reading, onPress }: { reading: Reading | null; onPress: () => void }) {
   const { colors } = useTheme()
-  const text = reading
-    ? `${reading.km.toLocaleString('he-IL')} ק״מ · ${formatDate(reading.date)}`
-    : 'עדכון קילומטראז׳ — לתזכורות לפי ק״מ'
+  const text = reading ? `${reading.km.toLocaleString('he-IL')} ק״מ · ${formatDate(reading.date)}` : 'עדכון קילומטראז׳ — לתזכורות לפי ק״מ'
   return (
     <Touchable feedback="scale" onPress={onPress} accessibilityRole="button" accessibilityLabel={text} style={styles.testLine}>
       <Gauge size={16} color={colors.muted} strokeWidth={2} />

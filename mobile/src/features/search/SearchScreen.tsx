@@ -19,6 +19,8 @@ interface Hit {
   car?: Car
   title: string
   subtitle: string
+  /** the note, when that's where the query matched */
+  note?: string
   href: string
 }
 
@@ -85,7 +87,14 @@ export function SearchScreen() {
     const out: Record<(typeof GROUPS)[number], Hit[]> = { רכבים: [], טיפולים: [], ביטוחים: [], מסמכים: [], תזכורות: [] }
     for (const c of cars) {
       if (has(q, c.nickname, c.make, c.model, c.plate, c.vin, c.color, c.year))
-        out['רכבים'].push({ key: c.id, icon: CarFront, car: c, title: carDisplayName(c), subtitle: formatPlate(c.plate), href: `/car/${c.id}` })
+        out['רכבים'].push({
+          key: c.id,
+          icon: CarFront,
+          car: c,
+          title: carDisplayName(c),
+          subtitle: formatPlate(c.plate),
+          href: `/car/${c.id}`,
+        })
     }
     for (const s of index?.services ?? []) {
       if (has(q, s.title, s.garage, s.notes))
@@ -94,6 +103,7 @@ export function SearchScreen() {
           icon: Wrench,
           title: s.title || 'טיפול',
           subtitle: [formatDate(s.date), s.garage, name(s.carId)].filter(Boolean).join(' · '),
+          note: has(q, s.notes) ? s.notes : undefined,
           href: `/car/${s.carId}/service-edit?rid=${s.id}`,
         })
     }
@@ -103,13 +113,22 @@ export function SearchScreen() {
           key: p.id,
           icon: Shield,
           title: [p.kind, p.company].filter(Boolean).join(' · '),
-          subtitle: [p.endDate && `עד ${formatDate(p.endDate)}`, name(p.carId)].filter(Boolean).join(' · '),
+          subtitle: [p.policyNumber && `פוליסה ${p.policyNumber}`, p.endDate && `עד ${formatDate(p.endDate)}`, name(p.carId)]
+            .filter(Boolean)
+            .join(' · '),
+          note: has(q, p.notes) ? p.notes : undefined,
           href: `/car/${p.carId}/insurance-edit?rid=${p.id}`,
         })
     }
     for (const d of index?.documents ?? []) {
       if (has(q, d.title, d.category))
-        out['מסמכים'].push({ key: d.id, icon: FileText, title: d.title, subtitle: `${d.category} · ${name(d.carId)}`, href: `/car/${d.carId}/documents` })
+        out['מסמכים'].push({
+          key: d.id,
+          icon: FileText,
+          title: d.title,
+          subtitle: `${d.category} · ${name(d.carId)}`,
+          href: `/car/${d.carId}/documents`,
+        })
     }
     for (const r of index?.reminders ?? []) {
       if (has(q, r.title))
@@ -198,6 +217,7 @@ export function SearchScreen() {
                   leading={h.car ? <CarThumb uri={h.car.imageUrl} kind={h.car.imageKind} /> : undefined}
                   title={h.title}
                   subtitle={h.subtitle}
+                  note={h.note}
                   onPress={() => open(h)}
                 />
               ))}

@@ -10,7 +10,21 @@ import { useLiveSub } from '../../../data/live'
 import { useCarParam } from '../../../features/cars/useCarParam'
 import { useRecordActions } from '../../../features/forms/useRecordActions'
 import { radius, space } from '../../../theme/tokens'
-import { AppBar, Appear, Button, Card, EmptyState, FAB, PhotoViewer, Screen, Skeleton, StatusChip, Text, Touchable } from '../../../ui'
+import {
+  AppBar,
+  Appear,
+  Button,
+  Card,
+  EmptyState,
+  FAB,
+  NoteLine,
+  PhotoViewer,
+  Screen,
+  Skeleton,
+  StatusChip,
+  Text,
+  Touchable,
+} from '../../../ui'
 
 export default function ServicesScreen() {
   const { id, car } = useCarParam()
@@ -84,7 +98,8 @@ export default function ServicesScreen() {
                 {s.photos.length > 0 && (
                   <View style={styles.photos}>
                     {s.photos.map((p, i) => (
-                      <Touchable feedback="scale"
+                      <Touchable
+                        feedback="scale"
                         key={i}
                         onPress={() =>
                           setViewing({
@@ -101,11 +116,7 @@ export default function ServicesScreen() {
                     ))}
                   </View>
                 )}
-                {s.notes ? (
-                  <Text variant="caption" tone="onSurfaceVariant">
-                    {s.notes}
-                  </Text>
-                ) : null}
+                <NoteLine text={s.notes} lines={6} />
               </Card>
             </Appear>
           ))}

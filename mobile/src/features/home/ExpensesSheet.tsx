@@ -65,13 +65,14 @@ export function ExpensesSheet({
     ]
       .filter((x) => x.value > 0)
       .sort((a, b) => b.value - a.value)
-    const top = [...services.items].filter((s) => s.cost).sort((a, b) => b.cost! - a.cost!).slice(0, 3)
+    const top = [...services.items]
+      .filter((s) => s.cost)
+      .sort((a, b) => b.cost! - a.cost!)
+      .slice(0, 3)
 
     // consumption: between the first and last fill that carry an odometer, the
     // fuel of every fill after the first covered the km in between
-    const fills = expenses.items
-      .filter((e) => e.category === 'דלק' && e.odometer)
-      .sort((a, b) => a.odometer! - b.odometer!)
+    const fills = expenses.items.filter((e) => e.category === 'דלק' && e.odometer).sort((a, b) => a.odometer! - b.odometer!)
     let perUnit: number | null = null
     let costPerKm: number | null = null
     if (fills.length >= 2) {
@@ -165,9 +166,7 @@ export function ExpensesSheet({
             <>
               <SectionHeader title={electric ? 'טעינה' : 'דלק'} />
               <View style={styles.tiles}>
-                {stats.perUnit ? (
-                  <Tile label={electric ? 'ק״מ לקוט״ש' : 'ק״מ לליטר'} value={stats.perUnit.toFixed(1)} />
-                ) : null}
+                {stats.perUnit ? <Tile label={electric ? 'ק״מ לקוט״ש' : 'ק״מ לליטר'} value={stats.perUnit.toFixed(1)} /> : null}
                 {stats.costPerKm ? <Tile label="עלות לק״מ" value={`₪${stats.costPerKm.toFixed(2)}`} /> : null}
               </View>
             </>
@@ -182,7 +181,11 @@ export function ExpensesSheet({
                     key={e.id}
                     icon={e.category === 'דלק' && electric ? Zap : CATEGORY_ICON[e.category]}
                     title={e.note || categoryLabel(e.category, car)}
-                    subtitle={[formatDate(e.date), e.note ? categoryLabel(e.category, car) : null, e.odometer ? `${e.odometer.toLocaleString('he-IL')} ק״מ` : null]
+                    subtitle={[
+                      formatDate(e.date),
+                      e.note ? categoryLabel(e.category, car) : null,
+                      e.odometer ? `${e.odometer.toLocaleString('he-IL')} ק״מ` : null,
+                    ]
                       .filter(Boolean)
                       .join(' · ')}
                     trailing={<Text variant="bodyStrong">{formatMoney(e.amount)}</Text>}
@@ -202,6 +205,7 @@ export function ExpensesSheet({
                     key={s.id}
                     title={s.title || 'טיפול'}
                     subtitle={[formatDate(s.date), s.garage].filter(Boolean).join(' · ')}
+                    note={s.notes}
                     trailing={<Text variant="bodyStrong">{formatMoney(s.cost)}</Text>}
                   />
                 ))}
