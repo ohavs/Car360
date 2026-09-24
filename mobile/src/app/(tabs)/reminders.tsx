@@ -7,7 +7,7 @@ import type { CustomReminder, DerivedReminder } from '@shared/types'
 import { dueLabel, dueStatus, formatDate, todayISO } from '@shared/utils'
 import { useGarage } from '../../data/CarsProvider'
 import { saveRecord } from '../../data/mutations'
-import { useAllReminders } from '../../data/reminders'
+import { useReminders } from '../../data/RemindersProvider'
 import { useNotifications } from '../../features/notifications/NotificationsProvider'
 import { ReminderSheet } from '../../features/reminders/ReminderSheet'
 import { useReminderOpener } from '../../features/reminders/useReminderOpener'
@@ -52,7 +52,7 @@ const setDone = (r: CustomReminder, done: boolean) =>
 
 export default function RemindersScreen() {
   const { cars, loading: carsLoading, activeCar } = useGarage()
-  const { reminders, customs, loading } = useAllReminders(cars)
+  const { reminders, customs, loading } = useReminders()
   const router = useRouter()
   const snack = useSnackbar()
   const { permission, canAsk, requestPermission } = useNotifications()

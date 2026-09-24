@@ -57,7 +57,7 @@ export function DocumentSheet({
     try {
       const now = Date.now()
       const imageUrl = isLocal(draft.imageUrl)
-        ? await uploadImage(draft.imageUrl, `cars/${carId}/documents/${draft.id}-${now}.webp`, 'document')
+        ? await uploadImage(draft.imageUrl, `cars/${carId}/documents/${draft.id}-${now}.webp`, 'document', `cars/${carId}/documents/${draft.id}`)
         : draft.imageUrl
       await saveRecord('documents', {
         ...draft,
@@ -71,7 +71,7 @@ export function DocumentSheet({
       const total = morePages.length + 1
       for (const [i, page] of morePages.entries()) {
         const id = newId()
-        const url = await uploadImage(page, `cars/${carId}/documents/${id}-${now}.webp`, 'document')
+        const url = await uploadImage(page, `cars/${carId}/documents/${id}-${now}.webp`, 'document', `cars/${carId}/documents/${id}`)
         await saveRecord('documents', {
           id,
           carId,

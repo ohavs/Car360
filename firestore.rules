@@ -29,7 +29,15 @@ service cloud.firestore {
     // may read; only signed-in users can publish or revoke a link.
     match /publicPassports/{token} {
       allow read: if true;
-      allow write: if isSignedIn();
+      // only whoever published a passport may replace or revoke it; older
+      // passports (from before ownerId was stored) stay editable by any
+      // signed-in user until they are republished
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isSignedIn()
+        && request.resource.data.ownerId == request.auth.uid
+        && (!('ownerId' in resource.data) || resource.data.ownerId == request.auth.uid);
+      allow delete: if isSignedIn()
+        && (!('ownerId' in resource.data) || resource.data.ownerId == request.auth.uid);
     }
 
     match /cars/{carId} {

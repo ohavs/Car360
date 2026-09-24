@@ -8,10 +8,13 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { KeyboardProvider } from 'react-native-keyboard-controller'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { AuthProvider, useAuth } from '../features/auth/AuthProvider'
+import { OfflineNotice } from '../features/sync/OfflineNotice'
+import { useUploadQueue } from '../features/sync/useUploadQueue'
 import { NotificationsProvider } from '../features/notifications/NotificationsProvider'
 import { UpdateProvider } from '../features/updates/UpdateProvider'
 import { ThemeProvider, useTheme } from '../theme/ThemeProvider'
 import { CarsProvider } from '../data/CarsProvider'
+import { RemindersProvider } from '../data/RemindersProvider'
 import { SnackbarProvider } from '../ui'
 
 // keep the native splash up until we know whether someone is signed in, so
@@ -22,6 +25,8 @@ SplashScreen.setOptions({ duration: 250, fade: true })
 function RootNavigator() {
   const { user, loading } = useAuth()
   const { colors, dark } = useTheme()
+  // photos taken offline upload themselves once the network is back
+  useUploadQueue(Boolean(user))
 
   useEffect(() => {
     if (!loading) void SplashScreen.hideAsync()
@@ -37,6 +42,7 @@ function RootNavigator() {
   return (
     <>
       <StatusBar style={dark ? 'light' : 'dark'} />
+      <OfflineNotice />
       <Stack
         screenOptions={{
           headerShown: false,
@@ -80,11 +86,13 @@ export default function RootLayout() {
               <SnackbarProvider>
                 <AuthProvider>
                   <CarsProvider>
-                    <NotificationsProvider>
-                      <UpdateProvider>
-                        <RootNavigator />
-                      </UpdateProvider>
-                    </NotificationsProvider>
+                    <RemindersProvider>
+                      <NotificationsProvider>
+                        <UpdateProvider>
+                          <RootNavigator />
+                        </UpdateProvider>
+                      </NotificationsProvider>
+                    </RemindersProvider>
                   </CarsProvider>
                 </AuthProvider>
               </SnackbarProvider>

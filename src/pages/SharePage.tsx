@@ -82,6 +82,7 @@ export default function SharePage() {
     ])
     return {
       token,
+      ownerId: user?.uid,
       car: {
         nickname: car.nickname,
         make: car.make,

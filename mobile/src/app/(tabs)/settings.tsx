@@ -1,6 +1,5 @@
 import { Image } from 'expo-image'
-import { DatabaseBackup, FileSearch, LogOut, Palette } from 'lucide-react-native'
-import { useRouter } from 'expo-router'
+import { DatabaseBackup, LogOut } from 'lucide-react-native'
 import { useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { useGarage } from '../../data/CarsProvider'
@@ -17,7 +16,6 @@ export default function SettingsScreen() {
   const { user, signOut } = useAuth()
   const { colors } = useTheme()
   const [confirmSignOut, setConfirmSignOut] = useState(false)
-  const router = useRouter()
   const { cars } = useGarage()
   const snack = useSnackbar()
   const [backingUp, setBackingUp] = useState(false)
@@ -51,12 +49,6 @@ export default function SettingsScreen() {
       <SectionHeader title="כלים ונתונים" />
       <Card padded={false}>
         <ListItem
-          icon={FileSearch}
-          title="דוח רכב"
-          subtitle="בדיקה לפי מספר רישוי — גם לרכב שחושבים לקנות"
-          onPress={() => router.push('/report')}
-        />
-        <ListItem
           icon={DatabaseBackup}
           title="גיבוי הנתונים"
           subtitle={backingUp ? 'מכין את הקובץ…' : 'כל הרכבים וההיסטוריה בקובץ אחד, לשמירה בדרייב או במייל'}
@@ -67,12 +59,6 @@ export default function SettingsScreen() {
               .catch(() => snack('הגיבוי נכשל. בדקו את החיבור ונסו שוב.', { tone: 'error' }))
               .finally(() => setBackingUp(false))
           }}
-        />
-        <ListItem
-          icon={Palette}
-          title="גלריית עיצוב"
-          subtitle="כל רכיבי האפליקציה בכל המצבים — לאישור שפת העיצוב"
-          onPress={() => router.push('/gallery')}
         />
       </Card>
 

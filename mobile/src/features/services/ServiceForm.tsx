@@ -43,7 +43,7 @@ export function ServiceForm({ car, initial, from }: { car: Car; initial?: Servic
     if (!draft.title.trim() && draft.photos.length === 0) return setError('תנו שם לטיפול או צרפו קבלה')
     void run(async () => {
       const now = Date.now()
-      const { photos, thumbs } = await storePhotos(draft.photos, initial, `cars/${car.id}/services`, draft.id)
+      const { photos, thumbs } = await storePhotos(draft.photos, initial, `cars/${car.id}/services`, draft.id, `cars/${car.id}/services/${draft.id}`)
       await saveRecord('services', {
         ...draft,
         title: draft.title.trim(),

@@ -46,6 +46,8 @@ export interface Car {
  *  token so anyone with the link can view it without an account. */
 export interface PublicPassport {
   token: string
+  /** who published it — the only one allowed to update or revoke it */
+  ownerId?: string
   car: {
     nickname?: string
     make: string

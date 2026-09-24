@@ -74,7 +74,7 @@ export function InsuranceForm({
 
     void run(async () => {
       const now = Date.now()
-      const { photos, thumbs } = await storePhotos(draft.photos, initial, `cars/${car.id}/insurance`, draft.id)
+      const { photos, thumbs } = await storePhotos(draft.photos, initial, `cars/${car.id}/insurance`, draft.id, `cars/${car.id}/insurances/${draft.id}`)
       await saveRecord('insurances', {
         ...draft,
         company: draft.company.trim(),

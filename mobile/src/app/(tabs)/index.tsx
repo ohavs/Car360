@@ -27,7 +27,7 @@ import type { CarDocument, InsuranceRecord, ServiceRecord } from '@shared/types'
 import { daysUntil, dueLabel, dueStatus, formatDate, formatMoney } from '@shared/utils'
 import { useGarage } from '../../data/CarsProvider'
 import { useLiveSub } from '../../data/live'
-import { useAllReminders } from '../../data/reminders'
+import { useReminders } from '../../data/RemindersProvider'
 import { useAuth } from '../../features/auth/AuthProvider'
 import { CarPager } from '../../features/cars/CarPager'
 import { DocumentSheet } from '../../features/documents/DocumentSheet'
@@ -61,7 +61,7 @@ import {
 export default function HomeScreen() {
   const { user } = useAuth()
   const { cars, loading, error, activeCar, setActiveCarId } = useGarage()
-  const { reminders, customs } = useAllReminders(cars)
+  const { reminders, customs } = useReminders()
   const { hasUpdate, justUpdatedTo, whatsNew, dismissJustUpdated } = useUpdates()
   const services = useLiveSub<ServiceRecord>(activeCar?.id, 'services')
   const router = useRouter()

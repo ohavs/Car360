@@ -136,6 +136,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       },
       /** 'stable' for builds of main, 'beta' for branch builds (set by CI) */
       channel: process.env.CAR360_CHANNEL ?? 'dev',
+      /** true once the reminder Cloud Function is deployed (needs Blaze):
+       *  shows the server checks and test in the notifications screen */
+      serverPush: false,
     },
   }
 }

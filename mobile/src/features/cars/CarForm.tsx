@@ -106,7 +106,7 @@ export function CarForm({ initial }: { initial?: Car }) {
     void run(async () => {
       const now = Date.now()
       let imageUrl = draft.imageUrl
-      if (imageUrl && isLocal(imageUrl)) imageUrl = await uploadImage(imageUrl, `cars/${draft.id}/hero-${now}.webp`, 'hero')
+      if (imageUrl && isLocal(imageUrl)) imageUrl = await uploadImage(imageUrl, `cars/${draft.id}/hero-${now}.webp`, 'hero', `cars/${draft.id}`)
       const car: Car = {
         ...draft,
         make: draft.make.trim(),

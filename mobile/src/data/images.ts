@@ -5,6 +5,7 @@ import * as ImagePicker from 'expo-image-picker'
 import DocumentScanner from 'react-native-document-scanner-plugin'
 import { File, Paths } from 'expo-file-system'
 import ImageTools from '../../modules/image-tools'
+import { enqueue } from './uploadQueue'
 
 /** Same budgets as the web app: a phone photo becomes ~100–350KB of WebP. */
 const PROFILES = {
@@ -32,20 +33,29 @@ export async function compress(uri: string, profile: ImageProfile, withBase64 = 
   return { uri: out.uri, base64: out.base64 }
 }
 
+/** Storage isn't set up for the project: the only way to keep the photo is inline. */
+const STORAGE_MISSING = ['storage/unauthorized', 'storage/bucket-not-found', 'storage/project-not-found', 'storage/unauthenticated']
+
 /**
- * Stores a local photo and returns the URL to save in Firestore.
- * With Storage available: uploads and returns its download URL. Without it
- * (not enabled, offline): keeps the compressed image inline as a data URL,
- * exactly like the web app does, so saving never fails over a photo.
+ * Stores a local photo and returns the URL to save in Firestore (`owner` is
+ * the document that will hold it). Online: uploads and returns the download
+ * URL. Offline: the photo waits on the phone and uploads itself later (see
+ * uploadQueue). Only if Storage isn't enabled at all does it fall back to an
+ * inline image, like the web app.
  */
-export async function uploadImage(localUri: string, path: string, profile: ImageProfile): Promise<string> {
-  const small = await compress(localUri, profile, true)
+export async function uploadImage(localUri: string, path: string, profile: ImageProfile, owner: string): Promise<string> {
+  const small = await compress(localUri, profile)
   try {
     const target = ref(getStorage(), path)
     await putFile(target, small.uri, { contentType: 'image/webp' })
     return await getDownloadURL(target)
-  } catch {
-    return `data:image/webp;base64,${small.base64}`
+  } catch (e) {
+    const code = (e as { code?: string }).code ?? ''
+    if (STORAGE_MISSING.includes(code)) {
+      const inline = await compress(localUri, profile, true)
+      return `data:image/webp;base64,${inline.base64}`
+    }
+    return await enqueue(small.uri, path, owner)
   }
 }
 
@@ -107,6 +117,7 @@ export async function storePhotos(
   previous: { photos: string[]; thumbs?: string[] } | undefined,
   dir: string,
   id: string,
+  owner: string,
 ): Promise<{ photos: string[]; thumbs: string[] }> {
   const now = Date.now()
   const stored = await Promise.all(
@@ -115,9 +126,9 @@ export async function storePhotos(
         const at = previous?.photos.indexOf(p) ?? -1
         return { photo: p, thumb: (at >= 0 && previous?.thumbs?.[at]) || p }
       }
-      const photo = await uploadImage(p, `${dir}/${id}-${i}-${now}.webp`, 'document')
+      const photo = await uploadImage(p, `${dir}/${id}-${i}-${now}.webp`, 'document', owner)
       // a thumbnail problem must never block the save
-      const thumb = await uploadImage(p, `${dir}/${id}-${i}-${now}-thumb.webp`, 'thumb').catch(() => photo)
+      const thumb = await uploadImage(p, `${dir}/${id}-${i}-${now}-thumb.webp`, 'thumb', owner).catch(() => photo)
       return { photo, thumb }
     }),
   )

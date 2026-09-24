@@ -5,8 +5,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { AppState } from 'react-native'
 import { DEFAULT_NOTIF_PREFS, DEFAULT_NOTIFY_TIME, type NotificationPrefs } from '@shared/notifyPrefs'
 import type { PlannedNotification } from '@shared/notifySchedule'
-import { useGarage } from '../../data/CarsProvider'
-import { useAllReminders } from '../../data/reminders'
+import { useReminders } from '../../data/RemindersProvider'
 import { readPref, writePref } from '../../lib/storage'
 import { useAuth } from '../auth/AuthProvider'
 import { ensureChannels, markCustomDone, registerPushToken, reschedule, snooze } from './engine'
@@ -40,8 +39,7 @@ const Ctx = createContext<NotificationsState | null>(null)
  */
 export function NotificationsProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth()
-  const { cars } = useGarage()
-  const { reminders, loading } = useAllReminders(cars)
+  const { reminders, loading } = useReminders()
   const router = useRouter()
 
   const [permission, setPermission] = useState<Permission>('undetermined')

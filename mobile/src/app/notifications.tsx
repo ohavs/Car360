@@ -1,15 +1,31 @@
 import { getFunctions, httpsCallable } from '@react-native-firebase/functions'
 import * as Notifications from 'expo-notifications'
-import { BatteryCharging, Bell, BellRing, CalendarClock, CheckCircle2, Cloud, Send, Smartphone, Timer, XCircle, type LucideIcon } from 'lucide-react-native'
+import {
+  BatteryCharging,
+  Bell,
+  BellRing,
+  CalendarClock,
+  CheckCircle2,
+  Cloud,
+  Send,
+  Smartphone,
+  Timer,
+  XCircle,
+  type LucideIcon,
+} from 'lucide-react-native'
 import { useCallback, useEffect, useState } from 'react'
 import { AppState, StyleSheet, View } from 'react-native'
 import { formatDate } from '@shared/utils'
+import Constants from 'expo-constants'
 import DeviceHealth from '../../modules/device-health'
 import { REMINDER_CHANNEL, sendLocalTest } from '../features/notifications/engine'
 import { useNotifications } from '../features/notifications/NotificationsProvider'
 import { useTheme } from '../theme/ThemeProvider'
 import { radius, space } from '../theme/tokens'
 import { AppBar, Button, Card, ListItem, Screen, SectionHeader, Text, useSnackbar } from '../ui'
+
+/** the server half (Cloud Function) is live — see app.config extra.serverPush */
+const SERVER_PUSH = Constants.expoConfig?.extra?.serverPush === true
 
 interface Health {
   channelOn: boolean
@@ -81,7 +97,11 @@ export default function NotificationsHealthScreen() {
   const tip = health ? VENDOR_TIP[health.vendor] : undefined
 
   return (
-    <Screen header={<AppBar title="בדיקת התראות" subtitle="כל מה שצריך כדי שתזכורת תקפוץ בזמן" back />} refreshing={false} onRefresh={reload}>
+    <Screen
+      header={<AppBar title="בדיקת התראות" subtitle="כל מה שצריך כדי שתזכורת תקפוץ בזמן" back />}
+      refreshing={false}
+      onRefresh={reload}
+    >
       {next ? (
         <Card style={styles.next}>
           <Text variant="caption" tone="muted">
@@ -144,25 +164,27 @@ export default function NotificationsHealthScreen() {
         </Text>
       ) : null}
 
-      <SectionHeader title="מהשרת" />
-      <Card padded={false}>
-        <Check
-          icon={Cloud}
-          ok={Boolean(pushToken)}
-          title="הטלפון רשום לקבלת התראות"
-          okText="לשינויים ממכשיר אחר ולרכבים משותפים"
-          badText={allowed ? 'הרישום עוד לא הושלם' : 'יתאפשר אחרי אישור ההתראות'}
-          fixLabel="רישום מחדש"
-          onFix={
-            allowed
-              ? () =>
-                  void retryPushToken().then((ok) =>
-                    snack(ok ? 'הטלפון נרשם' : 'הרישום נכשל. בדקו את החיבור.', { tone: ok ? 'success' : 'error' }),
-                  )
-              : undefined
-          }
-        />
-      </Card>
+      {SERVER_PUSH && <SectionHeader title="מהשרת" />}
+      {SERVER_PUSH && (
+        <Card padded={false}>
+          <Check
+            icon={Cloud}
+            ok={Boolean(pushToken)}
+            title="הטלפון רשום לקבלת התראות"
+            okText="לשינויים ממכשיר אחר ולרכבים משותפים"
+            badText={allowed ? 'הרישום עוד לא הושלם' : 'יתאפשר אחרי אישור ההתראות'}
+            fixLabel="רישום מחדש"
+            onFix={
+              allowed
+                ? () =>
+                    void retryPushToken().then((ok) =>
+                      snack(ok ? 'הטלפון נרשם' : 'הרישום נכשל. בדקו את החיבור.', { tone: ok ? 'success' : 'error' }),
+                    )
+                : undefined
+            }
+          />
+        </Card>
+      )}
 
       <SectionHeader title="ניסיון" />
       <View style={styles.tests}>
@@ -179,14 +201,16 @@ export default function NotificationsHealthScreen() {
               .finally(() => setSending(null))
           }}
         />
-        <Button
-          label="התראת ניסיון מהשרת"
-          icon={Send}
-          variant="outlined"
-          disabled={!allowed || !pushToken}
-          loading={sending === 'server'}
-          onPress={() => void serverTest()}
-        />
+        {SERVER_PUSH && (
+          <Button
+            label="התראת ניסיון מהשרת"
+            icon={Send}
+            variant="outlined"
+            disabled={!allowed || !pushToken}
+            loading={sending === 'server'}
+            onPress={() => void serverTest()}
+          />
+        )}
       </View>
     </Screen>
   )

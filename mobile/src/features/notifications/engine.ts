@@ -5,6 +5,8 @@ import { planNotifications, type PlannedNotification } from '@shared/notifySched
 import type { CustomReminder, DerivedReminder } from '@shared/types'
 import DeviceHealth from '../../../modules/device-health'
 import { readPref, writePref } from '../../lib/storage'
+import { commit } from '../../data/sync'
+import { todayISO } from '@shared/utils'
 
 export const REMINDER_CHANNEL = 'reminders'
 const SNOOZE_SUFFIX = ':snooze'
@@ -109,7 +111,7 @@ export async function markCustomDone(carId: string, customId: string): Promise<v
   const ref = doc(getFirestore(), 'cars', carId, 'reminders', customId)
   const snap = await getDoc(ref)
   const rec = snap.data() as CustomReminder | undefined
-  if (rec) await setDoc(ref, { ...rec, done: true, updatedAt: Date.now() })
+  if (rec) await commit(setDoc(ref, { ...rec, done: true, doneAt: todayISO(), updatedAt: Date.now() }))
 }
 
 /** A local notification in a few seconds — works with the app closed. */

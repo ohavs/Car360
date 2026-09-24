@@ -1,14 +1,12 @@
 import { Tabs, type BottomTabBarProps } from 'expo-router/tabs'
 import { Bell, FileText, House, Settings } from 'lucide-react-native'
-import { useGarage } from '../../data/CarsProvider'
-import { useAllReminders } from '../../data/reminders'
+import { useReminders } from '../../data/RemindersProvider'
 import { useRegistrySync } from '../../data/registrySync'
 import { useUpdates } from '../../features/updates/UpdateProvider'
 import { NavigationBar, type NavItem } from '../../ui'
 
 function TabBar({ state, navigation }: BottomTabBarProps) {
-  const { cars } = useGarage()
-  const { reminders } = useAllReminders(cars)
+  const { reminders } = useReminders()
   const { hasUpdate } = useUpdates()
   // what needs attention now: overdue or due within a week
   const urgent = reminders.filter((r) => r.daysLeft <= 7).length

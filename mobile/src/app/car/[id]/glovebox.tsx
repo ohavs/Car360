@@ -37,10 +37,11 @@ export default function GloveboxScreen() {
       {car && (
         <Card style={styles.center}>
           <Plate plate={car.plate} size="large" />
-          <Text variant="label" tone="muted">
-            טסט: {formatDate(car.testExpiry)}
-            {car.vin ? `  ·  שלדה …${car.vin.slice(-6)}` : ''}
-          </Text>
+          {car.testExpiry || car.vin ? (
+            <Text variant="label" tone="muted">
+              {[car.testExpiry && `טסט עד ${formatDate(car.testExpiry)}`, car.vin && `שלדה …${car.vin.slice(-6)}`].filter(Boolean).join('  ·  ')}
+            </Text>
+          ) : null}
         </Card>
       )}
 
@@ -77,7 +78,7 @@ export default function GloveboxScreen() {
             onPress={() => void Linking.openURL(`tel:${e.num}`)}
             accessibilityRole="button"
             accessibilityLabel={`חיוג ל${e.label}, ${e.num}`}
-            rippleColor="rgba(255,255,255,0.25)"
+            feedback="scale"
             style={[styles.sos, { backgroundColor: colors.danger }]}
           >
             <Phone size={22} color={colors.onDanger} />

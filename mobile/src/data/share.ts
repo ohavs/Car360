@@ -1,4 +1,5 @@
 import { collection, deleteDoc, doc, getDocs, getFirestore, setDoc } from '@react-native-firebase/firestore'
+import { getAuth } from '@react-native-firebase/auth'
 import { getRandomBytes } from 'expo-crypto'
 import type { Car, InsuranceRecord, PublicPassport, ServiceRecord } from '@shared/types'
 import { patchCar } from './mutations'
@@ -24,6 +25,7 @@ export async function publishPassport(car: Car): Promise<string> {
   const { services, insurances } = await loadHistory(car.id)
   const passport: PublicPassport = {
     token,
+    ownerId: getAuth().currentUser?.uid,
     car: {
       nickname: car.nickname,
       make: car.make,
