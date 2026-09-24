@@ -138,7 +138,6 @@ export function ReminderSheet({
           setError(null)
         }}
         error={error}
-        autoFocus={!reminder}
       />
       {!reminder && (
         <View style={styles.chips}>

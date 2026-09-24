@@ -136,7 +136,6 @@ function BlockSheet({
           setError(null)
         }}
         error={error}
-        autoFocus={isNew}
       />
       <SegmentedButtons label="סוג" value={draft.type} onChange={(type) => set({ type, value: '' })} options={TYPES} />
       {draft.type === 'date' ? (
