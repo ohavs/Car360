@@ -1,4 +1,4 @@
-import { collection, deleteDoc, doc, getDocs, getFirestore, setDoc, updateDoc } from '@react-native-firebase/firestore'
+import { collection, deleteDoc, doc, getDocs, getFirestore, setDoc, updateDoc, writeBatch } from '@react-native-firebase/firestore'
 import type { Car, CarDocument, CustomReminder, InsuranceRecord, ServiceRecord } from '@shared/types'
 import { deleteImage } from './images'
 import { commit } from './sync'
@@ -19,19 +19,29 @@ export async function patchCar(id: string, patch: Partial<Car>): Promise<void> {
   await commit(updateDoc(doc(db(), 'cars', id), clean({ ...patch, updatedAt: Date.now() })))
 }
 
-/** Deletes the car, its records and their photos. */
+/**
+ * Deletes the car and everything under it in one batch — all of it or none
+ * of it, even if the connection drops halfway — then its photos.
+ */
 export async function deleteCar(car: Car): Promise<void> {
+  const refs = []
+  const urls: string[] = car.imageUrl ? [car.imageUrl] : []
   for (const sub of ['services', 'insurances', 'documents', 'reminders'] as const) {
     const snap = await getDocs(collection(db(), 'cars', car.id, sub))
     for (const d of snap.docs) {
-      const data = d.data() as { photos?: string[]; thumbs?: string[]; imageUrl?: string }
-      const urls = [...(data.photos ?? []), ...(data.thumbs ?? []), ...(data.imageUrl ? [data.imageUrl] : [])]
-      await Promise.all(urls.map(deleteImage))
-      await commit(deleteDoc(d.ref))
+      const data = d.data() as { photos?: string[]; thumbs?: string[]; imageUrl?: string; thumbUrl?: string }
+      urls.push(...(data.photos ?? []), ...(data.thumbs ?? []), ...(data.imageUrl ? [data.imageUrl] : []), ...(data.thumbUrl ? [data.thumbUrl] : []))
+      refs.push(d.ref)
     }
   }
-  if (car.imageUrl) await deleteImage(car.imageUrl)
-  await commit(deleteDoc(doc(db(), 'cars', car.id)))
+  refs.push(doc(db(), 'cars', car.id))
+  // a batch holds up to 500 writes; a family car's history fits in one or two
+  for (let i = 0; i < refs.length; i += 450) {
+    const batch = writeBatch(db())
+    for (const ref of refs.slice(i, i + 450)) batch.delete(ref)
+    await commit(batch.commit())
+  }
+  await Promise.all(urls.map(deleteImage))
 }
 
 type SubRecord = ServiceRecord | InsuranceRecord | CarDocument | CustomReminder
@@ -44,7 +54,7 @@ export async function saveRecord(sub: Sub, rec: SubRecord): Promise<void> {
 /** Deletes a record and the photos that belong only to it. */
 export async function deleteRecord(sub: Sub, rec: SubRecord): Promise<void> {
   await commit(deleteDoc(doc(db(), 'cars', rec.carId, sub, rec.id)))
-  const r = rec as { photos?: string[]; thumbs?: string[]; imageUrl?: string }
-  const urls = [...(r.photos ?? []), ...(r.thumbs ?? []), ...(r.imageUrl ? [r.imageUrl] : [])]
+  const r = rec as { photos?: string[]; thumbs?: string[]; imageUrl?: string; thumbUrl?: string }
+  const urls = [...(r.photos ?? []), ...(r.thumbs ?? []), ...(r.imageUrl ? [r.imageUrl] : []), ...(r.thumbUrl ? [r.thumbUrl] : [])]
   await Promise.all(urls.map(deleteImage))
 }

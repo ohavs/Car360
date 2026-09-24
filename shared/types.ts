@@ -115,6 +115,8 @@ export interface CarDocument {
   category: DocumentCategory
   /** compressed image data URL / download URL */
   imageUrl: string
+  /** small rendition for grids (Android app); falls back to imageUrl */
+  thumbUrl?: string
   createdAt: number
   updatedAt: number
 }

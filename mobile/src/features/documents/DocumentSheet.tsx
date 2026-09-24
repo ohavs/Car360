@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import type { CarDocument, DocumentCategory } from '@shared/types'
 import { newId } from '@shared/utils'
-import { deleteImage, isLocal, PermissionDenied, pickImages, uploadImage, type PickSource } from '../../data/images'
+import { deleteImage, isLocal, PermissionDenied, pickImages, storeDocumentImage, type PickSource } from '../../data/images'
 import { deleteRecord, saveRecord } from '../../data/mutations'
 import { useTheme } from '../../theme/ThemeProvider'
 import { radius, space } from '../../theme/tokens'
@@ -56,28 +56,32 @@ export function DocumentSheet({
     setSaving(true)
     try {
       const now = Date.now()
-      const imageUrl = isLocal(draft.imageUrl)
-        ? await uploadImage(draft.imageUrl, `cars/${carId}/documents/${draft.id}-${now}.webp`, 'document', `cars/${carId}/documents/${draft.id}`)
-        : draft.imageUrl
+      const stored = isLocal(draft.imageUrl)
+        ? await storeDocumentImage(draft.imageUrl, carId, draft.id)
+        : { imageUrl: draft.imageUrl, thumbUrl: draft.thumbUrl }
+      const imageUrl = stored.imageUrl
       await saveRecord('documents', {
         ...draft,
-        imageUrl,
+        ...stored,
         title: draft.title.trim() || draft.category,
         createdAt: draft.createdAt || now,
         updatedAt: now,
       })
-      if (doc?.imageUrl && doc.imageUrl !== imageUrl) void deleteImage(doc.imageUrl)
+      if (doc?.imageUrl && doc.imageUrl !== imageUrl) {
+        void deleteImage(doc.imageUrl)
+        if (doc.thumbUrl && doc.thumbUrl !== doc.imageUrl) void deleteImage(doc.thumbUrl)
+      }
       const title = draft.title.trim() || draft.category
       const total = morePages.length + 1
       for (const [i, page] of morePages.entries()) {
         const id = newId()
-        const url = await uploadImage(page, `cars/${carId}/documents/${id}-${now}.webp`, 'document', `cars/${carId}/documents/${id}`)
+        const pageImages = await storeDocumentImage(page, carId, id)
         await saveRecord('documents', {
           id,
           carId,
           category: draft.category,
           title: `${title} · עמ׳ ${i + 2}/${total}`,
-          imageUrl: url,
+          ...pageImages,
           createdAt: now - i - 1,
           updatedAt: now,
         })

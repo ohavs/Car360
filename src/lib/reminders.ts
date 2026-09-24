@@ -1,63 +1,26 @@
 import { repo } from '../data'
+import { carDisplayName, deriveReminders } from '../../shared/reminders'
 import type { Car, DerivedReminder } from '../types'
-import { daysUntil } from './utils'
 import { leadDaysFor, loadNotifPrefs } from './notifyPrefs'
 
-export function carDisplayName(car: Car): string {
-  return car.nickname || `${car.make} ${car.model}`.trim() || car.plate
-}
+export { carDisplayName }
 
-/** Collect every upcoming/overdue date across all cars:
- *  test, license fee, insurance end, next service due, date blocks with
- *  remind=true, and custom reminders. */
+/** Collect every upcoming/overdue date across all cars — the same rules as
+ *  the Android app (shared/reminders.ts): test, licence, insurance end, next
+ *  service due, date blocks with remind=true, and open custom reminders. */
 export async function collectReminders(cars: Car[]): Promise<DerivedReminder[]> {
-  // Cars are processed in parallel: each one needs three collection reads, and
-  // doing them car-by-car turned a single round trip into N sequential waves.
-  const perCar = await Promise.all(cars.map(collectForCar))
+  // cars in parallel: each needs three collection reads
+  const perCar = await Promise.all(
+    cars.map(async (car) => {
+      const [insurances, services, reminders] = await Promise.all([
+        repo.listInsurances(car.id),
+        repo.listServices(car.id),
+        repo.listReminders(car.id),
+      ])
+      return deriveReminders(car, { insurances, services, reminders })
+    }),
+  )
   return perCar.flat().sort((a, b) => a.daysLeft - b.daysLeft)
-}
-
-async function collectForCar(car: Car): Promise<DerivedReminder[]> {
-  const out: DerivedReminder[] = []
-  const name = carDisplayName(car)
-  const push = (r: Omit<DerivedReminder, 'daysLeft' | 'carId' | 'carName' | 'carImage'>) =>
-    out.push({ ...r, carId: car.id, carName: name, carImage: car.imageUrl, daysLeft: daysUntil(r.dueDate) })
-
-  if (car.testExpiry)
-    push({ key: `test:${car.id}`, title: 'חידוש טסט (רישוי שנתי)', dueDate: car.testExpiry, source: 'test' })
-
-  for (const block of car.blocks) {
-    if (block.type === 'date' && block.remind && block.value)
-      push({ key: `block:${car.id}:${block.id}`, title: block.title, dueDate: block.value, source: 'block' })
-  }
-
-  const [insurances, services, custom] = await Promise.all([
-    repo.listInsurances(car.id),
-    repo.listServices(car.id),
-    repo.listReminders(car.id),
-  ])
-
-  // only the latest end-date per insurance kind matters
-  const latestByKind = new Map<string, string>()
-  for (const ins of insurances) {
-    const prev = latestByKind.get(ins.kind)
-    if (!prev || ins.endDate > prev) latestByKind.set(ins.kind, ins.endDate)
-  }
-  for (const [kind, endDate] of latestByKind) {
-    push({ key: `ins:${car.id}:${kind}`, title: `סיום ביטוח ${kind}`, dueDate: endDate, source: 'insurance' })
-  }
-
-  for (const s of services) {
-    if (s.nextDueDate)
-      push({ key: `svc:${car.id}:${s.id}`, title: `טיפול קרוב: ${s.title}`, dueDate: s.nextDueDate, source: 'service' })
-  }
-
-  for (const r of custom) {
-    if (!r.done)
-      push({ key: `custom:${car.id}:${r.id}`, title: r.title, dueDate: r.dueDate, time: r.time, source: 'custom', customId: r.id })
-  }
-
-  return out
 }
 
 /* ---------- Local notifications ---------- */

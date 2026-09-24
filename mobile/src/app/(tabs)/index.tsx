@@ -41,7 +41,7 @@ import { useUpdates } from '../../features/updates/UpdateProvider'
 import { UpdatePanel } from '../../features/updates/UpdatePanel'
 import { WhatsNewSheet } from '../../features/updates/WhatsNewSheet'
 import { useTheme } from '../../theme/ThemeProvider'
-import { badge, icon, radius, space } from '../../theme/tokens'
+import { radius, space } from '../../theme/tokens'
 import {
   AppBar,
   Appear,
@@ -55,6 +55,8 @@ import {
   Screen,
   SectionHeader,
   Sheet,
+  Shortcut,
+  ShortcutRow,
   Skeleton,
   StatusDot,
   Text,
@@ -179,14 +181,14 @@ export default function HomeScreen() {
             <TestLine testExpiry={activeCar.testExpiry} onPress={() => opener.openTest(activeCar.id)} />
           </View>
 
-          <View style={styles.shortcuts}>
+          <ShortcutRow>
             <Shortcut icon={Wrench} label="טיפולים" onPress={() => router.push(`/car/${activeCar.id}/services`)} />
             <Shortcut icon={Shield} label="ביטוח" onPress={() => router.push(`/car/${activeCar.id}/insurance`)} />
             <Shortcut icon={FileText} label="מסמכים" onPress={() => router.push(`/car/${activeCar.id}/documents`)} />
             <Shortcut icon={BarChart3} label="הוצאות" onPress={() => setSheet('expenses')} />
             <Shortcut icon={LifeBuoy} label="תא כפפות" onPress={() => router.push(`/car/${activeCar.id}/glovebox`)} />
             <Shortcut icon={FileSearch} label="דוח רכב" onPress={() => router.push({ pathname: '/report', params: { plate: activeCar.plate } })} />
-          </View>
+          </ShortcutRow>
 
           <SectionHeader title="לאחרונה" />
           <Card padded={false}>
@@ -259,21 +261,6 @@ function TestLine({ testExpiry, onPress }: { testExpiry?: string; onPress: () =>
       <StatusDot tone={tone} />
       <Text variant="label" tone={tone === 'danger' ? 'danger' : 'onSurfaceVariant'}>
         {text}
-      </Text>
-    </Touchable>
-  )
-}
-
-/** One compact destination: a round icon and a short label. */
-function Shortcut({ icon: Icon, label, onPress }: { icon: LucideIcon; label: string; onPress: () => void }) {
-  const { colors } = useTheme()
-  return (
-    <Touchable feedback="scale" onPress={onPress} accessibilityRole="button" accessibilityLabel={label} style={styles.shortcut}>
-      <View style={[styles.shortcutIcon, { backgroundColor: colors.surfaceContainer }]}>
-        <Icon size={icon.lg} color={colors.onSurface} strokeWidth={1.9} />
-      </View>
-      <Text variant="overline" tone="onSurfaceVariant" numberOfLines={1}>
-        {label}
       </Text>
     </Touchable>
   )
@@ -362,23 +349,6 @@ const styles = StyleSheet.create({
   stats: {
     flexDirection: 'row',
     gap: space.md,
-  },
-  shortcuts: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  shortcut: {
-    flex: 1,
-    alignItems: 'center',
-    gap: space.xs,
-    paddingVertical: space.xs,
-  },
-  shortcutIcon: {
-    width: badge.lg,
-    height: badge.lg,
-    borderRadius: radius.full,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   skeleton: {
     gap: space.lg,

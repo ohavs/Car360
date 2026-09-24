@@ -43,8 +43,10 @@ export function NavigationBar({
   useEffect(() => {
     if (width <= 0) return
     const slotWidth = width / Math.max(1, count)
+    // the pill is anchored at the start edge (the right, in Hebrew); transforms
+    // are physical, so in RTL it travels towards the left: a negative offset
     const fromStart = index * slotWidth + (slotWidth - PILL_WIDTH) / 2
-    const to = I18nManager.isRTL ? width - fromStart - PILL_WIDTH : fromStart
+    const to = I18nManager.isRTL ? -fromStart : fromStart
     if (!placed.value) {
       x.value = to
       placed.value = true
@@ -138,9 +140,7 @@ const styles = StyleSheet.create({
   },
   pill: {
     position: 'absolute',
-    // RN positions absolute children from the physical left even in RTL when
-    // using `left`; the translateX above is computed in those terms
-    left: 0,
+    start: 0,
     top: space.sm,
     width: PILL_WIDTH,
     height: 32,

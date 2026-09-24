@@ -5,36 +5,12 @@
 
 import { getFirestoreDb, isFirebaseConfigured } from './firebase'
 import type { DerivedReminder } from '../types'
+import { DEFAULT_NOTIF_PREFS, type NotificationPrefs } from '../../shared/notifyPrefs'
 
 export type NotifSource = DerivedReminder['source'] // 'test'|'license'|'insurance'|'service'|'block'|'custom'
 
-export interface NotificationPrefs {
-  test: number
-  insurance: number
-  service: number
-  custom: number
-  block: number
-}
-
-export const DEFAULT_NOTIF_PREFS: NotificationPrefs = {
-  test: 30,
-  insurance: 14,
-  service: 14,
-  custom: 3,
-  block: 7,
-}
-
-/** Lead-time options offered in the UI (days; 0 = off). */
-export const LEAD_OPTIONS: { value: number; label: string }[] = [
-  { value: 0, label: 'כבוי' },
-  { value: 1, label: 'יום לפני' },
-  { value: 3, label: '3 ימים לפני' },
-  { value: 7, label: 'שבוע לפני' },
-  { value: 14, label: 'שבועיים לפני' },
-  { value: 30, label: 'חודש לפני' },
-  { value: 60, label: 'חודשיים לפני' },
-]
-
+// the prefs model and its defaults are shared with the Android app
+export { DEFAULT_NOTIF_PREFS, LEAD_OPTIONS, leadDaysFor, type NotificationPrefs } from '../../shared/notifyPrefs'
 const KEY = 'car360:notifPrefs'
 
 export function loadNotifPrefs(): NotificationPrefs {
@@ -49,12 +25,6 @@ export function loadNotifPrefs(): NotificationPrefs {
 
 export function saveNotifPrefsLocal(prefs: NotificationPrefs): void {
   localStorage.setItem(KEY, JSON.stringify(prefs))
-}
-
-/** Lead-time for a derived reminder's source (license falls back to test). */
-export function leadDaysFor(source: NotifSource, prefs: NotificationPrefs): number {
-  if (source === 'license') return prefs.test
-  return prefs[source as keyof NotificationPrefs] ?? 14
 }
 
 export async function loadNotifPrefsCloud(uid: string): Promise<NotificationPrefs | null> {

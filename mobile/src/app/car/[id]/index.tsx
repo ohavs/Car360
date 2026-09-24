@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router'
 import { useState } from 'react'
-import { CalendarDays, Car as CarIcon, FileBadge, Pencil, Share2, Fuel, Hash, Link2, Palette, Phone, StickyNote, type LucideIcon } from 'lucide-react-native'
+import { CalendarDays, Car as CarIcon, FileBadge, FileSearch, FileText, LifeBuoy, Pencil, Share2, Shield, Wrench, Fuel, Hash, Link2, Palette, Phone, StickyNote, type LucideIcon } from 'lucide-react-native'
 import { Linking, StyleSheet, View } from 'react-native'
 import { carDisplayName } from '@shared/reminders'
 import type { InfoBlock } from '@shared/types'
@@ -9,7 +9,7 @@ import { TestSheet } from '../../../features/cars/TestSheet'
 import { ShareSheet } from '../../../features/share/ShareSheet'
 import { useCarParam } from '../../../features/cars/useCarParam'
 import { space } from '../../../theme/tokens'
-import { AppBar, Card, EmptyState, IconButton, ListItem, Plate, Screen, SectionHeader, StatusChip, Text } from '../../../ui'
+import { AppBar, Card, EmptyState, IconButton, ListItem, Shortcut, ShortcutRow, Plate, Screen, SectionHeader, StatusChip, Text } from '../../../ui'
 
 const BLOCK_ICON: Record<InfoBlock['type'], LucideIcon> = {
   text: StickyNote,
@@ -48,7 +48,6 @@ export default function CarDetailsScreen() {
           back
           actions={
             <>
-              <IconButton icon={Share2} label="שיתוף ודרכון" onPress={() => setSharing(true)} />
               <IconButton icon={Pencil} label="עריכת פרטי הרכב" onPress={() => router.push(`/car/${car.id}/edit`)} />
             </>
           }
@@ -58,6 +57,16 @@ export default function CarDetailsScreen() {
       <View style={styles.plate}>
         <Plate plate={car.plate} size="large" />
       </View>
+
+      {/* everything about this car, one tap away */}
+      <ShortcutRow>
+        <Shortcut icon={Wrench} label="טיפולים" onPress={() => router.push(`/car/${car.id}/services`)} />
+        <Shortcut icon={Shield} label="ביטוח" onPress={() => router.push(`/car/${car.id}/insurance`)} />
+        <Shortcut icon={FileText} label="מסמכים" onPress={() => router.push(`/car/${car.id}/documents`)} />
+        <Shortcut icon={LifeBuoy} label="תא כפפות" onPress={() => router.push(`/car/${car.id}/glovebox`)} />
+        <Shortcut icon={FileSearch} label="דוח רכב" onPress={() => router.push({ pathname: '/report', params: { plate: car.plate } })} />
+        <Shortcut icon={Share2} label="שיתוף" onPress={() => setSharing(true)} />
+      </ShortcutRow>
 
       <Card padded={false}>
         <ListItem

@@ -27,7 +27,7 @@ export function DocumentGrid({
           accessibilityLabel={d.title}
           style={[styles.tile, { backgroundColor: colors.surface, borderColor: colors.outline }]}
         >
-          <Image source={d.imageUrl} style={styles.image} contentFit="cover" transition={150} />
+          <Image source={d.thumbUrl ?? d.imageUrl} style={styles.image} contentFit="cover" transition={150} />
           <View style={styles.meta}>
             <Text variant="label" numberOfLines={1}>
               {d.title}

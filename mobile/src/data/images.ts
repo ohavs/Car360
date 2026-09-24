@@ -168,3 +168,13 @@ export async function removeBackground(uri: string): Promise<string> {
 }
 
 export class ModelNotReady extends Error {}
+
+/** A document page: the full image to read, and a small one for grids. */
+export async function storeDocumentImage(local: string, carId: string, id: string): Promise<{ imageUrl: string; thumbUrl: string }> {
+  const now = Date.now()
+  const owner = `cars/${carId}/documents/${id}`
+  const imageUrl = await uploadImage(local, `cars/${carId}/documents/${id}-${now}.webp`, 'document', owner)
+  // a thumbnail problem never blocks the save — the grid falls back to the full image
+  const thumbUrl = await uploadImage(local, `cars/${carId}/documents/${id}-${now}-thumb.webp`, 'thumb', owner).catch(() => imageUrl)
+  return { imageUrl, thumbUrl }
+}
