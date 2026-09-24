@@ -45,3 +45,19 @@ export const motion = {
   standard: 250,
   emphasized: 350,
 } as const
+
+/** Icon sizes: sm inside chips and captions, md in rows and buttons, lg for
+ *  standalone destinations (shortcuts, empty states). */
+export const icon = {
+  sm: 16,
+  md: 20,
+  lg: 24,
+} as const
+
+/** The round tinted badge an icon sits in: sm in dense rows, md in list
+ *  rows, lg for shortcuts. */
+export const badge = {
+  sm: 32,
+  md: 40,
+  lg: 48,
+} as const

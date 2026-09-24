@@ -12,7 +12,7 @@ import { useNotifications } from '../../features/notifications/NotificationsProv
 import { ReminderSheet } from '../../features/reminders/ReminderSheet'
 import { useReminderOpener } from '../../features/reminders/useReminderOpener'
 import { useTheme } from '../../theme/ThemeProvider'
-import { radius, space } from '../../theme/tokens'
+import { badge, icon, radius, space } from '../../theme/tokens'
 import {
   AppBar,
   Appear,
@@ -171,36 +171,34 @@ export default function RemindersScreen() {
   )
 }
 
+/** A reminder is a regular list row: its status chip and a ✓ at the end. */
 function ReminderRow({ reminder: r, onPress, onDone }: { reminder: DerivedReminder; onPress: () => void; onDone?: () => void }) {
   const { colors } = useTheme()
   const { icon: Icon, label } = SOURCE[r.source]
   return (
-    <Touchable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${r.title}, ${dueLabel(r.dueDate)}`} style={styles.row}>
-      <View style={[styles.icon, { backgroundColor: colors.surfaceContainer }]}>
-        <Icon size={20} color={colors.onSurface} strokeWidth={1.9} />
-      </View>
-      <View style={styles.flex}>
-        <Text variant="bodyStrong" numberOfLines={2}>
-          {r.title}
-        </Text>
-        <Text variant="caption" tone="muted" numberOfLines={1}>
-          {r.carName} · {formatDate(r.dueDate)}
-          {r.time ? ` · ${r.time}` : ''} · {label}
-        </Text>
-      </View>
-      <StatusChip tone={dueStatus(r.dueDate)} label={dueLabel(r.dueDate)} />
-      {onDone && (
-        <Touchable
-          borderless
-          onPress={onDone}
-          accessibilityRole="button"
-          accessibilityLabel={`סימון "${r.title}" כבוצע`}
-          style={[styles.done, { borderColor: colors.outline }]}
-        >
-          <Check size={18} color={colors.success} strokeWidth={2.4} />
-        </Touchable>
-      )}
-    </Touchable>
+    <ListItem
+      icon={Icon}
+      title={r.title}
+      titleLines={2}
+      subtitle={`${r.carName} · ${formatDate(r.dueDate)}${r.time ? ` · ${r.time}` : ''} · ${label}`}
+      onPress={onPress}
+      trailing={
+        <View style={styles.trailing}>
+          <StatusChip tone={dueStatus(r.dueDate)} label={dueLabel(r.dueDate)} />
+          {onDone && (
+            <Touchable
+              borderless
+              onPress={onDone}
+              accessibilityRole="button"
+              accessibilityLabel={`סימון "${r.title}" כבוצע`}
+              style={[styles.done, { borderColor: colors.outline }]}
+            >
+              <Check size={icon.sm} color={colors.success} strokeWidth={2.6} />
+            </Touchable>
+          )}
+        </View>
+      }
+    />
   )
 }
 
@@ -211,13 +209,10 @@ const styles = StyleSheet.create({
   flex: {
     flex: 1,
   },
-  row: {
+  trailing: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: space.md,
-    paddingHorizontal: space.lg,
-    paddingVertical: space.md,
-    minHeight: 68,
+    gap: space.sm,
   },
   offRow: {
     flexDirection: 'row',
@@ -225,17 +220,10 @@ const styles = StyleSheet.create({
     gap: space.md,
   },
   done: {
-    width: 40,
-    height: 40,
+    width: badge.sm,
+    height: badge.sm,
     borderRadius: radius.full,
     borderWidth: 1.5,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  icon: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
   },

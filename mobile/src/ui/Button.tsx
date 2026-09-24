@@ -5,7 +5,8 @@ import { radius, space } from '../theme/tokens'
 import { Touchable } from './Pressable'
 import { Text } from './Text'
 
-export type ButtonVariant = 'filled' | 'brand' | 'tonal' | 'outlined' | 'text' | 'danger'
+/** dangerText: the quiet red "מחיקה" at the start of a sheet's bottom row */
+export type ButtonVariant = 'filled' | 'brand' | 'tonal' | 'outlined' | 'text' | 'danger' | 'dangerText'
 
 export interface ButtonProps {
   label: string
@@ -40,6 +41,7 @@ export function Button({
     outlined: { bg: 'transparent', fg: colors.onSurface, border: colors.outline },
     text: { bg: 'transparent', fg: colors.brand },
     danger: { bg: colors.danger, fg: colors.onDanger },
+    dangerText: { bg: 'transparent', fg: colors.danger },
   }
   const { bg, fg, border } = palette[variant]
   const inactive = disabled || loading

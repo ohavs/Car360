@@ -8,6 +8,7 @@ import { useAuth } from '../../features/auth/AuthProvider'
 import { NotificationsPanel } from '../../features/notifications/NotificationsPanel'
 import { AppearancePanel } from '../../features/settings/AppearancePanel'
 import { UpdatePanel } from '../../features/updates/UpdatePanel'
+import { useUpdates } from '../../features/updates/UpdateProvider'
 import { useTheme } from '../../theme/ThemeProvider'
 import { radius, space } from '../../theme/tokens'
 import { AppBar, Card, ConfirmDialog, ListItem, Screen, SectionHeader, Text, useSnackbar } from '../../ui'
@@ -18,11 +19,21 @@ export default function SettingsScreen() {
   const [confirmSignOut, setConfirmSignOut] = useState(false)
   const { cars } = useGarage()
   const snack = useSnackbar()
+  const { hasUpdate } = useUpdates()
   const [backingUp, setBackingUp] = useState(false)
 
   return (
     <Screen header={<AppBar title="הגדרות" />}>
-      <Card>
+      {/* a waiting update comes first — that's why you came here */}
+      {hasUpdate && (
+        <>
+          <SectionHeader title="עדכון זמין" />
+          <UpdatePanel />
+        </>
+      )}
+
+      <SectionHeader title="חשבון" />
+      <Card padded={false}>
         <View style={styles.profile}>
           <View style={[styles.avatar, { backgroundColor: colors.surfaceContainer }]}>
             {user?.photoUrl ? (
@@ -40,10 +51,12 @@ export default function SettingsScreen() {
             </Text>
           </View>
         </View>
+        <ListItem icon={LogOut} tone="danger" title="התנתקות" onPress={() => setConfirmSignOut(true)} />
       </Card>
 
       <NotificationsPanel />
 
+      <SectionHeader title="מראה" />
       <AppearancePanel />
 
       <SectionHeader title="כלים ונתונים" />
@@ -62,11 +75,12 @@ export default function SettingsScreen() {
         />
       </Card>
 
-      <UpdatePanel />
-
-      <Card padded={false}>
-        <ListItem icon={LogOut} tone="danger" title="התנתקות" onPress={() => setConfirmSignOut(true)} />
-      </Card>
+      {!hasUpdate && (
+        <>
+          <SectionHeader title="עדכונים" />
+          <UpdatePanel />
+        </>
+      )}
 
       <ConfirmDialog
         visible={confirmSignOut}
@@ -88,6 +102,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: space.lg,
+    padding: space.lg,
   },
   avatar: {
     width: 56,

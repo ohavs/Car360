@@ -122,7 +122,7 @@ function BlockSheet({
       title={isNew ? 'שדה חדש' : 'עריכת שדה'}
       footer={
         <View style={styles.footer}>
-          {!isNew && <Button label="מחיקה" icon={Trash2} variant="text" onPress={() => setConfirming(true)} />}
+          {!isNew && <Button label="מחיקה" icon={Trash2} variant="dangerText" onPress={() => setConfirming(true)} />}
           <Button label={isNew ? 'הוספה' : 'עדכון'} onPress={save} style={styles.flex} />
         </View>
       }

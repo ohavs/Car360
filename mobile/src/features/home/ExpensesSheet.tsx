@@ -6,7 +6,7 @@ import { formatDate, formatMoney } from '@shared/utils'
 import { useLiveSub } from '../../data/live'
 import { useTheme } from '../../theme/ThemeProvider'
 import { radius, space } from '../../theme/tokens'
-import { ListItem, SectionHeader, Sheet, Text, Touchable } from '../../ui'
+import { ListItem, SectionHeader, Sheet, Skeleton, Text, Touchable } from '../../ui'
 
 const MONTHS = ['ינו׳', 'פבר׳', 'מרץ', 'אפר׳', 'מאי', 'יוני', 'יולי', 'אוג׳', 'ספט׳', 'אוק׳', 'נוב׳', 'דצמ׳']
 const CHART_HEIGHT = 120
@@ -52,9 +52,13 @@ export function ExpensesSheet({ car, onClose }: { car: Car; onClose: () => void 
   return (
     <Sheet visible onClose={onClose} title={`הוצאות · ${carDisplayName(car)}`}>
       {loading ? (
-        <Text tone="muted" align="center">
-          טוען…
-        </Text>
+        <View style={styles.tiles}>
+          {[0, 1, 2].map((i) => (
+            <View key={i} style={styles.flex}>
+              <Skeleton height={64} radius={radius.card} />
+            </View>
+          ))}
+        </View>
       ) : stats.total === 0 ? (
         <Text tone="muted" align="center">
           עוד לא תועדו עלויות. הוסיפו עלות לטיפולים ולפוליסות — והסיכום יופיע כאן.

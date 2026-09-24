@@ -9,12 +9,15 @@ import { Touchable } from './Pressable'
 export function Card({
   children,
   onPress,
+  onLongPress,
   padded = true,
   style,
   accessibilityLabel,
 }: {
   children: ReactNode
   onPress?: () => void
+  /** the item's actions (edit, delete…) in a sheet */
+  onLongPress?: () => void
   padded?: boolean
   style?: StyleProp<ViewStyle>
   accessibilityLabel?: string
@@ -27,9 +30,9 @@ export function Card({
   }
   const body = [styles.base, padded && styles.padded, surface, style]
 
-  if (onPress) {
+  if (onPress || onLongPress) {
     return (
-      <Touchable feedback="scale" onPress={onPress} accessibilityRole="button" accessibilityLabel={accessibilityLabel} style={body}>
+      <Touchable feedback="scale" onPress={onPress} onLongPress={onLongPress} accessibilityRole="button" accessibilityLabel={accessibilityLabel} style={body}>
         {children}
       </Touchable>
     )

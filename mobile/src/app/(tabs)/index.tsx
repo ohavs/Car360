@@ -34,12 +34,14 @@ import { DocumentSheet } from '../../features/documents/DocumentSheet'
 import { NotifyPrompt } from '../../features/notifications/NotifyPrompt'
 import { ReminderSheet } from '../../features/reminders/ReminderSheet'
 import { useReminderOpener } from '../../features/reminders/useReminderOpener'
+import { useRecordActions } from '../../features/forms/useRecordActions'
 import { AttentionCard } from '../../features/home/AttentionCard'
 import { ExpensesSheet } from '../../features/home/ExpensesSheet'
 import { useUpdates } from '../../features/updates/UpdateProvider'
+import { UpdatePanel } from '../../features/updates/UpdatePanel'
 import { WhatsNewSheet } from '../../features/updates/WhatsNewSheet'
 import { useTheme } from '../../theme/ThemeProvider'
-import { radius, space } from '../../theme/tokens'
+import { badge, icon, radius, space } from '../../theme/tokens'
 import {
   AppBar,
   Appear,
@@ -54,6 +56,7 @@ import {
   SectionHeader,
   Sheet,
   Skeleton,
+  StatusDot,
   Text,
   Touchable,
 } from '../../ui'
@@ -66,8 +69,9 @@ export default function HomeScreen() {
   const services = useLiveSub<ServiceRecord>(activeCar?.id, 'services')
   const router = useRouter()
   const { colors } = useTheme()
-  const [sheet, setSheet] = useState<'quick' | 'document' | 'reminder' | 'expenses' | null>(null)
+  const [sheet, setSheet] = useState<'quick' | 'document' | 'reminder' | 'expenses' | 'update' | null>(null)
   const opener = useReminderOpener(cars, customs, activeCar?.id)
+  const { openService, openPolicy, element: recordActionsSheet } = useRecordActions()
 
   const carReminders = useMemo(() => reminders.filter((r) => r.carId === activeCar?.id), [reminders, activeCar?.id])
   const documents = useLiveSub<CarDocument>(activeCar?.id, 'documents')
@@ -76,7 +80,7 @@ export default function HomeScreen() {
   const latest = useMemo(() => {
     if (!activeCar) return []
     const id = activeCar.id
-    const items: { key: string; at: string; icon: LucideIcon; title: string; subtitle: string; trailing?: ReactNode; onPress: () => void }[] = [
+    const items: { key: string; at: string; icon: LucideIcon; title: string; subtitle: string; trailing?: ReactNode; onPress: () => void; onLongPress?: () => void }[] = [
       ...services.items.map((s) => ({
         key: `s:${s.id}`,
         at: s.date,
@@ -85,6 +89,7 @@ export default function HomeScreen() {
         subtitle: [formatDate(s.date), s.garage].filter(Boolean).join(' · '),
         trailing: s.cost != null ? <Text variant="label">{formatMoney(s.cost)}</Text> : undefined,
         onPress: () => router.push({ pathname: '/car/[id]/service-edit', params: { id, rid: s.id } }),
+        onLongPress: () => openService(s),
       })),
       ...documents.items.map((d) => {
         const at = new Date(d.createdAt).toISOString().slice(0, 10)
@@ -106,18 +111,18 @@ export default function HomeScreen() {
           title: `ביטוח ${p.kind}${p.company ? ` · ${p.company}` : ''}`,
           subtitle: `מ-${formatDate(p.startDate)} עד ${formatDate(p.endDate)}`,
           onPress: () => router.push({ pathname: '/car/[id]/insurance-edit', params: { id, rid: p.id } }),
+          onLongPress: () => openPolicy(p),
         })),
     ]
     return items.sort((a, b) => b.at.localeCompare(a.at)).slice(0, 4)
-  }, [activeCar, services.items, documents.items, insurances.items, router])
+  }, [activeCar, services.items, documents.items, insurances.items, router, openService, openPolicy])
   const firstName = user?.displayName.split(' ')[0] ?? ''
 
   return (
     <Screen
       header={
         <AppBar
-          title={activeCar ? carDisplayName(activeCar) : `שלום, ${firstName}`}
-          subtitle={activeCar ? `שלום, ${firstName}` : undefined}
+          title={`שלום, ${firstName}`}
           actions={
             <>
               <IconButton icon={Search} label="חיפוש" onPress={() => router.push('/search')} />
@@ -143,7 +148,7 @@ export default function HomeScreen() {
         <Banner icon={CheckCircle2} tone="success" text={`Car360 עודכן לגרסה ${justUpdatedTo}`} onDismiss={dismissJustUpdated} />
       )}
       {hasUpdate && (
-        <Card onPress={() => router.push('/settings')} accessibilityLabel="עדכון זמין — מעבר להגדרות">
+        <Card onPress={() => setSheet('update')} accessibilityLabel="עדכון זמין — פרטים והתקנה">
           <View style={styles.row}>
             <Sparkles size={20} color={colors.brand} strokeWidth={2} />
             <Text variant="bodyStrong" style={styles.flex}>
@@ -194,7 +199,7 @@ export default function HomeScreen() {
             ) : (
               latest.map((a) => (
                 <Appear key={a.key}>
-                  <ListItem icon={a.icon} title={a.title} subtitle={a.subtitle} trailing={a.trailing} onPress={a.onPress} />
+                  <ListItem icon={a.icon} title={a.title} subtitle={a.subtitle} trailing={a.trailing} onPress={a.onPress} onLongPress={a.onLongPress} />
                 </Appear>
               ))
             )}
@@ -215,11 +220,17 @@ export default function HomeScreen() {
           </View>
         </Sheet>
       )}
+      {sheet === 'update' && (
+        <Sheet visible onClose={() => setSheet(null)} title="עדכון לאפליקציה">
+          <UpdatePanel />
+        </Sheet>
+      )}
       {sheet === 'expenses' && activeCar && <ExpensesSheet car={activeCar} onClose={() => setSheet(null)} />}
       {sheet === 'document' && activeCar && <DocumentSheet carId={activeCar.id} onClose={() => setSheet(null)} />}
       <NotifyPrompt enabled={cars.length > 0 && sheet === null && !justUpdatedTo} />
       {justUpdatedTo && whatsNew.length > 0 && <WhatsNewSheet version={justUpdatedTo} notes={whatsNew} onClose={dismissJustUpdated} />}
       {opener.sheet}
+      {recordActionsSheet}
       {sheet === 'reminder' && <ReminderSheet cars={cars} defaultCarId={activeCar?.id} onClose={() => setSheet(null)} />}
     </Screen>
   )
@@ -233,9 +244,7 @@ export default function HomeScreen() {
 /** The test, as one quiet line centred under the plate: a status dot and
  *  the date in words. Tapping it opens the test sheet. */
 function TestLine({ testExpiry, onPress }: { testExpiry?: string; onPress: () => void }) {
-  const { colors } = useTheme()
   const tone = dueStatus(testExpiry)
-  const dot = { neutral: colors.muted, ok: colors.success, warn: colors.warning, danger: colors.danger }[tone]
   const text = testExpiry
     ? `${daysUntil(testExpiry) < 0 ? 'הטסט פג' : 'טסט בתוקף עד'} ${formatDate(testExpiry)} · ${dueLabel(testExpiry)}`
     : 'לא הוזן תאריך טסט — להוספה'
@@ -247,7 +256,7 @@ function TestLine({ testExpiry, onPress }: { testExpiry?: string; onPress: () =>
       accessibilityLabel={text}
       style={styles.testLine}
     >
-      <View style={[styles.testDot, { backgroundColor: dot }]} />
+      <StatusDot tone={tone} />
       <Text variant="label" tone={tone === 'danger' ? 'danger' : 'onSurfaceVariant'}>
         {text}
       </Text>
@@ -261,7 +270,7 @@ function Shortcut({ icon: Icon, label, onPress }: { icon: LucideIcon; label: str
   return (
     <Touchable feedback="scale" onPress={onPress} accessibilityRole="button" accessibilityLabel={label} style={styles.shortcut}>
       <View style={[styles.shortcutIcon, { backgroundColor: colors.surfaceContainer }]}>
-        <Icon size={22} color={colors.onSurface} strokeWidth={1.9} />
+        <Icon size={icon.lg} color={colors.onSurface} strokeWidth={1.9} />
       </View>
       <Text variant="overline" tone="onSurfaceVariant" numberOfLines={1}>
         {label}
@@ -350,11 +359,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.md,
     minHeight: 36,
   },
-  testDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
   stats: {
     flexDirection: 'row',
     gap: space.md,
@@ -370,8 +374,8 @@ const styles = StyleSheet.create({
     paddingVertical: space.xs,
   },
   shortcutIcon: {
-    width: 48,
-    height: 48,
+    width: badge.lg,
+    height: badge.lg,
     borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',

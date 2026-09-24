@@ -14,7 +14,6 @@ export function AppearancePanel() {
 
   return (
     <Card style={styles.card}>
-      <Text variant="bodyStrong">מראה</Text>
 
       <View style={styles.group}>
         <Text variant="label" tone="onSurfaceVariant">

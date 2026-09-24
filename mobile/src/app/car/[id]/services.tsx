@@ -8,6 +8,7 @@ import type { ServiceRecord } from '@shared/types'
 import { dueLabel, dueStatus, formatDate, formatMoney, formatNumber } from '@shared/utils'
 import { useLiveSub } from '../../../data/live'
 import { useCarParam } from '../../../features/cars/useCarParam'
+import { useRecordActions } from '../../../features/forms/useRecordActions'
 import { radius, space } from '../../../theme/tokens'
 import { AppBar, Appear, Button, Card, EmptyState, FAB, PhotoViewer, Screen, Skeleton, StatusChip, Text, Touchable } from '../../../ui'
 
@@ -22,6 +23,7 @@ export default function ServicesScreen() {
     title: string
   } | null>(null)
   const router = useRouter()
+  const actions = useRecordActions()
   const add = () => router.push(`/car/${id}/service-edit`)
 
   return (
@@ -58,6 +60,7 @@ export default function ServicesScreen() {
                     params: { id: s.carId, rid: s.id },
                   })
                 }
+                onLongPress={() => actions.openService(s)}
                 accessibilityLabel={`עריכת ${s.title || 'טיפול'}`}
               >
                 <View style={styles.row}>
@@ -108,6 +111,7 @@ export default function ServicesScreen() {
           ))}
         </>
       )}
+      {actions.element}
       {viewing && <PhotoViewer {...viewing} onClose={() => setViewing(null)} />}
     </Screen>
   )

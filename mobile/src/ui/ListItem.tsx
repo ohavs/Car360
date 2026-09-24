@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { useTheme } from '../theme/ThemeProvider'
 import type { Colors } from '../theme/palettes'
-import { radius, space } from '../theme/tokens'
+import { badge, icon, radius, space } from '../theme/tokens'
 import { Touchable } from './Pressable'
 import { Text } from './Text'
 
@@ -15,6 +15,8 @@ export function ListItem({
   subtitle,
   trailing,
   onPress,
+  onLongPress,
+  titleLines = 1,
   tone = 'onSurface',
 }: {
   icon?: LucideIcon
@@ -22,6 +24,9 @@ export function ListItem({
   subtitle?: string
   trailing?: ReactNode
   onPress?: () => void
+  /** the row's actions (edit, delete…) in a sheet */
+  onLongPress?: () => void
+  titleLines?: number
   tone?: keyof Colors
 }) {
   const { colors } = useTheme()
@@ -29,11 +34,11 @@ export function ListItem({
     <>
       {Icon && (
         <View style={[styles.icon, { backgroundColor: colors.surfaceContainer }]}>
-          <Icon size={20} color={colors[tone]} strokeWidth={1.9} />
+          <Icon size={icon.md} color={colors[tone]} strokeWidth={1.9} />
         </View>
       )}
       <View style={styles.text}>
-        <Text variant="bodyStrong" tone={tone} numberOfLines={1}>
+        <Text variant="bodyStrong" tone={tone} numberOfLines={titleLines}>
           {title}
         </Text>
         {subtitle ? (
@@ -46,9 +51,9 @@ export function ListItem({
     </>
   )
 
-  if (onPress) {
+  if (onPress || onLongPress) {
     return (
-      <Touchable onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={styles.row}>
+      <Touchable onPress={onPress} onLongPress={onLongPress} accessibilityRole="button" accessibilityLabel={title} style={styles.row}>
         {body}
       </Touchable>
     )
@@ -66,8 +71,8 @@ const styles = StyleSheet.create({
     paddingVertical: space.md,
   },
   icon: {
-    width: 40,
-    height: 40,
+    width: badge.md,
+    height: badge.md,
     borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',

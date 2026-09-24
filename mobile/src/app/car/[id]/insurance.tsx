@@ -8,6 +8,7 @@ import type { InsuranceRecord } from '@shared/types'
 import { dueLabel, dueStatus, formatDate, formatMoney } from '@shared/utils'
 import { useLiveSub } from '../../../data/live'
 import { useCarParam } from '../../../features/cars/useCarParam'
+import { useRecordActions } from '../../../features/forms/useRecordActions'
 import { radius, space } from '../../../theme/tokens'
 import { AppBar, Appear, Button, Card, EmptyState, FAB, PhotoViewer, Screen, Skeleton, StatusChip, Text, Touchable } from '../../../ui'
 
@@ -21,6 +22,7 @@ export default function InsuranceScreen() {
     title: string
   } | null>(null)
   const router = useRouter()
+  const actions = useRecordActions()
   const add = () => router.push(`/car/${id}/insurance-edit`)
 
   return (
@@ -50,6 +52,7 @@ export default function InsuranceScreen() {
                     params: { id: p.carId, rid: p.id },
                   })
                 }
+                onLongPress={() => actions.openPolicy(p)}
                 accessibilityLabel={`עריכת ${title}`}
               >
                 <View style={styles.row}>
@@ -101,6 +104,7 @@ export default function InsuranceScreen() {
           )
         })
       )}
+      {actions.element}
       {viewing && <PhotoViewer {...viewing} onClose={() => setViewing(null)} />}
     </Screen>
   )

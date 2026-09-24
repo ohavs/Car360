@@ -110,7 +110,7 @@ export function DocumentSheet({
       title={doc ? 'עריכת מסמך' : 'מסמך חדש'}
       footer={
         <View style={styles.footer}>
-          {doc && <Button label="מחיקה" icon={Trash2} variant="text" onPress={() => setConfirming(true)} />}
+          {doc && <Button label="מחיקה" icon={Trash2} variant="dangerText" onPress={() => setConfirming(true)} />}
           <Button label="שמירה" onPress={() => void save()} loading={saving} style={styles.flex} />
         </View>
       }

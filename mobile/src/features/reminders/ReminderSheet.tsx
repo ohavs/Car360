@@ -106,7 +106,7 @@ export function ReminderSheet({
       title={reminder?.done ? 'תזכורת שבוצעה' : reminder ? 'עריכת תזכורת' : 'תזכורת חדשה'}
       footer={
         <View style={styles.footer}>
-          {reminder && <Button label="מחיקה" icon={Trash2} variant="text" onPress={() => setConfirming(true)} />}
+          {reminder && <Button label="מחיקה" icon={Trash2} variant="dangerText" onPress={() => setConfirming(true)} />}
           <Button label="שמירה" onPress={() => void save()} loading={saving} style={styles.flex} />
         </View>
       }

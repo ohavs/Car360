@@ -1,5 +1,6 @@
 /** The design system. Screens build only from these — never from raw
  *  react-native controls — so every element carries the same look. */
+export { ActionSheet, type SheetAction } from './ActionSheet'
 export { Appear } from './Appear'
 export { Button, type ButtonVariant } from './Button'
 export { Card } from './Card'
@@ -17,6 +18,7 @@ export { AppBar, Screen } from './Screen'
 export { Dropdown, FieldTrigger, Select, SheetSelect, type SelectOption } from './Select'
 export { Sheet } from './Sheet'
 export { Skeleton } from './Skeleton'
+export { StatusDot } from './StatusDot'
 export { Text } from './Text'
 export { TextField, type TextFieldProps } from './TextField'
 export { NavigationBar, type NavItem } from './NavigationBar'

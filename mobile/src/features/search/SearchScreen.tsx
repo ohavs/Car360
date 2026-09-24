@@ -10,7 +10,7 @@ import { readPref, writePref } from '../../lib/storage'
 import { useTheme } from '../../theme/ThemeProvider'
 import { space } from '../../theme/tokens'
 import { useGarage } from '../../data/CarsProvider'
-import { Card, Chip, EmptyState, IconButton, ListItem, Screen, SectionHeader, Text, TextField } from '../../ui'
+import { Card, Chip, EmptyState, IconButton, ListItem, Screen, SectionHeader, Skeleton, Text, TextField } from '../../ui'
 
 interface Hit {
   key: string
@@ -176,9 +176,13 @@ export function SearchScreen() {
         index ? (
           <EmptyState icon={SearchX} title="לא נמצא דבר" subtitle={`אין תוצאות עבור "${query.trim()}"`} />
         ) : (
-          <Text tone="muted" align="center">
-            מחפש…
-          </Text>
+          <Card padded={false}>
+            {[0, 1, 2].map((i) => (
+              <View key={i} style={styles.skeletonRow}>
+                <Skeleton height={44} />
+              </View>
+            ))}
+          </Card>
         )
       ) : (
         groups.map((g) => (
@@ -200,6 +204,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   bar: { flexDirection: 'row', alignItems: 'center', gap: space.xs, paddingStart: space.sm, paddingEnd: space.lg, paddingTop: space.md },
   group: { gap: space.sm },
+  skeletonRow: { padding: space.lg },
   recent: { gap: space.sm },
   recentHead: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.xs },
