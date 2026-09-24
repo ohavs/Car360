@@ -1,6 +1,6 @@
 import { collection, getDocs, getFirestore } from '@react-native-firebase/firestore'
 import { useRouter } from 'expo-router'
-import { Bell, CarFront, FileText, History, Search, Shield, Wrench, X, type LucideIcon } from 'lucide-react-native'
+import { ArrowRight, Bell, CarFront, FileText, History, Search, SearchX, Shield, Wrench, X, type LucideIcon } from 'lucide-react-native'
 import { useEffect, useMemo, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { carDisplayName } from '@shared/reminders'
@@ -9,7 +9,8 @@ import { formatDate, formatPlate } from '@shared/utils'
 import { readPref, writePref } from '../../lib/storage'
 import { useTheme } from '../../theme/ThemeProvider'
 import { space } from '../../theme/tokens'
-import { Chip, IconButton, ListItem, SectionHeader, Sheet, Text, TextField } from '../../ui'
+import { useGarage } from '../../data/CarsProvider'
+import { Card, Chip, EmptyState, IconButton, ListItem, Screen, SectionHeader, Text, TextField } from '../../ui'
 
 interface Hit {
   key: string
@@ -58,9 +59,11 @@ async function loadIndex(cars: Car[]): Promise<Index> {
 
 const GROUPS = ['רכבים', 'טיפולים', 'ביטוחים', 'מסמכים', 'תזכורות'] as const
 
-/** One search over everything: cars, services, policies, documents, reminders. */
-export function SearchSheet({ cars, onClose }: { cars: Car[]; onClose: () => void }) {
+/** One search over everything: cars, services, policies, documents, reminders.
+ *  A full screen with the field in the top bar — the keyboard never covers it. */
+export function SearchScreen() {
   const router = useRouter()
+  const { cars } = useGarage()
   const { colors } = useTheme()
   const [query, setQuery] = useState('')
   const [index, setIndex] = useState<Index | null>(null)
@@ -123,22 +126,28 @@ export function SearchSheet({ cars, onClose }: { cars: Car[]; onClose: () => voi
     const next = [query.trim(), ...recent.filter((r) => r !== query.trim())].slice(0, 6)
     setRecent(next)
     writePref('recentSearches', next)
-    onClose()
     router.push(hit.href as never)
   }
 
   return (
-    <Sheet visible onClose={onClose} title="חיפוש">
-      <TextField
-        label="מה מחפשים?"
-        placeholder="מוסך, פוליסה, לוחית, מסמך…"
-        leadingIcon={Search}
-        value={query}
-        onChangeText={setQuery}
-        autoFocus
-        returnKeyType="search"
-        clearable
-      />
+    <Screen
+      header={
+        <View style={styles.bar}>
+          <IconButton icon={ArrowRight} label="חזרה" onPress={() => router.back()} />
+          <TextField
+            label="חיפוש"
+            placeholder="מוסך, פוליסה, לוחית, מסמך…"
+            leadingIcon={Search}
+            value={query}
+            onChangeText={setQuery}
+            autoFocus
+            returnKeyType="search"
+            clearable
+            style={styles.flex}
+          />
+        </View>
+      }
+    >
       {q.length < 2 ? (
         recent.length > 0 && (
           <View style={styles.recent}>
@@ -164,25 +173,33 @@ export function SearchSheet({ cars, onClose }: { cars: Car[]; onClose: () => voi
           </View>
         )
       ) : groups.length === 0 ? (
-        <Text tone="muted" align="center">
-          {index ? `לא נמצא דבר עבור "${query.trim()}"` : 'מחפש…'}
-        </Text>
+        index ? (
+          <EmptyState icon={SearchX} title="לא נמצא דבר" subtitle={`אין תוצאות עבור "${query.trim()}"`} />
+        ) : (
+          <Text tone="muted" align="center">
+            מחפש…
+          </Text>
+        )
       ) : (
         groups.map((g) => (
-          <View key={g.title}>
+          <View key={g.title} style={styles.group}>
             <SectionHeader title={g.title} />
-            {g.hits.map((h) => (
-              <ListItem key={h.key} icon={h.icon} title={h.title} subtitle={h.subtitle} onPress={() => open(h)} />
-            ))}
+            <Card padded={false}>
+              {g.hits.map((h) => (
+                <ListItem key={h.key} icon={h.icon} title={h.title} subtitle={h.subtitle} onPress={() => open(h)} />
+              ))}
+            </Card>
           </View>
         ))
       )}
-    </Sheet>
+    </Screen>
   )
 }
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  bar: { flexDirection: 'row', alignItems: 'center', gap: space.xs, paddingStart: space.sm, paddingEnd: space.lg, paddingTop: space.md },
+  group: { gap: space.sm },
   recent: { gap: space.sm },
   recentHead: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.xs },

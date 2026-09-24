@@ -1,5 +1,5 @@
 import { Image } from 'expo-image'
-import { Camera, ImagePlus, Images, ScanLine, X } from 'lucide-react-native'
+import { Camera, FileType2, ImagePlus, Images, ScanLine, X } from 'lucide-react-native'
 import { useState } from 'react'
 import { ScrollView, StyleSheet, View } from 'react-native'
 import { pickImages, PermissionDenied, type PickSource } from '../data/images'
@@ -38,7 +38,7 @@ export function PhotoStrip({
       const picked = await pickImages(source, multiple)
       if (picked.length) onChange(multiple ? [...photos, ...picked] : picked.slice(0, 1))
     } catch (e) {
-      snack(e instanceof PermissionDenied ? 'צריך לאשר גישה למצלמה בהגדרות הטלפון' : 'לא הצלחנו לפתוח את התמונות', {
+      snack(e instanceof PermissionDenied ? 'צריך לאשר גישה למצלמה בהגדרות הטלפון' : 'לא הצלחנו לפתוח את הקובץ', {
         tone: 'error',
       })
     }
@@ -82,6 +82,12 @@ export function PhotoStrip({
         <View>
           <ListItem icon={ScanLine} title="סריקת מסמך" subtitle="חיתוך ויישור אוטומטיים — לקבלות ופוליסות" onPress={() => void add('scan')} />
           <ListItem icon={Camera} title="צילום במצלמה" onPress={() => void add('camera')} />
+          <ListItem
+            icon={FileType2}
+            title="קובץ PDF"
+            subtitle={multiple ? 'כל עמוד נשמר כתמונה דחוסה' : 'העמוד הראשון נשמר כתמונה'}
+            onPress={() => void add('pdf')}
+          />
           <ListItem icon={Images} title="בחירה מהגלריה" subtitle={multiple ? 'אפשר לבחור כמה ביחד' : undefined} onPress={() => void add('library')} />
         </View>
       </Sheet>

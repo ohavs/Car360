@@ -1,5 +1,6 @@
 import { deleteObject, getDownloadURL, getStorage, putFile, ref } from '@react-native-firebase/storage'
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator'
+import * as DocumentPicker from 'expo-document-picker'
 import * as ImagePicker from 'expo-image-picker'
 import DocumentScanner from 'react-native-document-scanner-plugin'
 import { File, Paths } from 'expo-file-system'
@@ -57,11 +58,19 @@ export async function deleteImage(url: string): Promise<void> {
   }
 }
 
-export type PickSource = 'camera' | 'library' | 'scan'
+export type PickSource = 'camera' | 'library' | 'scan' | 'pdf'
 
 /** Camera, gallery, or the document scanner (Google's: finds the edges,
  *  straightens and crops); returns local URIs, empty when cancelled. */
 export async function pickImages(source: PickSource, multiple: boolean): Promise<string[]> {
+  if (source === 'pdf') {
+    // a PDF becomes page images (on the device), then goes through the same
+    // compression as photos — ~200KB a page, viewable and zoomable in the app
+    const res = await DocumentPicker.getDocumentAsync({ type: 'application/pdf', copyToCacheDirectory: true })
+    if (res.canceled || !res.assets[0]) return []
+    const pages = await ImageTools.renderPdf(res.assets[0].uri, multiple ? PDF_MAX_PAGES : 1, 1600)
+    return pages
+  }
   if (source === 'scan') {
     const res = await DocumentScanner.scanDocument({ maxNumDocuments: multiple ? 10 : 1, croppedImageQuality: 95 })
     return res.status === 'success' ? (res.scannedImages ?? []) : []
@@ -81,6 +90,9 @@ export async function pickImages(source: PickSource, multiple: boolean): Promise
 }
 
 export class PermissionDenied extends Error {}
+
+/** a long PDF stops here — policies and receipts are a few pages */
+export const PDF_MAX_PAGES = 8
 
 /** A photo that is still on the device (not yet uploaded). */
 export const isLocal = (uri: string) => uri.startsWith('file:') || uri.startsWith('content:')

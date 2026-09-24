@@ -2,6 +2,8 @@ package expo.modules.car360imagetools
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.Color
+import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import com.google.mlkit.common.MlKitException
 import com.google.mlkit.vision.common.InputImage
@@ -33,6 +35,42 @@ class ImageToolsModule : Module() {
       } else {
         segment(image, promise)
       }
+    }
+
+    /**
+     * A PDF (policy, receipt) becomes page images — JPEG, at most `maxPages`,
+     * `width` px wide — which the app then compresses and stores like photos.
+     * Android renders PDFs natively, so no library and no network.
+     */
+    AsyncFunction("renderPdf") { uri: String, maxPages: Int, width: Int ->
+      val pages = mutableListOf<String>()
+      val fd = context.contentResolver.openFileDescriptor(Uri.parse(uri), "r")
+        ?: throw IllegalArgumentException("Could not open the PDF")
+      val renderer = PdfRenderer(fd)
+      try {
+        val count = minOf(renderer.pageCount, maxPages)
+        val stamp = System.currentTimeMillis()
+        for (i in 0 until count) {
+          val page = renderer.openPage(i)
+          try {
+            val h = (width.toFloat() * page.height / page.width).toInt().coerceAtLeast(1)
+            val bitmap = Bitmap.createBitmap(width, h, Bitmap.Config.ARGB_8888)
+            // PDFs assume white paper; a transparent page would render black
+            bitmap.eraseColor(Color.WHITE)
+            page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+            val out = File(context.cacheDir, "car360-pdf-$stamp-${i + 1}.jpg")
+            FileOutputStream(out).use { bitmap.compress(Bitmap.CompressFormat.JPEG, 88, it) }
+            bitmap.recycle()
+            pages.add(Uri.fromFile(out).toString())
+          } finally {
+            page.close()
+          }
+        }
+      } finally {
+        renderer.close()
+        fd.close()
+      }
+      pages
     }
   }
 

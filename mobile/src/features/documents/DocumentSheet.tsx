@@ -1,5 +1,5 @@
 import { Image } from 'expo-image'
-import { Camera, Images, ScanLine, Trash2 } from 'lucide-react-native'
+import { Camera, FileType2, Images, ScanLine, Trash2 } from 'lucide-react-native'
 import { useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import type { CarDocument, DocumentCategory } from '@shared/types'
@@ -34,15 +34,20 @@ export function DocumentSheet({
   const [confirming, setConfirming] = useState(false)
   const dirty = JSON.stringify(draft) !== JSON.stringify(start)
 
+  // a multi-page PDF: the first page is this document, the rest become
+  // "<name> · עמ׳ 2/3"… next to it
+  const [morePages, setMorePages] = useState<string[]>([])
+
   const pick = async (source: PickSource) => {
     try {
-      const [uri] = await pickImages(source, false)
+      const [uri, ...rest] = await pickImages(source, !doc && source === 'pdf')
       if (uri) {
         setDraft((d) => ({ ...d, imageUrl: uri }))
+        setMorePages(rest)
         setError(null)
       }
     } catch (e) {
-      snack(e instanceof PermissionDenied ? 'צריך לאשר גישה למצלמה בהגדרות הטלפון' : 'לא הצלחנו לפתוח את התמונות', { tone: 'error' })
+      snack(e instanceof PermissionDenied ? 'צריך לאשר גישה למצלמה בהגדרות הטלפון' : 'לא הצלחנו לפתוח את הקובץ', { tone: 'error' })
     }
   }
 
@@ -62,7 +67,22 @@ export function DocumentSheet({
         updatedAt: now,
       })
       if (doc?.imageUrl && doc.imageUrl !== imageUrl) void deleteImage(doc.imageUrl)
-      snack(doc ? 'המסמך עודכן' : 'המסמך נשמר', { tone: 'success' })
+      const title = draft.title.trim() || draft.category
+      const total = morePages.length + 1
+      for (const [i, page] of morePages.entries()) {
+        const id = newId()
+        const url = await uploadImage(page, `cars/${carId}/documents/${id}-${now}.webp`, 'document')
+        await saveRecord('documents', {
+          id,
+          carId,
+          category: draft.category,
+          title: `${title} · עמ׳ ${i + 2}/${total}`,
+          imageUrl: url,
+          createdAt: now - i - 1,
+          updatedAt: now,
+        })
+      }
+      snack(doc ? 'המסמך עודכן' : total > 1 ? `המסמך נשמר (${total} עמודים)` : 'המסמך נשמר', { tone: 'success' })
       onClose()
     } catch {
       snack('השמירה נכשלה. בדקו את החיבור ונסו שוב.', { tone: 'error' })
@@ -110,8 +130,14 @@ export function DocumentSheet({
             <Button label="צילום" icon={Camera} variant="tonal" onPress={() => void pick('camera')} style={styles.flex} />
             <Button label="מהגלריה" icon={Images} variant="outlined" onPress={() => void pick('library')} style={styles.flex} />
           </View>
+          <Button label="קובץ PDF" icon={FileType2} variant="text" onPress={() => void pick('pdf')} />
         </View>
       )}
+      {draft.imageUrl && morePages.length > 0 ? (
+        <Text variant="caption" tone="muted" align="center">
+          ועוד {morePages.length} עמודים מה-PDF — יישמרו כמסמכים נפרדים
+        </Text>
+      ) : null}
       {error && (
         <Text variant="caption" tone="danger">
           {error}

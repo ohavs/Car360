@@ -3,7 +3,6 @@ import { useRouter } from 'expo-router'
 import {
   BarChart3,
   BellPlus,
-  CalendarClock,
   CarFront as CarAdd,
   FilePlus2,
   FileSearch,
@@ -25,7 +24,7 @@ import { useMemo, useState, type ReactNode } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { carDisplayName } from '@shared/reminders'
 import type { CarDocument, InsuranceRecord, ServiceRecord } from '@shared/types'
-import { dueLabel, dueStatus, formatDate, formatMoney } from '@shared/utils'
+import { daysUntil, dueLabel, dueStatus, formatDate, formatMoney } from '@shared/utils'
 import { useGarage } from '../../data/CarsProvider'
 import { useLiveSub } from '../../data/live'
 import { useAllReminders } from '../../data/reminders'
@@ -34,7 +33,6 @@ import { CarPager } from '../../features/cars/CarPager'
 import { DocumentSheet } from '../../features/documents/DocumentSheet'
 import { NotifyPrompt } from '../../features/notifications/NotifyPrompt'
 import { ReminderSheet } from '../../features/reminders/ReminderSheet'
-import { SearchSheet } from '../../features/search/SearchSheet'
 import { useReminderOpener } from '../../features/reminders/useReminderOpener'
 import { AttentionCard } from '../../features/home/AttentionCard'
 import { ExpensesSheet } from '../../features/home/ExpensesSheet'
@@ -70,7 +68,6 @@ export default function HomeScreen() {
   const { colors } = useTheme()
   const [sheet, setSheet] = useState<'quick' | 'document' | 'reminder' | 'expenses' | null>(null)
   const opener = useReminderOpener(cars, customs, activeCar?.id)
-  const [searching, setSearching] = useState(false)
 
   const carReminders = useMemo(() => reminders.filter((r) => r.carId === activeCar?.id), [reminders, activeCar?.id])
   const documents = useLiveSub<CarDocument>(activeCar?.id, 'documents')
@@ -123,7 +120,7 @@ export default function HomeScreen() {
           subtitle={activeCar ? `שלום, ${firstName}` : undefined}
           actions={
             <>
-              <IconButton icon={Search} label="חיפוש" onPress={() => setSearching(true)} />
+              <IconButton icon={Search} label="חיפוש" onPress={() => router.push('/search')} />
               <Touchable
                 feedback="scale"
                 onPress={() => router.push('/settings')}
@@ -174,7 +171,7 @@ export default function HomeScreen() {
           <CarPager cars={cars} activeId={activeCar.id} onChange={setActiveCarId} onPressCar={(id) => router.push(`/car/${id}`)} />
           <View style={styles.plateRow}>
             <Plate plate={activeCar.plate} />
-            <TestChip testExpiry={activeCar.testExpiry} onPress={() => opener.openTest(activeCar.id)} />
+            <TestLine testExpiry={activeCar.testExpiry} onPress={() => opener.openTest(activeCar.id)} />
           </View>
 
           <View style={styles.shortcuts}>
@@ -223,7 +220,6 @@ export default function HomeScreen() {
       <NotifyPrompt enabled={cars.length > 0 && sheet === null && !justUpdatedTo} />
       {justUpdatedTo && whatsNew.length > 0 && <WhatsNewSheet version={justUpdatedTo} notes={whatsNew} onClose={dismissJustUpdated} />}
       {opener.sheet}
-      {searching && <SearchSheet cars={cars} onClose={() => setSearching(false)} />}
       {sheet === 'reminder' && <ReminderSheet cars={cars} defaultCarId={activeCar?.id} onClose={() => setSheet(null)} />}
     </Screen>
   )
@@ -234,23 +230,26 @@ export default function HomeScreen() {
   }
 }
 
-/** The test date as a small tappable chip beside the plate. */
-function TestChip({ testExpiry, onPress }: { testExpiry?: string; onPress: () => void }) {
+/** The test, as one quiet line centred under the plate: a status dot and
+ *  the date in words. Tapping it opens the test sheet. */
+function TestLine({ testExpiry, onPress }: { testExpiry?: string; onPress: () => void }) {
   const { colors } = useTheme()
   const tone = dueStatus(testExpiry)
-  const tint = { neutral: colors.surfaceContainer, ok: colors.successContainer, warn: colors.warningContainer, danger: colors.dangerContainer }[tone]
-  const ink = { neutral: 'onSurfaceVariant', ok: 'success', warn: 'warning', danger: 'danger' } as const
+  const dot = { neutral: colors.muted, ok: colors.success, warn: colors.warning, danger: colors.danger }[tone]
+  const text = testExpiry
+    ? `${daysUntil(testExpiry) < 0 ? 'הטסט פג' : 'טסט בתוקף עד'} ${formatDate(testExpiry)} · ${dueLabel(testExpiry)}`
+    : 'לא הוזן תאריך טסט — להוספה'
   return (
     <Touchable
       feedback="scale"
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={testExpiry ? `טסט עד ${formatDate(testExpiry)}, ${dueLabel(testExpiry)}` : 'טסט: לא הוזן תאריך'}
-      style={[styles.testChip, { backgroundColor: tint }]}
+      accessibilityLabel={text}
+      style={styles.testLine}
     >
-      <CalendarClock size={16} color={colors[ink[tone]]} strokeWidth={2.2} />
-      <Text variant="label" tone={ink[tone]}>
-        {testExpiry ? `טסט · ${dueLabel(testExpiry)}` : 'טסט · להוספה'}
+      <View style={[styles.testDot, { backgroundColor: dot }]} />
+      <Text variant="label" tone={tone === 'danger' ? 'danger' : 'onSurfaceVariant'}>
+        {text}
       </Text>
     </Touchable>
   )
@@ -341,19 +340,20 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   plateRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: space.sm,
-  },
-  testChip: {
-    flexDirection: 'row',
     alignItems: 'center',
     gap: space.xs,
-    borderRadius: radius.full,
+  },
+  testLine: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.sm,
     paddingHorizontal: space.md,
     minHeight: 36,
+  },
+  testDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   stats: {
     flexDirection: 'row',

@@ -56,6 +56,7 @@ function RootNavigator() {
           <Stack.Screen name="gallery" />
           <Stack.Screen name="notifications" />
           <Stack.Screen name="report" />
+          <Stack.Screen name="search" options={{ animation: 'fade' }} />
           <Stack.Screen name="car/new" />
           <Stack.Screen name="car/[id]/edit" />
           <Stack.Screen name="car/[id]/service-edit" />
