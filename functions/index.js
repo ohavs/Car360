@@ -179,7 +179,8 @@ export const dailyReminderPush = onSchedule(
 
     for (const carDoc of carsSnap.docs) {
       const car = { id: carDoc.id, ...carDoc.data() }
-      if (!car.ownerId) continue
+      // no owner, or sold/archived: nothing to remind about
+      if (!car.ownerId || car.archived) continue
       const uids = [car.ownerId, ...(await uidsByEmail(car.sharedWith || [], emails))]
 
       const [insSnap, svcSnap, remSnap] = await Promise.all([

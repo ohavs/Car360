@@ -34,6 +34,10 @@ jobs:
       # update whose versionCode is higher than the installed one
       ANDROID_VERSION_CODE: ${{ github.run_number }}
       CAR360_CHANNEL: ${{ github.ref_name == 'main' && 'stable' || 'beta' }}
+      # optional: "smart scan" of policies and receipts (Gemini). Without it the
+      # scan buttons simply don't show. Restrict the key to this Android app.
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || secrets.VITE_GEMINI_API_KEY }}
+      GEMINI_MODEL: ${{ secrets.GEMINI_MODEL }}
       EXPO_NO_TELEMETRY: '1'
 
     steps:

@@ -1,11 +1,12 @@
 import { useRouter } from 'expo-router'
-import { CarFront, RefreshCw } from 'lucide-react-native'
+import { CalendarPlus, CarFront, RefreshCw } from 'lucide-react-native'
 import { useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { carDisplayName } from '@shared/reminders'
 import type { Car } from '@shared/types'
 import { dueLabel, dueStatus, formatDate } from '@shared/utils'
 import { patchCar } from '../../data/mutations'
+import { addToCalendar } from '../../lib/calendar'
 import { syncCarNow } from '../../data/registrySync'
 import { space } from '../../theme/tokens'
 import { Button, DateField, EXPIRY_PRESETS, Sheet, StatusChip, Text, useSnackbar } from '../../ui'
@@ -55,6 +56,18 @@ export function TestSheet({ car, kind = 'test', onClose }: { car: Car; kind?: 't
           </Text>
         </>
       )}
+      {value ? (
+        <Button
+          label="הוספה ליומן"
+          icon={CalendarPlus}
+          variant="outlined"
+          onPress={() =>
+            void addToCalendar({ title: `${title === 'טסט' ? 'חידוש טסט' : 'חידוש רישיון רכב'} · ${carDisplayName(car)}`, date: value }).catch(() =>
+              snack('פתיחת היומן נכשלה — נסו שוב', { tone: 'error' }),
+            )
+          }
+        />
+      ) : null}
       <DateField label="שינוי התאריך" value={value ?? ''} onChange={change} presets={EXPIRY_PRESETS} />
       <Button
         label="כל פרטי הרכב"

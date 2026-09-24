@@ -9,6 +9,8 @@ import { space } from '../../theme/tokens'
 import { Chip, DateField, EXPIRY_PRESETS, NumberField, PhotoStrip, SectionHeader, TextField, useSnackbar } from '../../ui'
 import { FormScreen, useSaver } from '../forms/FormScreen'
 import { useFormGuard } from '../forms/useFormGuard'
+import { scanReceipt } from '../scan/smartScan'
+import { SmartScanButton } from '../scan/SmartScanButton'
 
 const SUGGESTIONS = ['טיפול תקופתי', 'החלפת שמן', 'צמיגים', 'בלמים', 'מצבר', 'מיזוג', 'פחחות וצבע']
 
@@ -80,6 +82,18 @@ export function ServiceForm({ car, initial, from }: { car: Car; initial?: Servic
       deleteTitle="למחוק את הטיפול?"
       deleteMessage={`"${start.title || 'טיפול'}" מ-${formatDate(start.date)} יימחק יחד עם הקבלות שלו.`}
     >
+      <SmartScanButton
+        label="סריקה חכמה של הקבלה"
+        read={scanReceipt}
+        onResult={(f, page) => {
+          setDraft((d) => ({
+            ...d,
+            ...Object.fromEntries(Object.entries(f).filter(([, v]) => v !== undefined)),
+            photos: [...d.photos, page],
+          }))
+          if (f.title) setError(null)
+        }}
+      />
       <TextField label="מה נעשה" value={draft.title} onChangeText={setTitle} error={error} />
       <View style={styles.chips}>
         {SUGGESTIONS.map((s) => (

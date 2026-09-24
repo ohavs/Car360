@@ -11,6 +11,8 @@ import { DateField, NumberField, PhotoStrip, SectionHeader, SegmentedButtons, Te
 import { BlocksEditor } from '../forms/BlocksEditor'
 import { FormScreen, useSaver } from '../forms/FormScreen'
 import { useFormGuard } from '../forms/useFormGuard'
+import { scanPolicy } from '../scan/smartScan'
+import { SmartScanButton } from '../scan/SmartScanButton'
 
 const KINDS: InsuranceKind[] = ['חובה', 'מקיף', 'צד ג׳', 'אחר']
 
@@ -108,6 +110,16 @@ export function InsuranceForm({
       deleteTitle="למחוק את הפוליסה?"
       deleteMessage={`ביטוח ${start.kind}${start.company ? ` ב${start.company}` : ''} יימחק יחד עם הצילומים שלו.`}
     >
+      <SmartScanButton
+        label="סריקה חכמה של הפוליסה"
+        read={scanPolicy}
+        onResult={(f, page) =>
+          setDraft((d) => {
+            const filled = Object.fromEntries(Object.entries(f).filter(([, v]) => v !== undefined))
+            return { ...d, ...filled, photos: [...d.photos, page] }
+          })
+        }
+      />
       <SegmentedButtons label="סוג ביטוח" value={draft.kind} onChange={(v) => set('kind', v)} options={KINDS.map((k) => ({ value: k, label: k }))} />
       <TextField
         label="חברת ביטוח"

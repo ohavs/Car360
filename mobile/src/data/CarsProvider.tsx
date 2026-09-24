@@ -5,7 +5,10 @@ import { useCars } from '../features/cars/useCars'
 import { readPref, writePref } from '../lib/storage'
 
 interface CarsState {
+  /** the cars in use — archived (sold) ones are left out */
   cars: Car[]
+  /** every car, archived ones included (the garage screen) */
+  allCars: Car[]
   loading: boolean
   error: boolean
   /** the car the home screen shows and "add" actions apply to */
@@ -18,7 +21,8 @@ const CarsContext = createContext<CarsState | null>(null)
 
 export function CarsProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth()
-  const { cars, loading, error } = useCars(user)
+  const { cars: allCars, loading, error } = useCars(user)
+  const cars = useMemo(() => allCars.filter((c) => !c.archived), [allCars])
   const [activeId, setActiveId] = useState<string | null>(() => readPref<string | null>('activeCar', null))
 
   const setActiveCarId = useCallback((id: string) => {
@@ -29,14 +33,15 @@ export function CarsProvider({ children }: { children: ReactNode }) {
   const value = useMemo<CarsState>(
     () => ({
       cars,
+      allCars,
       loading,
       error,
       // a remembered car that no longer exists falls back to the first one
       activeCar: cars.find((c) => c.id === activeId) ?? cars[0] ?? null,
       setActiveCarId,
-      carById: (id) => cars.find((c) => c.id === id),
+      carById: (id) => allCars.find((c) => c.id === id),
     }),
-    [cars, loading, error, activeId, setActiveCarId],
+    [cars, allCars, loading, error, activeId, setActiveCarId],
   )
   return <CarsContext.Provider value={value}>{children}</CarsContext.Provider>
 }

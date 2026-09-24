@@ -70,6 +70,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         'android.permission.READ_EXTERNAL_STORAGE',
         'android.permission.WRITE_EXTERNAL_STORAGE',
         'android.permission.SYSTEM_ALERT_WINDOW',
+        // "הוספה ליומן" opens the calendar's own dialog, which needs neither
+        'android.permission.READ_CALENDAR',
+        'android.permission.WRITE_CALENDAR',
       ],
       predictiveBackGestureEnabled: false,
     },
@@ -139,6 +142,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       /** true once the reminder Cloud Function is deployed (needs Blaze):
        *  shows the server checks and test in the notifications screen */
       serverPush: false,
+      /** "smart scan" (Gemini) — set by CI from a secret; empty hides the feature */
+      gemini: { key: process.env.GEMINI_API_KEY || undefined, model: process.env.GEMINI_MODEL || 'gemini-2.5-flash' },
     },
   }
 }

@@ -30,7 +30,7 @@ export function useCars(user: UserProfile | null): CarsState {
       if (own === null || shared === null) return
       const merged = new Map<string, Car>()
       for (const car of [...own, ...shared]) merged.set(car.id, car)
-      setResult({ uid, cars: [...merged.values()].sort((a, b) => a.createdAt - b.createdAt), error: false })
+      setResult({ uid, cars: [...merged.values()].sort((a, b) => (a.order ?? a.createdAt) - (b.order ?? b.createdAt)), error: false })
     }
     const fail = () => setResult((prev) => ({ uid, cars: prev?.uid === uid ? prev.cars : [], error: true }))
 

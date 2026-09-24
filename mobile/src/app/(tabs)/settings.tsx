@@ -1,5 +1,6 @@
 import { Image } from 'expo-image'
-import { DatabaseBackup, LogOut } from 'lucide-react-native'
+import { useRouter } from 'expo-router'
+import { CarFront, DatabaseBackup, LogOut } from 'lucide-react-native'
 import { useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { useGarage } from '../../data/CarsProvider'
@@ -19,6 +20,7 @@ export default function SettingsScreen() {
   const [confirmSignOut, setConfirmSignOut] = useState(false)
   const { cars } = useGarage()
   const snack = useSnackbar()
+  const router = useRouter()
   const { hasUpdate } = useUpdates()
   const [backingUp, setBackingUp] = useState(false)
 
@@ -61,6 +63,7 @@ export default function SettingsScreen() {
 
       <SectionHeader title="כלים ונתונים" />
       <Card padded={false}>
+        <ListItem icon={CarFront} title="הרכבים שלי" subtitle="סדר, ארכיון לרכב שנמכר, מחיקה" onPress={() => router.push('/garage')} />
         <ListItem
           icon={DatabaseBackup}
           title="גיבוי הנתונים"

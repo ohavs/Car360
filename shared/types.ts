@@ -45,6 +45,11 @@ export interface Car {
   blocks: InfoBlock[]
   /** emails of users the car is shared with */
   sharedWith: string[]
+  /** position in the garage (the owner's order); falls back to createdAt */
+  order?: number
+  /** sold or no longer in use: kept with its history, out of reminders */
+  archived?: boolean
+  archivedAt?: string
   /** random token for a public, read-only passport link (owner-generated) */
   publicToken?: string
   createdAt: number

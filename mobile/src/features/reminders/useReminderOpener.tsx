@@ -1,11 +1,12 @@
 import { useRouter } from 'expo-router'
-import { CalendarClock, CheckCircle2, ChevronLeft, RefreshCw } from 'lucide-react-native'
+import { CalendarClock, CalendarPlus, CheckCircle2, ChevronLeft, RefreshCw } from 'lucide-react-native'
 import { useState } from 'react'
 import { View } from 'react-native'
 import type { Car, CustomReminder, DerivedReminder } from '@shared/types'
 import { dueLabel, formatDate } from '@shared/utils'
 import { patchCar } from '../../data/mutations'
 import { routeForReminder } from '../../data/reminders'
+import { addToCalendar } from '../../lib/calendar'
 import { ListItem, Sheet, useSnackbar } from '../../ui'
 import { TestSheet } from '../cars/TestSheet'
 import { ReminderSheet } from './ReminderSheet'
@@ -76,6 +77,16 @@ export function useReminderOpener(cars: Car[], customs: CustomReminder[], active
       <Sheet visible onClose={close} title={r.title}>
         <View>
           <ListItem icon={CalendarClock} title={`${formatDate(r.dueDate)} · ${dueLabel(r.dueDate)}`} subtitle={r.carName} />
+          <ListItem
+            icon={CalendarPlus}
+            title="הוספה ליומן"
+            onPress={() => {
+              close()
+              void addToCalendar({ title: `${r.title} · ${r.carName}`, date: r.dueDate }).catch(() =>
+                snack('פתיחת היומן נכשלה — נסו שוב', { tone: 'error' }),
+              )
+            }}
+          />
           {r.source === 'service' && (
             <>
               <ListItem

@@ -1,10 +1,11 @@
-import { CheckCircle2, RotateCcw, Trash2 } from 'lucide-react-native'
+import { CalendarPlus, CheckCircle2, RotateCcw, Trash2 } from 'lucide-react-native'
 import { useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { carDisplayName } from '@shared/reminders'
 import type { Car, CustomReminder } from '@shared/types'
 import { formatDate, newId, todayISO } from '@shared/utils'
 import { deleteRecord, saveRecord } from '../../data/mutations'
+import { addToCalendar } from '../../lib/calendar'
 import { useTheme } from '../../theme/ThemeProvider'
 import { radius, space } from '../../theme/tokens'
 import { Button, Chip, ConfirmDialog, DateField, Select, Sheet, Text, TimeField, TextField, useSnackbar } from '../../ui'
@@ -120,7 +121,19 @@ export function ReminderSheet({
           <Button label="ביטול הסימון" icon={RotateCcw} variant="text" onPress={() => void setDone(false)} />
         </View>
       ) : reminder && !marking ? (
-        <Button label="סימון כבוצע" icon={CheckCircle2} variant="tonal" size="large" onPress={() => setMarking(true)} />
+        <View style={styles.footer}>
+          <Button label="סימון כבוצע" icon={CheckCircle2} variant="tonal" onPress={() => setMarking(true)} style={styles.flex} />
+          <Button
+            label="ליומן"
+            icon={CalendarPlus}
+            variant="outlined"
+            onPress={() =>
+              void addToCalendar({ title: reminder.title, date: reminder.dueDate }).catch(() =>
+                snack('פתיחת היומן נכשלה — נסו שוב', { tone: 'error' }),
+              )
+            }
+          />
+        </View>
       ) : reminder && marking ? (
         <View style={[styles.doneBox, styles.doneColumn, { backgroundColor: colors.surfaceContainer }]}>
           <DateField label="מתי זה בוצע?" value={doneAt} onChange={(v) => setDoneAt(v || todayISO())} max={todayISO()} clearable={false} />
