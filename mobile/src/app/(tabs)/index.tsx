@@ -39,6 +39,7 @@ import { useReminderOpener } from '../../features/reminders/useReminderOpener'
 import { AttentionCard } from '../../features/home/AttentionCard'
 import { ExpensesSheet } from '../../features/home/ExpensesSheet'
 import { useUpdates } from '../../features/updates/UpdateProvider'
+import { WhatsNewSheet } from '../../features/updates/WhatsNewSheet'
 import { useTheme } from '../../theme/ThemeProvider'
 import { radius, space } from '../../theme/tokens'
 import {
@@ -63,7 +64,7 @@ export default function HomeScreen() {
   const { user } = useAuth()
   const { cars, loading, error, activeCar, setActiveCarId } = useGarage()
   const { reminders, customs } = useAllReminders(cars)
-  const { hasUpdate, justUpdatedTo, dismissJustUpdated } = useUpdates()
+  const { hasUpdate, justUpdatedTo, whatsNew, dismissJustUpdated } = useUpdates()
   const services = useLiveSub<ServiceRecord>(activeCar?.id, 'services')
   const router = useRouter()
   const { colors } = useTheme()
@@ -141,7 +142,7 @@ export default function HomeScreen() {
       }
       fab={activeCar ? <FAB icon={Plus} label="הוספה" onPress={() => setSheet('quick')} /> : undefined}
     >
-      {justUpdatedTo && (
+      {justUpdatedTo && whatsNew.length === 0 && (
         <Banner icon={CheckCircle2} tone="success" text={`Car360 עודכן לגרסה ${justUpdatedTo}`} onDismiss={dismissJustUpdated} />
       )}
       {hasUpdate && (
@@ -219,7 +220,8 @@ export default function HomeScreen() {
       )}
       {sheet === 'expenses' && activeCar && <ExpensesSheet car={activeCar} onClose={() => setSheet(null)} />}
       {sheet === 'document' && activeCar && <DocumentSheet carId={activeCar.id} onClose={() => setSheet(null)} />}
-      <NotifyPrompt enabled={cars.length > 0 && sheet === null} />
+      <NotifyPrompt enabled={cars.length > 0 && sheet === null && !justUpdatedTo} />
+      {justUpdatedTo && whatsNew.length > 0 && <WhatsNewSheet version={justUpdatedTo} notes={whatsNew} onClose={dismissJustUpdated} />}
       {opener.sheet}
       {searching && <SearchSheet cars={cars} onClose={() => setSearching(false)} />}
       {sheet === 'reminder' && <ReminderSheet cars={cars} defaultCarId={activeCar?.id} onClose={() => setSheet(null)} />}

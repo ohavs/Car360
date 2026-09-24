@@ -31,7 +31,7 @@ export function AppBar({
       {back && !leading && <IconButton icon={ArrowRight} label="חזרה" onPress={() => router.back()} />}
       <View style={styles.titles}>
         {title ? (
-          <Text variant="headline" numberOfLines={1}>
+          <Text variant="headline" numberOfLines={1} accessibilityRole="header">
             {title}
           </Text>
         ) : null}

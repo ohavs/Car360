@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { AppState, PermissionsAndroid, Platform } from 'react-native'
 import AppUpdater from '../../../modules/app-updater'
+import { readPref, writePref } from '../../lib/storage'
 import { buildChannel, findLatestRelease, installedVersion, type ReleaseInfo } from './releases'
 
 export type UpdatePhase =
@@ -22,6 +23,8 @@ interface UpdateState {
   hasUpdate: boolean
   /** set once, on the first launch after an update */
   justUpdatedTo: string | null
+  /** what the update that just landed brought — shown once */
+  whatsNew: string[]
   dismissJustUpdated: () => void
   check: () => Promise<void>
   start: () => Promise<void>
@@ -46,6 +49,11 @@ export function UpdateProvider({ children }: { children: ReactNode }) {
   const [phase, setPhaseState] = useState<UpdatePhase>({ kind: 'idle' })
   // read once: the native side clears it, so a later launch does not repeat it
   const [justUpdatedTo, setJustUpdatedTo] = useState<string | null>(() => AppUpdater.consumeJustUpdated())
+  // the notes were saved just before installing; they belong to this version only
+  const [whatsNew] = useState<string[]>(() => {
+    const pending = readPref<{ version: string; notes: string[] } | null>('pendingNotes', null)
+    return pending && pending.version === installedVersion.name ? pending.notes : []
+  })
   // native events and AppState callbacks need the current phase, not the one
   // captured when they were subscribed
   const phaseRef = useRef<UpdatePhase>(phase)
@@ -90,6 +98,7 @@ export function UpdateProvider({ children }: { children: ReactNode }) {
       await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS).catch(() => null)
     }
 
+    writePref('pendingNotes', { version: release.versionName, notes: release.notes })
     setPhase({ kind: 'installing', release })
     try {
       await AppUpdater.install(path)
@@ -166,13 +175,17 @@ export function UpdateProvider({ children }: { children: ReactNode }) {
       phase,
       hasUpdate: 'release' in phase && Boolean(phase.release),
       justUpdatedTo,
-      dismissJustUpdated: () => setJustUpdatedTo(null),
+      whatsNew,
+      dismissJustUpdated: () => {
+        setJustUpdatedTo(null)
+        writePref('pendingNotes', null)
+      },
       check,
       start,
       cancel: () => AppUpdater.cancelDownload(),
       openPermissionSettings: () => AppUpdater.openInstallPermissionSettings(),
     }),
-    [phase, justUpdatedTo, check, start],
+    [phase, justUpdatedTo, whatsNew, check, start],
   )
 
   return <UpdateContext.Provider value={value}>{children}</UpdateContext.Provider>

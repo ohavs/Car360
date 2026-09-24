@@ -200,7 +200,7 @@ export function EmptyState({
 export function SectionHeader({ title, action }: { title: string; action?: ReactNode }) {
   return (
     <View style={styles.section}>
-      <Text variant="overline" tone="muted" style={styles.sectionTitle}>
+      <Text variant="overline" tone="muted" style={styles.sectionTitle} accessibilityRole="header">
         {title}
       </Text>
       {action}

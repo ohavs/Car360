@@ -116,7 +116,7 @@ export function Sheet({
         >
           {title ? (
             <View style={styles.header}>
-              <Text variant="title" style={styles.title}>
+              <Text variant="title" style={styles.title} accessibilityRole="header">
                 {title}
               </Text>
               <IconButton icon={X} label="סגירה" tonal onPress={requestClose} />
