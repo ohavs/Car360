@@ -16,6 +16,12 @@ import { ThemeProvider, useTheme } from '../theme/ThemeProvider'
 import { CarsProvider } from '../data/CarsProvider'
 import { RemindersProvider } from '../data/RemindersProvider'
 import { SnackbarProvider } from '../ui'
+import { installCrashLog } from '../lib/crashLog'
+
+// a render error shows a way back instead of closing the app
+export { CrashScreen as ErrorBoundary } from '../features/crash/CrashScreen'
+
+installCrashLog()
 
 // keep the native splash up until we know whether someone is signed in, so
 // the first thing on screen is the right screen rather than a flash of login

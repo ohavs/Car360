@@ -1,10 +1,12 @@
 import { Image } from 'expo-image'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { CarFront, DatabaseBackup, LogOut } from 'lucide-react-native'
+import * as Clipboard from 'expo-clipboard'
+import { Bug, CarFront, DatabaseBackup, LogOut, X } from 'lucide-react-native'
 import { useEffect, useRef, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { useGarage } from '../../data/CarsProvider'
 import { shareBackup } from '../../data/backup'
+import { clearCrash, crashText, readCrash } from '../../lib/crashLog'
 import { useAuth } from '../../features/auth/AuthProvider'
 import { NotificationsPanel } from '../../features/notifications/NotificationsPanel'
 import { AppearancePanel } from '../../features/settings/AppearancePanel'
@@ -12,7 +14,7 @@ import { UpdatePanel } from '../../features/updates/UpdatePanel'
 import { useUpdates } from '../../features/updates/UpdateProvider'
 import { useTheme } from '../../theme/ThemeProvider'
 import { radius, space } from '../../theme/tokens'
-import { AppBar, Card, ConfirmDialog, ListItem, Screen, SectionHeader, Text, useSnackbar, type ScreenScroll } from '../../ui'
+import { AppBar, Card, ConfirmDialog, IconButton, ListItem, Screen, SectionHeader, Text, useSnackbar, type ScreenScroll } from '../../ui'
 
 export default function SettingsScreen() {
   const { user, signOut } = useAuth()
@@ -23,6 +25,8 @@ export default function SettingsScreen() {
   const router = useRouter()
   const { hasUpdate } = useUpdates()
   const [backingUp, setBackingUp] = useState(false)
+  // the last time the app went down, until it's been passed on or dismissed
+  const [crash, setCrash] = useState(readCrash)
   // arriving from the "new version" card: glide down to the update section
   const { focus } = useLocalSearchParams<{ focus?: string }>()
   const scrollRef = useRef<ScreenScroll>(null)
@@ -80,6 +84,25 @@ export default function SettingsScreen() {
               .finally(() => setBackingUp(false))
           }}
         />
+        {crash && (
+          <ListItem
+            icon={Bug}
+            tone="warning"
+            title="פרטי התקלה האחרונה"
+            subtitle={`${new Date(crash.at).toLocaleString('he-IL')} · גרסה ${crash.version} · הקישו להעתקה ושלחו לנו`}
+            onPress={() => void Clipboard.setStringAsync(crashText(crash)).then(() => snack('פרטי התקלה הועתקו', { tone: 'success' }))}
+            trailing={
+              <IconButton
+                icon={X}
+                label="הסרה"
+                onPress={() => {
+                  clearCrash()
+                  setCrash(null)
+                }}
+              />
+            }
+          />
+        )}
       </Card>
 
       <View onLayout={(e) => setUpdateY(e.nativeEvent.layout.y)} style={styles.section}>
