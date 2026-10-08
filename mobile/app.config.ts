@@ -143,7 +143,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
        *  shows the server checks and test in the notifications screen */
       serverPush: false,
       /** "smart scan" (Gemini) — set by CI from a secret; empty hides the feature */
-      gemini: { key: process.env.GEMINI_API_KEY || undefined, model: process.env.GEMINI_MODEL || 'gemini-2.5-flash' },
+      gemini: { key: process.env.GEMINI_API_KEY || undefined, model: process.env.GEMINI_MODEL || 'gemini-flash-latest' },
     },
   }
 }

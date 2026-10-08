@@ -5,6 +5,7 @@ import * as ImagePicker from 'expo-image-picker'
 import DocumentScanner from 'react-native-document-scanner-plugin'
 import { File, Paths } from 'expo-file-system'
 import ImageTools from '../../modules/image-tools'
+import { recordCrash } from '../lib/crashLog'
 import { enqueue } from './uploadQueue'
 
 /** Same budgets as the web app: a phone photo becomes ~100–350KB of WebP. */
@@ -82,8 +83,15 @@ export async function pickImages(source: PickSource, multiple: boolean): Promise
     return pages
   }
   if (source === 'scan') {
-    const res = await DocumentScanner.scanDocument({ maxNumDocuments: multiple ? 10 : 1, croppedImageQuality: 95 })
-    return res.status === 'success' ? (res.scannedImages ?? []) : []
+    try {
+      const res = await DocumentScanner.scanDocument({ maxNumDocuments: multiple ? 10 : 1, croppedImageQuality: 95 })
+      return res.status === 'success' ? (res.scannedImages ?? []) : []
+    } catch (e) {
+      // Google's scanner lives in Play services and isn't on every phone (or
+      // is still downloading): a plain photo of the page still does the job
+      recordCrash(e, false)
+      return pickImages('camera', false)
+    }
   }
   if (source === 'camera') {
     const perm = await ImagePicker.requestCameraPermissionsAsync()
@@ -100,6 +108,16 @@ export async function pickImages(source: PickSource, multiple: boolean): Promise
 }
 
 export class PermissionDenied extends Error {}
+
+/** What to tell the user when picking a photo or a file failed. */
+export function pickErrorMessage(e: unknown): string {
+  if (e instanceof PermissionDenied) return 'צריך לאשר גישה למצלמה בהגדרות הטלפון'
+  const code = (e as { code?: string }).code
+  if (code === 'ERR_PDF_PROTECTED') return 'ה-PDF מוגן בסיסמה. פתחו אותו, שמרו עותק בלי סיסמה (״הדפסה״ ← ״שמירה כ-PDF״) ונסו שוב'
+  if (code === 'ERR_PDF_CORRUPT') return 'הקובץ לא נפתח — ייתכן שהוא לא PDF תקין'
+  recordCrash(e, false)
+  return 'פתיחת הקובץ נכשלה — נסו שוב'
+}
 
 /** a long PDF stops here — policies and receipts are a few pages */
 export const PDF_MAX_PAGES = 8
@@ -136,10 +154,7 @@ export async function storePhotos(
 }
 
 /** Photos the user removed from a record while editing — delete them from Storage after the save. */
-export function removedPhotos(
-  previous: { photos: string[]; thumbs?: string[] } | undefined,
-  kept: string[],
-): string[] {
+export function removedPhotos(previous: { photos: string[]; thumbs?: string[] } | undefined, kept: string[]): string[] {
   if (!previous) return []
   return previous.photos.flatMap((p, i) => {
     if (kept.includes(p)) return []

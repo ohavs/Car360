@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import type { CarDocument, DocumentCategory } from '@shared/types'
 import { newId } from '@shared/utils'
-import { deleteImage, isLocal, PermissionDenied, pickImages, storeDocumentImage, type PickSource } from '../../data/images'
+import { deleteImage, isLocal, pickErrorMessage, pickImages, storeDocumentImage, type PickSource } from '../../data/images'
 import { deleteRecord, saveRecord } from '../../data/mutations'
 import { useTheme } from '../../theme/ThemeProvider'
 import { radius, space } from '../../theme/tokens'
@@ -47,7 +47,7 @@ export function DocumentSheet({
         setError(null)
       }
     } catch (e) {
-      snack(e instanceof PermissionDenied ? 'צריך לאשר גישה למצלמה בהגדרות הטלפון' : 'פתיחת הקובץ נכשלה — נסו שוב', { tone: 'error' })
+      snack(pickErrorMessage(e), { tone: 'error' })
     }
   }
 
@@ -120,7 +120,8 @@ export function DocumentSheet({
       }
     >
       {draft.imageUrl ? (
-        <Touchable feedback="scale"
+        <Touchable
+          feedback="scale"
           onPress={() => void pick('library')}
           accessibilityLabel="החלפת התמונה"
           style={[styles.preview, { backgroundColor: colors.surfaceContainer }]}

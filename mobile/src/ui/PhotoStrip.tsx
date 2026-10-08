@@ -2,7 +2,7 @@ import { Image } from 'expo-image'
 import { Camera, FileType2, ImagePlus, Images, ScanLine, X } from 'lucide-react-native'
 import { useState } from 'react'
 import { ScrollView, StyleSheet, View } from 'react-native'
-import { pickImages, PermissionDenied, type PickSource } from '../data/images'
+import { pickImages, pickErrorMessage, type PickSource } from '../data/images'
 import { useTheme } from '../theme/ThemeProvider'
 import { radius, space } from '../theme/tokens'
 import { ConfirmDialog } from './Dialog'
@@ -38,9 +38,7 @@ export function PhotoStrip({
       const picked = await pickImages(source, multiple)
       if (picked.length) onChange(multiple ? [...photos, ...picked] : picked.slice(0, 1))
     } catch (e) {
-      snack(e instanceof PermissionDenied ? 'צריך לאשר גישה למצלמה בהגדרות הטלפון' : 'פתיחת הקובץ נכשלה — נסו שוב', {
-        tone: 'error',
-      })
+      snack(pickErrorMessage(e), { tone: 'error' })
     }
   }
 
@@ -66,8 +64,26 @@ export function PhotoStrip({
             </Touchable>
           </View>
         ))}
-        {(multiple || photos.length === 0) && (
-          <Touchable feedback="scale"
+        {photos.length === 0 ? (
+          // nothing attached yet: every way in is in sight, PDF included
+          SOURCES.map((x) => (
+            <Touchable
+              key={x.source}
+              feedback="scale"
+              onPress={() => void add(x.source)}
+              accessibilityRole="button"
+              accessibilityLabel={`${label}: ${x.label}`}
+              style={[styles.thumb, styles.add, { backgroundColor: colors.surfaceContainer, borderColor: colors.outline }]}
+            >
+              <x.icon size={22} color={colors.onSurfaceVariant} strokeWidth={1.8} />
+              <Text variant="caption" tone="onSurfaceVariant">
+                {x.label}
+              </Text>
+            </Touchable>
+          ))
+        ) : multiple ? (
+          <Touchable
+            feedback="scale"
             onPress={() => setChoosing(true)}
             accessibilityRole="button"
             accessibilityLabel={`הוספת ${label}`}
@@ -75,12 +91,17 @@ export function PhotoStrip({
           >
             <ImagePlus size={24} color={colors.onSurfaceVariant} strokeWidth={1.8} />
           </Touchable>
-        )}
+        ) : null}
       </ScrollView>
 
       <Sheet visible={choosing} onClose={() => setChoosing(false)} title={`הוספת ${label}`}>
         <View>
-          <ListItem icon={ScanLine} title="סריקת מסמך" subtitle="חיתוך ויישור אוטומטיים — לקבלות ופוליסות" onPress={() => void add('scan')} />
+          <ListItem
+            icon={ScanLine}
+            title="סריקת מסמך"
+            subtitle="חיתוך ויישור אוטומטיים — לקבלות ופוליסות"
+            onPress={() => void add('scan')}
+          />
           <ListItem icon={Camera} title="צילום במצלמה" onPress={() => void add('camera')} />
           <ListItem
             icon={FileType2}
@@ -88,7 +109,12 @@ export function PhotoStrip({
             subtitle={multiple ? 'כל עמוד נשמר כתמונה דחוסה' : 'העמוד הראשון נשמר כתמונה'}
             onPress={() => void add('pdf')}
           />
-          <ListItem icon={Images} title="בחירה מהגלריה" subtitle={multiple ? 'אפשר לבחור כמה ביחד' : undefined} onPress={() => void add('library')} />
+          <ListItem
+            icon={Images}
+            title="בחירה מהגלריה"
+            subtitle={multiple ? 'אפשר לבחור כמה ביחד' : undefined}
+            onPress={() => void add('library')}
+          />
         </View>
       </Sheet>
 
@@ -110,12 +136,19 @@ export function PhotoStrip({
   )
 }
 
+const SOURCES: { source: PickSource; label: string; icon: typeof Camera }[] = [
+  { source: 'scan', label: 'סריקה', icon: ScanLine },
+  { source: 'camera', label: 'צילום', icon: Camera },
+  { source: 'pdf', label: 'PDF', icon: FileType2 },
+  { source: 'library', label: 'גלריה', icon: Images },
+]
+
 const styles = StyleSheet.create({
   root: { gap: space.sm },
   strip: { gap: space.sm, paddingTop: 6 },
   thumb: { width: 80, height: 80, borderRadius: radius.md, overflow: 'hidden' },
   image: { width: '100%', height: '100%' },
-  add: { alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderStyle: 'dashed' },
+  add: { alignItems: 'center', justifyContent: 'center', gap: 4, borderWidth: 1, borderStyle: 'dashed' },
   remove: {
     position: 'absolute',
     top: 4,

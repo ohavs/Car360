@@ -12,7 +12,10 @@ import { compressToDataUrl } from './images'
 import type { InsuranceKind } from '../types'
 
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY as string | undefined
-const MODEL = (import.meta.env.VITE_GEMINI_MODEL as string | undefined) || 'gemini-2.0-flash'
+const MODEL = import.meta.env.VITE_GEMINI_MODEL as string | undefined
+/** Google retires model versions; the "-latest" aliases follow the current
+ *  Flash, and the lite one stands in when Flash is overloaded. */
+const MODELS = [...new Set([MODEL, 'gemini-flash-latest', 'gemini-flash-lite-latest'].filter(Boolean) as string[])]
 
 export const isGeminiConfigured = Boolean(API_KEY)
 
@@ -53,30 +56,33 @@ async function extract<T>(file: File, prompt: string, schema: object): Promise<T
   const dataUrl = await compressToDataUrl(file, 'document')
   const base64 = dataUrl.slice(dataUrl.indexOf(',') + 1)
 
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}`,
-    {
+  const body = JSON.stringify({
+    contents: [
+      {
+        role: 'user',
+        parts: [
+          { text: prompt },
+          { inlineData: { mimeType: 'image/webp', data: base64 } },
+        ],
+      },
+    ],
+    generationConfig: {
+      responseMimeType: 'application/json',
+      responseSchema: schema,
+      temperature: 0,
+    },
+  })
+  let res: Response | undefined
+  // a retired model (404) or a busy one (429/5xx): the next one takes over
+  for (const model of MODELS) {
+    res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${API_KEY}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: 'user',
-            parts: [
-              { text: prompt },
-              { inlineData: { mimeType: 'image/webp', data: base64 } },
-            ],
-          },
-        ],
-        generationConfig: {
-          responseMimeType: 'application/json',
-          responseSchema: schema,
-          temperature: 0,
-        },
-      }),
-    },
-  )
-  if (!res.ok) throw new Error(`Gemini HTTP ${res.status}`)
+      body,
+    })
+    if (res.ok || !(res.status === 404 || res.status === 429 || res.status >= 500)) break
+  }
+  if (!res?.ok) throw new Error(`Gemini HTTP ${res?.status}`)
   const json = await res.json()
   const text: string | undefined = json?.candidates?.[0]?.content?.parts?.[0]?.text
   if (!text) throw new Error('Gemini empty response')

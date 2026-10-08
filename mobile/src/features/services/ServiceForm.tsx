@@ -45,7 +45,13 @@ export function ServiceForm({ car, initial, from }: { car: Car; initial?: Servic
     if (!draft.title.trim() && draft.photos.length === 0) return setError('תנו שם לטיפול או צרפו קבלה')
     void run(async () => {
       const now = Date.now()
-      const { photos, thumbs } = await storePhotos(draft.photos, initial, `cars/${car.id}/services`, draft.id, `cars/${car.id}/services/${draft.id}`)
+      const { photos, thumbs } = await storePhotos(
+        draft.photos,
+        initial,
+        `cars/${car.id}/services`,
+        draft.id,
+        `cars/${car.id}/services/${draft.id}`,
+      )
       await saveRecord('services', {
         ...draft,
         title: draft.title.trim(),
@@ -85,11 +91,11 @@ export function ServiceForm({ car, initial, from }: { car: Car; initial?: Servic
       <SmartScanButton
         label="סריקה חכמה של הקבלה"
         read={scanReceipt}
-        onResult={(f, page) => {
+        onResult={(f, pages) => {
           setDraft((d) => ({
             ...d,
             ...Object.fromEntries(Object.entries(f).filter(([, v]) => v !== undefined)),
-            photos: [...d.photos, page],
+            photos: [...d.photos, ...pages],
           }))
           if (f.title) setError(null)
         }}
@@ -100,7 +106,12 @@ export function ServiceForm({ car, initial, from }: { car: Car; initial?: Servic
           <Chip key={s} label={s} selected={draft.title === s} onPress={() => setTitle(s)} />
         ))}
       </View>
-      <DateField label={from ? 'מתי זה בוצע?' : 'תאריך הטיפול'} value={draft.date} onChange={(v) => set('date', v || todayISO())} max={todayISO()} />
+      <DateField
+        label={from ? 'מתי זה בוצע?' : 'תאריך הטיפול'}
+        value={draft.date}
+        onChange={(v) => set('date', v || todayISO())}
+        max={todayISO()}
+      />
       <TextField label="מוסך" value={draft.garage ?? ''} onChangeText={(v) => set('garage', v || undefined)} />
       <View style={styles.row}>
         <NumberField label="קילומטראז׳" suffix="ק״מ" value={draft.odometer} onChangeValue={(v) => set('odometer', v)} style={styles.flex} />

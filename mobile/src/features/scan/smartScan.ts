@@ -17,26 +17,83 @@ const CERT_SHA1 = '46DAFCF00754ED2F640D3541C25958CF645B1189'
 
 export const smartScanAvailable = Boolean(config.key)
 
-async function extract<T>(imageUri: string, prompt: string, schema: object): Promise<T> {
-  if (!config.key) throw new Error('smart scan not configured')
-  const { base64 } = await compress(imageUri, 'document', true)
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${config.model}:generateContent?key=${config.key}`,
-    {
+/** Google retires model versions; the "-latest" aliases follow the current
+ *  Flash, and the lite one stands in when Flash is overloaded. */
+const MODELS = [...new Set([config.model, 'gemini-flash-latest', 'gemini-flash-lite-latest'].filter(Boolean) as string[])]
+
+/** Why a smart read failed — the button words its message by it. */
+export class SmartScanError extends Error {
+  constructor(
+    readonly kind: 'busy' | 'refused' | 'unreadable',
+    message: string,
+  ) {
+    super(message)
+  }
+}
+
+const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
+async function call(model: string, body: string): Promise<Response> {
+  const abort = new AbortController()
+  const timer = setTimeout(() => abort.abort(), 45_000)
+  try {
+    return await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${config.key}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Android-Package': PACKAGE, 'X-Android-Cert': CERT_SHA1 },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: prompt }, { inlineData: { mimeType: 'image/webp', data: base64 } }] }],
-        generationConfig: { responseMimeType: 'application/json', responseSchema: schema, temperature: 0 },
-      }),
-    },
-  )
-  if (!res.ok) throw new Error(`Gemini HTTP ${res.status}`)
-  const json = (await res.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] }
-  const text = json.candidates?.[0]?.content?.parts?.[0]?.text
-  if (!text) throw new Error('empty response')
-  return JSON.parse(text) as T
+      body,
+      signal: abort.signal,
+    })
+  } finally {
+    clearTimeout(timer)
+  }
 }
+
+/** Reads up to a few pages of one document (a scan, or a PDF's pages). */
+async function extract<T>(pages: string[], prompt: string, schema: object): Promise<T> {
+  if (!config.key) throw new SmartScanError('refused', 'smart scan not configured')
+  const images = await Promise.all(pages.slice(0, MAX_READ_PAGES).map((p) => compress(p, 'document', true)))
+  const body = JSON.stringify({
+    contents: [
+      {
+        role: 'user',
+        parts: [{ text: prompt }, ...images.map((i) => ({ inlineData: { mimeType: 'image/webp', data: i.base64 } }))],
+      },
+    ],
+    generationConfig: { responseMimeType: 'application/json', responseSchema: schema, temperature: 0 },
+  })
+
+  let last = ''
+  for (const model of MODELS) {
+    // a busy model gets one more try before the next one takes over
+    for (let attempt = 0; attempt < 2; attempt++) {
+      let res: Response
+      try {
+        res = await call(model, body)
+      } catch (e) {
+        last = `${model}: ${(e as Error).message}`
+        break
+      }
+      if (res.ok) {
+        const json = (await res.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] }
+        const text = json.candidates?.[0]?.content?.parts?.[0]?.text
+        if (!text) throw new SmartScanError('unreadable', `${model}: empty response`)
+        return JSON.parse(text) as T
+      }
+      last = `${model}: HTTP ${res.status} ${(await res.text().catch(() => '')).slice(0, 300)}`
+      if (res.status === 404) break // retired or unknown model — try the next
+      if (res.status === 429 || res.status >= 500) {
+        if (attempt === 0) await wait(1500)
+        continue
+      }
+      // 400/403: a bad request or a key restriction — another model won't help
+      throw new SmartScanError('refused', last)
+    }
+  }
+  throw new SmartScanError('busy', last)
+}
+
+/** a policy's details sit on its first pages; more only costs time */
+export const MAX_READ_PAGES = 3
 
 const isIso = (v?: string): v is string => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)
 const str = (v: unknown) => (typeof v === 'string' || typeof v === 'number' ? String(v).trim() || undefined : undefined)
@@ -55,10 +112,10 @@ export interface PolicyFields {
 
 const KINDS: InsuranceKind[] = ['חובה', 'מקיף', 'צד ג׳', 'אחר']
 
-export async function scanPolicy(imageUri: string): Promise<PolicyFields> {
+export async function scanPolicy(pages: string[]): Promise<PolicyFields> {
   const raw = await extract<Record<string, unknown>>(
-    imageUri,
-    'זוהי תמונה של פוליסת ביטוח רכב בישראל. חלץ את הפרטים שמופיעים במסמך והחזר JSON בלבד. ' +
+    pages,
+    'אלה עמודים של פוליסת ביטוח רכב בישראל (עמוד אחד או יותר). חלץ את הפרטים שמופיעים במסמך והחזר JSON בלבד. ' +
       'תאריכים בפורמט YYYY-MM-DD. אם שדה לא מופיע בבירור — השמט אותו (אל תנחש). עלות כמספר בלבד.',
     {
       type: 'object',
@@ -94,9 +151,9 @@ export interface ReceiptFields {
   odometer?: number
 }
 
-export async function scanReceipt(imageUri: string): Promise<ReceiptFields> {
+export async function scanReceipt(pages: string[]): Promise<ReceiptFields> {
   const raw = await extract<Record<string, unknown>>(
-    imageUri,
+    pages,
     'זוהי קבלה או חשבונית של מוסך בישראל. חלץ מה נעשה ברכב (תיאור קצר, למשל "טיפול 30,000" או "החלפת בלמים"), ' +
       'שם המוסך, תאריך בפורמט YYYY-MM-DD, הסכום הכולל לתשלום, וקילומטראז׳ אם מופיע. JSON בלבד; שדה שלא מופיע בבירור — השמט.',
     {

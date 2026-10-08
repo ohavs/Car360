@@ -76,7 +76,13 @@ export function InsuranceForm({
 
     void run(async () => {
       const now = Date.now()
-      const { photos, thumbs } = await storePhotos(draft.photos, initial, `cars/${car.id}/insurance`, draft.id, `cars/${car.id}/insurances/${draft.id}`)
+      const { photos, thumbs } = await storePhotos(
+        draft.photos,
+        initial,
+        `cars/${car.id}/insurance`,
+        draft.id,
+        `cars/${car.id}/insurances/${draft.id}`,
+      )
       await saveRecord('insurances', {
         ...draft,
         company: draft.company.trim(),
@@ -113,14 +119,19 @@ export function InsuranceForm({
       <SmartScanButton
         label="סריקה חכמה של הפוליסה"
         read={scanPolicy}
-        onResult={(f, page) =>
+        onResult={(f, pages) =>
           setDraft((d) => {
             const filled = Object.fromEntries(Object.entries(f).filter(([, v]) => v !== undefined))
-            return { ...d, ...filled, photos: [...d.photos, page] }
+            return { ...d, ...filled, photos: [...d.photos, ...pages] }
           })
         }
       />
-      <SegmentedButtons label="סוג ביטוח" value={draft.kind} onChange={(v) => set('kind', v)} options={KINDS.map((k) => ({ value: k, label: k }))} />
+      <SegmentedButtons
+        label="סוג ביטוח"
+        value={draft.kind}
+        onChange={(v) => set('kind', v)}
+        options={KINDS.map((k) => ({ value: k, label: k }))}
+      />
       <TextField
         label="חברת ביטוח"
         value={draft.company}

@@ -10,6 +10,7 @@ import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.segmentation.subject.SubjectSegmentation
 import com.google.mlkit.vision.segmentation.subject.SubjectSegmenterOptions
 import expo.modules.kotlin.Promise
+import expo.modules.kotlin.exception.CodedException
 import expo.modules.kotlin.exception.Exceptions
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
@@ -46,7 +47,16 @@ class ImageToolsModule : Module() {
       val pages = mutableListOf<String>()
       val fd = context.contentResolver.openFileDescriptor(Uri.parse(uri), "r")
         ?: throw IllegalArgumentException("Could not open the PDF")
-      val renderer = PdfRenderer(fd)
+      // a password-protected PDF (insurers often send those) can't be opened here
+      val renderer = try {
+        PdfRenderer(fd)
+      } catch (e: SecurityException) {
+        fd.close()
+        throw CodedException("ERR_PDF_PROTECTED", "The PDF is password protected", e)
+      } catch (e: java.io.IOException) {
+        fd.close()
+        throw CodedException("ERR_PDF_CORRUPT", "The file is not a readable PDF", e)
+      }
       try {
         val count = minOf(renderer.pageCount, maxPages)
         val stamp = System.currentTimeMillis()
