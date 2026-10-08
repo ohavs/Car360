@@ -11,10 +11,21 @@ import { DateField, NumberField, PhotoStrip, SectionHeader, SegmentedButtons, Te
 import { BlocksEditor } from '../forms/BlocksEditor'
 import { FormScreen, useSaver } from '../forms/FormScreen'
 import { useFormGuard } from '../forms/useFormGuard'
-import { scanPolicy } from '../scan/smartScan'
-import { SmartScanButton } from '../scan/SmartScanButton'
+import { scanPolicy, type PolicyFields } from '../scan/smartScan'
+import { useSmartFill } from '../scan/useSmartFill'
 
 const KINDS: InsuranceKind[] = ['חובה', 'מקיף', 'צד ג׳', 'אחר']
+
+const POLICY_LABELS: Record<keyof PolicyFields, string> = {
+  kind: 'סוג',
+  company: 'חברה',
+  policyNumber: 'מספר פוליסה',
+  startDate: 'תחילת תוקף',
+  endDate: 'סיום תוקף',
+  cost: 'עלות',
+  agentName: 'שם הסוכן',
+  agentPhone: 'טלפון הסוכן',
+}
 
 function inAYear(from: string): string {
   const d = new Date(`${from}T00:00:00`)
@@ -66,6 +77,23 @@ export function InsuranceForm({
   const { saving, run } = useSaver()
   const set = <K extends keyof InsuranceRecord>(key: K, value: InsuranceRecord[K]) => setDraft((d) => ({ ...d, [key]: value }))
 
+  const smart = useSmartFill<PolicyFields>({
+    subject: 'הפוליסה',
+    read: scanPolicy,
+    labels: POLICY_LABELS,
+    openOnStart: !initial,
+    onResult: (f, pages) => {
+      setDraft((d) => ({
+        ...d,
+        ...f,
+        // a start date alone: the policy runs a year, like a typed one
+        endDate: f.endDate ?? (f.startDate ? inAYear(f.startDate) : d.endDate),
+        photos: [...d.photos, ...pages],
+      }))
+      setErrors({})
+    },
+  })
+
   const save = () => {
     const next: typeof errors = {}
     if (!draft.company.trim() && draft.photos.length === 0) next.company = 'מלאו חברת ביטוח או צרפו צילום פוליסה'
@@ -116,16 +144,7 @@ export function InsuranceForm({
       deleteTitle="למחוק את הפוליסה?"
       deleteMessage={`ביטוח ${start.kind}${start.company ? ` ב${start.company}` : ''} יימחק יחד עם הצילומים שלו.`}
     >
-      <SmartScanButton
-        label="סריקה חכמה של הפוליסה"
-        read={scanPolicy}
-        onResult={(f, pages) =>
-          setDraft((d) => {
-            const filled = Object.fromEntries(Object.entries(f).filter(([, v]) => v !== undefined))
-            return { ...d, ...filled, photos: [...d.photos, ...pages] }
-          })
-        }
-      />
+      {smart.status}
       <SegmentedButtons
         label="סוג ביטוח"
         value={draft.kind}
@@ -167,6 +186,7 @@ export function InsuranceForm({
       <NumberField label="עלות שנתית" suffix="₪" decimal value={draft.cost} onChangeValue={(v) => set('cost', v)} />
 
       <PhotoStrip label="צילומי פוליסה" photos={draft.photos} onChange={(p) => set('photos', p)} />
+      {smart.sheet}
 
       <SectionHeader title="סוכן" />
       <TextField label="שם הסוכן" value={draft.agentName ?? ''} onChangeText={(v) => set('agentName', v || undefined)} />

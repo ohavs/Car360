@@ -85,6 +85,9 @@ export function DateField({
         label={label}
         valueText={formatDateHe(value)}
         icon={CalendarDays}
+        // a set date: ✕ takes the calendar's place, so the date itself fits
+        // even in half-width fields (the whole field still opens the calendar)
+        showIcon={!(clearable && value)}
         onPress={() => setOpen(true)}
         error={error}
         hint={hint}

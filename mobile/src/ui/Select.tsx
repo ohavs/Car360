@@ -28,6 +28,7 @@ export function FieldTrigger({
   error,
   hint,
   trailing,
+  showIcon = true,
 }: {
   label: string
   valueText?: string
@@ -37,6 +38,8 @@ export function FieldTrigger({
   error?: string | null
   hint?: string
   trailing?: ReactNode
+  /** false: the trailing control stands in for the icon (narrow fields) */
+  showIcon?: boolean
 }) {
   const { colors } = useTheme()
   const filled = Boolean(valueText)
@@ -62,7 +65,7 @@ export function FieldTrigger({
           </Text>
         </View>
         {trailing}
-        <Icon size={20} color={colors.onSurfaceVariant} strokeWidth={2} />
+        {showIcon && <Icon size={20} color={colors.onSurfaceVariant} strokeWidth={2} />}
       </Touchable>
       {error || hint ? (
         <Text variant="caption" tone={error ? 'danger' : 'muted'} style={styles.support}>
@@ -112,16 +115,16 @@ export function Dropdown<T extends string>({
   return (
     <>
       <View ref={anchor} collapsable={false}>
-        <FieldTrigger
-          label={label}
-          valueText={current?.label}
-          placeholder={placeholder}
-          onPress={open}
-          error={error}
-          hint={hint}
-        />
+        <FieldTrigger label={label} valueText={current?.label} placeholder={placeholder} onPress={open} error={error} hint={hint} />
       </View>
-      <Modal visible={Boolean(menu)} transparent statusBarTranslucent navigationBarTranslucent animationType="none" onRequestClose={() => setMenu(null)}>
+      <Modal
+        visible={Boolean(menu)}
+        transparent
+        statusBarTranslucent
+        navigationBarTranslucent
+        animationType="none"
+        onRequestClose={() => setMenu(null)}
+      >
         <Pressable style={StyleSheet.absoluteFill} onPress={() => setMenu(null)} accessibilityLabel="סגירה" />
         {menu && (
           <Animated.View

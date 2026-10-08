@@ -9,8 +9,16 @@ import { space } from '../../theme/tokens'
 import { Chip, DateField, EXPIRY_PRESETS, NumberField, PhotoStrip, SectionHeader, TextField, useSnackbar } from '../../ui'
 import { FormScreen, useSaver } from '../forms/FormScreen'
 import { useFormGuard } from '../forms/useFormGuard'
-import { scanReceipt } from '../scan/smartScan'
-import { SmartScanButton } from '../scan/SmartScanButton'
+import { scanReceipt, type ReceiptFields } from '../scan/smartScan'
+import { useSmartFill } from '../scan/useSmartFill'
+
+const RECEIPT_LABELS: Record<keyof ReceiptFields, string> = {
+  title: 'מה נעשה',
+  garage: 'מוסך',
+  date: 'תאריך',
+  cost: 'עלות',
+  odometer: 'קילומטראז׳',
+}
 
 const SUGGESTIONS = ['טיפול תקופתי', 'החלפת שמן', 'צמיגים', 'בלמים', 'מצבר', 'מיזוג', 'פחחות וצבע']
 
@@ -40,6 +48,17 @@ export function ServiceForm({ car, initial, from }: { car: Car; initial?: Servic
     set('title', title)
     setError(null)
   }
+
+  const smart = useSmartFill<ReceiptFields>({
+    subject: 'הקבלה',
+    read: scanReceipt,
+    labels: RECEIPT_LABELS,
+    openOnStart: !initial,
+    onResult: (f, pages) => {
+      setDraft((d) => ({ ...d, ...f, photos: [...d.photos, ...pages] }))
+      setError(null)
+    },
+  })
 
   const save = () => {
     if (!draft.title.trim() && draft.photos.length === 0) return setError('תנו שם לטיפול או צרפו קבלה')
@@ -88,18 +107,7 @@ export function ServiceForm({ car, initial, from }: { car: Car; initial?: Servic
       deleteTitle="למחוק את הטיפול?"
       deleteMessage={`"${start.title || 'טיפול'}" מ-${formatDate(start.date)} יימחק יחד עם הקבלות שלו.`}
     >
-      <SmartScanButton
-        label="סריקה חכמה של הקבלה"
-        read={scanReceipt}
-        onResult={(f, pages) => {
-          setDraft((d) => ({
-            ...d,
-            ...Object.fromEntries(Object.entries(f).filter(([, v]) => v !== undefined)),
-            photos: [...d.photos, ...pages],
-          }))
-          if (f.title) setError(null)
-        }}
-      />
+      {smart.status}
       <TextField label="מה נעשה" value={draft.title} onChangeText={setTitle} error={error} />
       <View style={styles.chips}>
         {SUGGESTIONS.map((s) => (
@@ -119,6 +127,7 @@ export function ServiceForm({ car, initial, from }: { car: Car; initial?: Servic
       </View>
 
       <PhotoStrip label="קבלות ותמונות" photos={draft.photos} onChange={(p) => set('photos', p)} />
+      {smart.sheet}
 
       <SectionHeader title="הטיפול הבא" />
       <DateField
